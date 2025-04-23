@@ -1,0 +1,44 @@
+/* .editor {
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    cursor: text;
+    padding: 16px;
+    border-radius: 2px;
+    margin-bottom: 2em;
+    box-shadow: inset 0px 1px 8px -3px #ABABAB;
+    background: #fefefe;
+  } */
+  
+  /* .editor :global(.public-DraftEditor-content) {
+    min-height: 80px;
+  } */
+
+  .editor :global(.public-DraftEditorPlaceholder-inner) {
+    font-size: 1em;
+    position: absolute;
+    color: var(--mui-palette-divider)
+  }
+  
+
+   .editor {
+    box-sizing: border-box;
+    /* border: 0.2px solid #181818; */
+    cursor: text;
+    padding: var(--editor-padding, 4px 4px 16px 4px);
+    /* border-radius: 5px; */
+    /* margin-bottom: 2em; */
+    /* box-shadow: inset 1px 1px 1px -1px #363535; */
+    /* min-height: 10px; */
+    /* background: rgba(231, 226, 226, 0.975); */
+  }
+  
+  /* .editor :global(.public-DraftEditor-content) {
+    min-height: 140px;
+  }
+  .options {
+    margin-bottom: 20px;
+  } */
+
+  .editorNoPadding {
+    padding: 0; /* Remove padding */
+  }

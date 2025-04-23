@@ -1,0 +1,7 @@
+.cropper_overlay {
+    transition: 0.5s;
+  }
+  
+.cropper_overlay_faded {
+    color: rgba(0, 0, 0, 0.9); /* 'black' is replaced with its RGBA equivalent */
+}

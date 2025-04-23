@@ -1,42 +1,126 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
 
 html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
 }
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 * {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* sticky sidebar */
+.sticky__sidebar {
+  will-change: min-height !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+.sticky__sidebar__inner {
+  transform: translate(0, 0) !important; /* For browsers don't support translate3d. */
+  transform: translate3d(0, 0, 0) !important;
+  will-change: position, transform !important;
+}
+
+/* mentions popover */
+.mnw6qvm {
+  background: none !important;
+  box-shadow: none !important;
+}
+/* mention hover item */
+.mention-item:hover {
+  background: var(--mui-palette-divider) !important
+}
+
+/* emoji editor */
+.e8k2yoa{
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+  line-height: 1.2em !important;
+  font-size: 1.5em !important;
+  color: #888 !important;
+  background: transparent !important;
+  border: 1px solid #ddd !important;
+  border-radius: 1.5em !important;
+  cursor: pointer !important;
+  border: none !important;
+}
+
+.e8k2yoa:hover, .e8k2yoa:active, .e8k2yoa:focus {
+  background: transparent !important;
+}
+
+.e13wqaj6:hover {
+  background: transparent !important;
+}
+.e13wqaj6:focus {
+  outline: 0 !important;
+}
+.e13wqaj6 {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+  line-height: 1.2em !important;
+  font-size: 1.5em !important;
+  color: #888 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 1.5em !important;
+  cursor: pointer !important;
+  background: transparent !important;
+}
+
+/* Draft editor emoji display */
+.e183m4hm{
+  z-index: 999999 !important;
+  height: 100px !important;
+  display: block !important;
+}
+.ejr02pv {
+  padding: 0 0.3em;
+  box-sizing: content-box;
+  background: var(--mui-palette-background-paper) !important;
+  border: 1px solid #e0e0e0;
+  box-shadow: none !important;
+  position: fixed;
+  margin: 0px auto !important;
+  inset: auto auto 0px 0px !important;
+  overflow-y: hidden !important;
+  z-index: 999999999;
+  height: 180px;
+  overflow-x: hidden !important;
+  transform: translate3d(-161.5px, 35px, 17px) !important;
+}
+.e1kg9q3n {
+  height: 12em !important;
+}
+
+/* increase emoji icon size */
+.e183m4hm span {
+  font-size: large !important;
+}
+/* toggle button size */
+.e183m4hm .e8k2yoa {
+  font-size: 2em !important
+}
+/* emoji suggestion */
+.esyutjr{
+  box-shadow: var(--Paper-shadow) !important;
+  background-image: var(--Paper-overlay) !important;
+  background: var(--mui-palette-background-paper) !important;
+  box-shadow: none !important;
+  border: 1px solid var(--mui-palette-divider) !important;
+  z-index: 99999 !important;
+  position: absolute;
+}
+.e1eijkox:active, .e1eijkox:hover{
+  background: var(--mui-palette-divider) !important;
+}
+.e1adbvmt{
+  background: var(--mui-palette-divider) !important;
 }
