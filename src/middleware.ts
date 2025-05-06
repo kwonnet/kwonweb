@@ -1,4 +1,17 @@
-export { auth as middleware } from './auth';
+import { NextResponse } from 'next/server';
+import { auth } from './auth'; // import it but call manually
+
+export async function middleware(request: any) {
+  const { pathname } = request.nextUrl;
+
+  // Allow public access to embed pages
+  if (pathname.includes("/embed/")) {
+    return NextResponse.next();
+  }
+
+  // Otherwise, run your existing auth middleware
+  return auth(request);
+}
 
 export const config = {
   // https://nextjs.org/docs/app/building-your-application/routing/middleware#matcher

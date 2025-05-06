@@ -250,6 +250,7 @@ const DisplayQuizItem = ({
                 Ended:
               </Typography>
               <Typography
+                suppressHydrationWarning
                 color="textDisabled"
                 variant="caption"
                 sx={{ fontSize: 10 }}
@@ -268,7 +269,7 @@ const DisplayQuizItem = ({
                 color="inherit"
                 sx={{ textTransform: "lowercase" }}
                 size="small"
-                href={`/${post?.user?.username}/feed/${post.id}}`}
+                href={`/${post?.author?.username}/feed/${post.id}}`}
                 LinkComponent={Link}
               >
                 Show more

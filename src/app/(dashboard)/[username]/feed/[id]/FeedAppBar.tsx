@@ -1,31 +1,21 @@
 "use client";
-import { FeedPost } from "@/types";
 import { ArrowBackIosNewOutlined, HomeOutlined } from "@mui/icons-material";
 import { IconButton, Paper, Stack } from "@mui/material";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
 import StickyBox from "react-sticky-box";
 
-const FeedAppBar = ({ item }: { item: FeedPost }) => {
+const FeedAppBar = () => {
   const router = useRouter();
   const handleGoBack = (
     ev: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     ev.preventDefault();
     router.back()
-    // if (!item.parentId) {
-      
-    //   router.replace("/", { scroll: false });
-    // } else {
-    //   router.replace(`/${item?.author?.username}/feed/${item?.parentId}`, {
-    //     scroll: false,
-    //   });
-    // }
   };
   return (
     <React.Fragment>
-      <StickyBox className="post_appbar" style={{ zIndex: 9999999 }}>
+      <StickyBox className="post_appbar" style={{ zIndex: 99 }}>
         <Paper
           sx={{
             mt: 0,
@@ -45,12 +35,6 @@ const FeedAppBar = ({ item }: { item: FeedPost }) => {
             direction={"row"}
             sx={{ justifyContent: "space-between", alignItems: "center" }}
           >
-            {/* <Link scroll={false} href={!item.parentId ? `/`: `/${item?.author?.username}/feed/${item?.parentId}`}>
-            <IconButton size="small" >
-              <ArrowBackIosNewOutlined />
-            </IconButton>
-            </Link> */}
-            
             <IconButton onClick={ev => handleGoBack(ev)} size="small">
               <ArrowBackIosNewOutlined />
             </IconButton>

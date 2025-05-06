@@ -1,6 +1,7 @@
 'use client'
 import { Box, Stack, Typography } from '@mui/material';
 import React, { useState } from 'react'
+import FeedAppBar from '../FeedAppBar';
 
 const updateUrl = (url: string) => {
   // const url = new URL(window.location.href);
@@ -36,6 +37,7 @@ const PageClient = ({ QuotesNode, RepostsNode, params }:{ QuotesNode: React.Reac
     };
   return (
     <React.Fragment>
+      <FeedAppBar />
       <Box sx={{ width: "100wv", mb: 1 }}>
         <Stack
           direction="row"

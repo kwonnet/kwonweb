@@ -18,6 +18,7 @@ const NearYouLocation = () => {
         }
     }
     handleUserLocation()
+    // eslint-disable-next-line
     }, [])
     
   return (

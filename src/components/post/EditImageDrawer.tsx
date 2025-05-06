@@ -3,7 +3,7 @@ import {
   Box,
   Container,
   FormControl,
-  Grid2,
+  Grid,
   IconButton,
   Stack,
   TextField,
@@ -111,6 +111,7 @@ const UpdateAltText = memo(
     );
   }
 );
+UpdateAltText.displayName = "UpdateAltText"
 
 const FlagContent = memo(
   ({
@@ -209,6 +210,8 @@ const FlagContent = memo(
   }
 );
 
+FlagContent.displayName = "FlagContent"
+
 
 const flags = ["Nudity", "Violence", "Sensitive"];
 const EditImageDrawer =
@@ -282,16 +285,16 @@ const EditImageDrawer =
         }}}
       >
         <Box sx={{ width: "auto" }} role="presentation">
-          <Grid2 container sx={{ alignItems: "center" }}>
-            <Grid2 size={{ lg: 2, md: 2, sm: 2, xl: 2, xs: 2 }}>
+          <Grid container sx={{ alignItems: "center" }}>
+            <Grid size={{ lg: 2, md: 2, sm: 2, xl: 2, xs: 2 }}>
               <IconButton
                 color="inherit"
                 onClick={(ev) => toggleDrawer(ev, false)}
               >
                 <ArrowBack />
               </IconButton>
-            </Grid2>
-            <Grid2 size={{ lg: 10, md: 10, sm: 10, xl: 10, xs: 10 }}>
+            </Grid>
+            <Grid size={{ lg: 10, md: 10, sm: 10, xl: 10, xs: 10 }}>
               <Typography
                 sx={{
                   alignSelf: "center",
@@ -307,8 +310,8 @@ const EditImageDrawer =
                   ? "Content warning"
                   : "Edit Media"}
               </Typography>
-            </Grid2>
-          </Grid2>
+            </Grid>
+          </Grid>
           <Box sx={{ position: "relative", mb: 1 }}>
             <Stack
               sx={{
@@ -388,5 +391,7 @@ const EditImageDrawer =
       </SwipeableDrawer>
     );
   }
+
+
 
 export default EditImageDrawer;

@@ -1,6 +1,5 @@
 "use client";
 import {
-  Avatar,
   Box,
   Button,
   CardMedia,
@@ -16,9 +15,9 @@ import StickyBox from "react-sticky-box";
 import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
 import Link from "next/link";
 const StickySidebar = ({pathname, ConnectionSection}:{pathname?: string; ConnectionSection?: React.ReactNode}) => {
-  const matches = useMediaQuery((theme) => theme.breakpoints.down('md'));
+  // const matches = useMediaQuery((theme) => theme.breakpoints.down('md'));
   return (
-    <StickyBox style={{ width: matches ? "0" : "35%", display: matches ? "none" : "block" }}>
+    <StickyBox className="page__content_sidebar">
       <Box>
         <Paper sx={{}}>
           <CardMedia

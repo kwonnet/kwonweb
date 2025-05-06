@@ -8,8 +8,7 @@ import {
   Badge,
   Box,
   Button,
-  CardMedia,
-  Grid2,
+  Grid,
   IconButton,
   Paper,
   Stack,
@@ -54,7 +53,7 @@ const ReposterCard = ({
                   height: 60,
                   width: 60,
                   border: (theme) =>
-                    `4px solid ${theme.palette.background.paper}`,
+                    `4px solid ${theme.vars.palette.background.paper}`,
                 }}
                 alt={item?.name}
                 src={item?.avatar}
@@ -184,18 +183,18 @@ export const RepostsClient = ({
       {postReposters?.length === 0 && (
         <Typography textAlign={"center"}>Not reposts yet</Typography>
       )}
-      <Grid2 container spacing={1}>
+      <Grid container spacing={1}>
         {postReposters.length > 0 &&
           postReposters?.map((item) => (
-            <Grid2 size={{ lg: 6, md: 6 }} key={item.id}>
+            <Grid size={{ lg: 6, md: 6 }} key={item.id}>
               <ReposterCard
                 key={item.id}
                 item={item}
                 onFollowUser={onFollowUser}
               />
-            </Grid2>
+            </Grid>
           ))}
-      </Grid2>
+      </Grid>
       <Box sx={{ my: 2, textAlign: "center" }}>
         {postReposters.length >= PAGE_SIZE && (
           <Button

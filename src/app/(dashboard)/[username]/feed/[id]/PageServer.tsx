@@ -6,6 +6,7 @@ import React from "react";
 import PageClient from "./PageClient";
 
 const PageServer = async ({ id }: { id?: string }) => {
+  
   const date = new Date();
 
   const session = await auth();

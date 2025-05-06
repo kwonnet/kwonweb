@@ -13,6 +13,7 @@ const FeedSkeleton = ({rows = 3, items = 6, height = 200}: {rows?:number; height
             mb: 0,
             pt: 0,
             pb: 0,
+            my: 1,
             borderBottom: `0.1px solid #eaeaec`,
             ...theme.applyStyles("dark", {
               borderBottom: `0.1px solid #2b2a30`,
@@ -27,8 +28,8 @@ const FeedSkeleton = ({rows = 3, items = 6, height = 200}: {rows?:number; height
                 <Skeleton variant="text" width={80} height={15} />
               </Stack>
             </Stack>
-            <IconButton>
-              <MoreVertIcon />
+            <IconButton color="inherit">
+              <MoreVertIcon color="disabled" />
             </IconButton>
           </Stack>
 

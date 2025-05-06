@@ -43,6 +43,7 @@ export const AdjustableImage = forwardRef<HTMLCanvasElement, Props>(
 
 		useLayoutEffect(() => {
 			drawImage();
+			// eslint-disable-next-line
 		}, [src, brightness, saturation, hue, contrast]);
 
 		return (

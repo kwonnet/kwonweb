@@ -1,0 +1,8 @@
+[
+    {
+      "origin": ["http://localhost:3000", "https://torazon.com"],
+      "method": ["GET"],
+      "maxAgeSeconds": 3600
+    }
+  ]
+  

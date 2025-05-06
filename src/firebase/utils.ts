@@ -44,6 +44,7 @@ export async function ensureSignedInAnon() {
   }
 }
 
+
 // Extract file extension helper
 function getFileExtension(filename: string): string {
     const match = filename.match(/\.([0-9a-z]+)(?:[\?#]|$)/i);

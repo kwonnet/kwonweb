@@ -228,6 +228,7 @@ const SocketIoProvider = (props: any) => {
 
       socketConn.close();
     };
+  // eslint-disable-next-line
   }, []);
 
   const updateSocketState = (params: Partial<SocketContextType>) => {

@@ -3,7 +3,7 @@ import {
   Box,
   Avatar,
   Container,
-  Grid2,
+  Grid,
   IconButton,
   Stack,
   Tooltip,
@@ -70,6 +70,7 @@ import { logUserLocation } from "@/lib/users";
 import { signInAnonymously } from "firebase/auth";
 import { auth, signInAnon } from "@/firebase";
 import { ensureSignedInAnon, uploadMultipleFilesWithMetadata } from "@/firebase/utils";
+import { uploadBunnyFilesWithMetadata } from "@/utils/bunny";
 
 function CircularProgressWithLabel(
   props: CircularProgressProps & { value: number; max: number }
@@ -137,6 +138,30 @@ function CircularProgressWithLabel(
     </Box>
   );
 }
+
+function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+
+      img.onload = () => {
+        resolve({
+          width: img.width,
+          height: img.height,
+        });
+      };
+
+      img.onerror = reject;
+    };
+
+    reader.onerror = reject;
+  });
+}
+
 
 type LocalState = {
   threads: PostThread[];
@@ -497,7 +522,7 @@ export default function CreatePostDrawer({
     document.getElementById(`input_${id}`)?.click();
   };
 
-  const onFileChange = (
+  const onFileChange = async(
     ev: React.ChangeEvent<HTMLInputElement>,
     id: number
   ) => {
@@ -508,13 +533,17 @@ export default function CreatePostDrawer({
         file,
         altText: "",
         flags: [],
-      }));
+      }))
       setState((prev) => ({
         ...prev,
         threads: prev.threads.map((item) =>
           item.id === id ? { ...item, files: [...item.files, ...files] } : item
         ),
       }));
+      const input = document.getElementById(`input_${id}`) as HTMLInputElement;
+        if (input) {
+          input.value = "";
+        }
     }
   };
 
@@ -676,28 +705,27 @@ export default function CreatePostDrawer({
           });
         }
       }
-      // Function to get the current content of the editor and log it
-      // const getContent = () => {
-      //   const rawState = convertToRaw(editorState.getCurrentContent());
-      //   const mentions = getMentions(rawState);
-      //   const uniqueMentions = Array.from(new Set(mentions)); // Remove duplicates
-      //   console.log("Mentioned Users : ", getMentions(rawState));
-      //   console.log("Unique Mentioned Users: ", uniqueMentions);
-      //   console.log("Plain Text: ", editorState.getCurrentContent().getPlainText());
-      // };
       // sign in to firebase anonymously to upload files
-      const userCred = await ensureSignedInAnon()
-      console.log("firebase auth ", userCred)
+      await ensureSignedInAnon()
       const posts = await Promise.all(
         state.threads.map(async (thread) => {
-          const postFiles = thread.files;
-          const media =
-            postFiles.length > 0
-              ? await uploadMultipleFilesWithMetadata(userCred.uid,postFiles, "feed") //handleImagikPostFileUpload(user?.id, postFiles, token)
-              : [];
+          const media = await Promise.all(
+            thread.files.map(async (f) => {
+              if (f.file.type.startsWith("image/")) {
+                const [uploadedImage] = await uploadMultipleFilesWithMetadata(user?.id, [f]);
+                return uploadedImage;
+              } else if (f.file.type.startsWith("video/")) {
+                const [uploadedVideo] = await uploadBunnyFilesWithMetadata([f]);
+                return uploadedVideo;
+              } else {
+                return null; // Or handle unknown types if needed
+              }
+            })
+          );
+          const finalMedia = media.filter(m => m !== null);
           return {
             content: thread.content,
-            media,
+            media: finalMedia,
             type: thread.type,
             poll: thread.poll,
             quiz: thread.quiz,
@@ -811,8 +839,8 @@ export default function CreatePostDrawer({
             <Box role="presentation">
               <Container maxWidth="xl" sx={{ mt: 1, pb: 2 }}>
                 {state.threads.map((thread, index) => (
-                  <Grid2 sx={{ mb: 1 }} key={thread.id} container spacing={2}>
-                    <Grid2 size={{ lg: 1, md: 1, sm: 1, xs: 1 }}>
+                  <Grid sx={{ mb: 1 }} key={thread.id} container spacing={2}>
+                    <Grid size={{ lg: 1, md: 1, sm: 1, xs: 1 }}>
                       <Box
                         sx={{
                           height: "100%",
@@ -832,8 +860,8 @@ export default function CreatePostDrawer({
                           orientation="vertical"
                         />
                       </Box>
-                    </Grid2>
-                    <Grid2
+                    </Grid>
+                    <Grid
                       sx={{ pl: 0 }}
                       size={{ lg: 11, md: 11, sm: 11, xs: 11 }}
                     >
@@ -850,7 +878,7 @@ export default function CreatePostDrawer({
                           type="file"
                           ref={fileRef}
                           id={`input_${thread.id}`}
-                          accept="image/*"
+                          accept="image/*,video/*"
                         />
                       </Box>
                       {thread.type === PostType.POLL && (
@@ -1137,8 +1165,8 @@ export default function CreatePostDrawer({
                           toggleDrawer={(ev, open) => toggleTagPeopleDrawer(thread.id, open)}
                         />
                       </Box>
-                    </Grid2>
-                  </Grid2>
+                    </Grid>
+                  </Grid>
                 ))}
                 <Box sx={{ m: 0, p: 0, position: "relative", mt: 5 }}>
                   <Stack

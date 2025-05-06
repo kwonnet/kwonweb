@@ -1,11 +1,23 @@
-import { bunnyFilenameUID, bunnyPullZoneUrl, bunnyStorageUrl } from "@/config";
+import {
+  bunnyFilenameUID,
+  bunnyPullZoneUrl,
+  bunnyStorageUrl,
+} from "@/config/bunny";
 
 import axios from "axios";
 import { ZodError, ZodIssue, ZodSchema } from "zod";
 
-import { customAlphabet } from "nanoid";
+import { customAlphabet, nanoid } from "nanoid";
+import { appUrl } from "@/config";
 
 const numbersOnly = "0123456789";
+
+/**
+ * Gen unique number only using nanoid library.
+ *
+ * Size can be any number and default is 16
+ */
+export const genUniqueRef = customAlphabet(numbersOnly, 16);
 
 /**
  * Shuffles an array in place using the Fisher-Yates algorithm.
@@ -39,7 +51,6 @@ export const getCurrent_ton_usd_rate = async () => {
     const result = res.data;
     const tonUsdRate = result["the-open-network"]["usd"];
     if (!tonUsdRate) return null;
-    console.log(tonUsdRate);
     return tonUsdRate as number;
   } catch (error) {
     return null;
@@ -61,7 +72,7 @@ export function formatNumber(num: number): string {
 }
 
 export function formatFeedNumber(num: number) {
-  if(num === 0) return ""
+  if (num === 0) return "";
   if (num < 1000) return num.toString(); // Leave numbers < 1000 as they are
   const units = ["", "K", "M", "B", "T"]; // Define units (thousand, million, etc.)
   let unitIndex = 0;
@@ -121,8 +132,6 @@ export const get_usd_ton_rate = (
   return parseFloat((usdAmount / tonRate).toFixed(2));
 };
 
-export const genUniqueRef = customAlphabet(numbersOnly, 16);
-
 export function getWithrawalTxnFee(amount: number) {
   if (amount === 0) return 0;
   if (amount <= 500) {
@@ -135,12 +144,12 @@ export function getWithrawalTxnFee(amount: number) {
 
 export const getErrorMessage = (error: any): string => {
   let message = error?.message;
-  
+
   if (error?.response?.data) {
     message = error?.response?.data;
   }
-  if(error instanceof ZodError){
-    message = error.issues.map(issue => issue.message).toString()
+  if (error instanceof ZodError) {
+    message = error.issues.map((issue) => issue.message).toString();
   }
   return message as string;
 };
@@ -343,7 +352,7 @@ export const getFileExtension = (fileName: string) => {
 
 export function formatRelativeTime(date: string | Date) {
   const relDate = new Date(date);
-  const now = new Date().getTime();;
+  const now = new Date().getTime();
   const seconds = Math.floor((now - relDate.getTime()) / 1000);
 
   const intervals = [
@@ -366,23 +375,72 @@ export function formatRelativeTime(date: string | Date) {
   return "1s"; // If less than 1 second, show "1s"
 }
 
-export const isMobileScreenshot = (width: number, height: number): boolean => {
-  const aspectRatio = height / width;
+export function isMobileScreenshot(width: number, height: number) {
+  const aspectRatio = width / height;
 
-  // Common mobile portrait aspect ratios with slight tolerance
-  const mobileAspectRatios = [16 / 9, 19.5 / 9, 20 / 9, 21 / 9];
-  const tolerance = 0.2; // Allow up to ±20% variation
+  // Common screen aspect ratios
+  const commonRatios = [9 / 16, 16 / 9, 3 / 4, 4 / 3];
 
-  // Typical mobile screen width and height ranges
-  const isMobileSize = width >= 360 && width <= 1440 && height >= 640 && height <= 3200;
+  // Allow ~5% drift on aspect ratio
+  const matchesAspect = commonRatios.some((ratio) => {
+    return Math.abs(ratio - aspectRatio) < 0.05;
+  });
 
-  // Check if the aspect ratio is close to any mobile ratio
-  const isMobileAspectRatio = mobileAspectRatios.some(
-    (ratio) => Math.abs(aspectRatio - ratio) < tolerance
-  );
+  // Common screen base sizes
+  const commonScreenSizes = [
+    [1080, 1920],
+    [1170, 2532],
+    [1440, 2960],
+    [1125, 2436],
+    [828, 1792],
+  ];
 
-  return isMobileSize && isMobileAspectRatio;
+  const matchesScreenSizeOrSimilar = commonScreenSizes.some(([w, h]) => {
+    const exactMatch =
+      (width === w && height === h) || (width === h && height === w);
+
+    const sizeRatioW = width / w;
+    const sizeRatioH = height / h;
+    const sizeRatioSwapW = width / h;
+    const sizeRatioSwapH = height / w;
+
+    // Allow up to 30% bigger or smaller (device frame, resizing, cropping a bit)
+    const similarSize =
+      (sizeRatioW >= 0.7 &&
+        sizeRatioW <= 1.3 &&
+        sizeRatioH >= 0.7 &&
+        sizeRatioH <= 1.3) ||
+      (sizeRatioSwapW >= 0.7 &&
+        sizeRatioSwapW <= 1.3 &&
+        sizeRatioSwapH >= 0.7 &&
+        sizeRatioSwapH <= 1.3);
+
+    return exactMatch || similarSize;
+  });
+
+  // check size ration
+  const multipleWidth = Math.floor(height / width) >= 2;
+
+  return multipleWidth || (matchesAspect && matchesScreenSizeOrSimilar);
 }
+
+// export const isMobileScreenshot = (width: number, height: number): boolean => {
+//   const aspectRatio = height / width;
+
+//   // Common mobile portrait aspect ratios with slight tolerance
+//   const mobileAspectRatios = [16 / 9, 19.5 / 9, 20 / 9, 21 / 9];
+//   const tolerance = 0.2; // Allow up to ±20% variation
+
+//   // Typical mobile screen width and height ranges
+//   const isMobileSize = width >= 360 && width <= 1440 && height >= 640 && height <= 3200;
+
+//   // Check if the aspect ratio is close to any mobile ratio
+//   const isMobileAspectRatio = mobileAspectRatios.some(
+//     (ratio) => Math.abs(aspectRatio - ratio) < tolerance
+//   );
+
+//   return isMobileSize && isMobileAspectRatio;
+// }
 
 export function getMobileScaledDimensions(
   originalWidth: number,
@@ -416,4 +474,85 @@ export function shortenText(text?: string, limit = 50): string {
   if (!text) return "";
   if (text.length <= limit) return text;
   return `${text.slice(0, limit)}...`;
+}
+
+export function getPostUrl(
+  postId: string,
+  username: string,
+  path = "feed"
+): string {
+  return `${appUrl}/${username}/${path}/${postId}`;
+}
+
+export function getBunnySubtitleUrl(videoId: string, langCode: string): string {
+  return `${bunnyPullZoneUrl}/${videoId}/captions/${langCode}.vtt `;
+}
+
+/**
+ * Get or generate unique session ID for a user
+ * @returns string
+ */
+export function getSessionId() {
+  let id = sessionStorage.getItem("tz_session_id");
+  if (!id) {
+    id = genUniqueRef(13);
+    sessionStorage.setItem("tz_session_id", id);
+  }
+  return id;
+}
+
+export const shouldSendLog = (
+  id: string,
+  kind:
+    | "MEDIA_IMAGE_VIEW"
+    | "MEDIA_IMAGE_IMPRESSION"
+    | "MEDIA_IMAGE_SAVE"
+    | "MEDIA_VIDEO_WATCH"
+    | "MEDIA_VIDEO_IMPRESSION"
+    | "MEDIA_VIDEO_SAVE"
+    | "POST_LAST_SEEN"
+    | "POST_LAST_VIEWED"
+    | "REPLY_LAST_VIEWED",
+  ttlMinutes = 5
+) => {
+  const kId =
+    kind === "MEDIA_IMAGE_VIEW"
+      ? "m_i_v"
+      : kind === "MEDIA_IMAGE_SAVE"
+        ? "m_i_s"
+        : kind === "MEDIA_IMAGE_IMPRESSION"
+          ? "m_i_i"
+        : kind === "MEDIA_VIDEO_WATCH"
+          ? "m_v_w"
+          : kind === "MEDIA_VIDEO_SAVE"
+            ? "m_v_s"
+            : kind === "MEDIA_VIDEO_IMPRESSION"
+              ? "m_v_i"
+              : kind === "POST_LAST_SEEN"
+                ? "l_s"
+                : kind === "POST_LAST_VIEWED" 
+                ? "l_v"
+                : "r_v";
+  const key = `tz_p_${kId}:${id}`;
+  const lastSeen = sessionStorage.getItem(key);
+  const now = Date.now();
+  const ttlMs = ttlMinutes * 60 * 1000;
+  const timeDiff = now - Number(lastSeen);
+  if (!lastSeen || timeDiff >= ttlMs) {
+    sessionStorage.setItem(key, (now + ttlMs).toString());
+    return true;
+  }
+  return false;
+};
+
+export function convertJsonToFormBody(obj: Record<string, any>): string {
+  const formBody: string[] = [];
+  for (const key in obj) {
+    const encodedKey = encodeURIComponent(key);
+    const encodedValue = encodeURIComponent(
+      typeof obj[key] === "object" ? JSON.stringify(obj[key]) : obj[key]
+    );
+    formBody.push(`${encodedKey}=${encodedValue}`);
+  }
+  return formBody.join("&");
 }

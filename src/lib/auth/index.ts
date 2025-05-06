@@ -1,12 +1,12 @@
 'use client'
 import { axiosAPI } from "@/config/axios";
-import { User } from "@/types";
+import { CurrentAuthUser } from "@/types";
 
 export const getAuthUser = async(token?: string) => {
     try {
           axiosAPI.accessToken = token
           const result = await axiosAPI.get(`/v1/auth/me`)
-          return result.data as User
+          return result.data as CurrentAuthUser
       } catch (error: any) {
           throw error
       }
@@ -20,7 +20,7 @@ export const getTmaAuthUser = async(payload: {
 } ) => {
     try {
         const result = await axiosAPI.post("/v1/auth", payload)
-        return result.data as { user: User, token: string }
+        return result.data as { user: CurrentAuthUser, token: string }
     } catch (error) {
         throw error
     }

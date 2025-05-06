@@ -1,5 +1,6 @@
 import { UserRoleEnum, UserTypeEnum } from ".";
 
+
 type UserMeta = {
     type: string;
     color: string;

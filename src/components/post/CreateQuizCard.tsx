@@ -6,7 +6,7 @@ import {
   CardContent,
   Checkbox,
   FormControl,
-  Grid2,
+  Grid,
   IconButton,
   Stack,
   Switch,
@@ -172,8 +172,8 @@ const CreateQuizCard = ({
         >
           <Typography variant="caption">Create options and mark the correct answer(s)</Typography>
           {state.options.map((item, index) => (
-            <Grid2 key={item.id} container sx={{ alignItems: "center", pt: 1 }} spacing={2}>
-              <Grid2 size={{ lg: 9, md: 9, sm: 9, xs: 9 }}>
+            <Grid key={item.id} container sx={{ alignItems: "center", pt: 1 }} spacing={2}>
+              <Grid size={{ lg: 9, md: 9, sm: 9, xs: 9 }}>
                 <FormControl key={item.id} fullWidth sx={{ mb: 0.5 }}>
                   <TextField
                     size="small"
@@ -196,8 +196,8 @@ const CreateQuizCard = ({
                     }}
                   />
                 </FormControl>
-              </Grid2>
-              <Grid2 sx={{ lg: 3, md: 3, sm: 3, xs: 3 }}>
+              </Grid>
+              <Grid sx={{ lg: 3, md: 3, sm: 3, xs: 3 }}>
                 <Stack direction={"row"} sx={{alignItems: "center"}} spacing={1}>
                 <Checkbox
                     size="small"
@@ -228,8 +228,8 @@ const CreateQuizCard = ({
                   </Tooltip>
                 )}
                 </Stack>
-              </Grid2>
-            </Grid2>
+              </Grid>
+            </Grid>
           ))}
           <Box sx={{ m: 0, p: 0, position: "relative", mt: 5 }}>
             <Stack

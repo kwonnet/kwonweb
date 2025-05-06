@@ -4,21 +4,19 @@ import Box from "@mui/material/Box";
 import {
   Avatar,
   Badge,
+  Button,
   Card,
   CardContent,
   Divider,
-  Grid2,
   IconButton,
   Stack,
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useAuthSession } from "@/hooks";
+import { useAuthSession, useTrackImpression, useTrackPostReplyView } from "@/hooks";
 import { formatDateTime, formatFeedNumber, formatRelativeTime } from "@/utils";
 import QuickreplyOutlinedIcon from "@mui/icons-material/QuickreplyOutlined";
 import RepeatOutlinedIcon from "@mui/icons-material/RepeatOutlined";
-import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
-import FavoriteOutlinedIcon from "@mui/icons-material/FavoriteOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import BookmarkBorderOutlinedIcon from "@mui/icons-material/BookmarkBorderOutlined";
 import BookmarkOutlinedIcon from "@mui/icons-material/BookmarkOutlined";
@@ -31,11 +29,12 @@ import {
   DisplayFeedMedia,
   DisplayQuizItem,
   FeedQuoteItem,
+  PostOptions,
   RepostPopover,
   RollingNumber,
 } from "@/components/post";
 import AddCircleOutlinedIcon from "@mui/icons-material/AddCircleOutlined";
-import { FeedPost, PostAuthor, PostKind, PostType, User } from "@/types";
+import { FeedPost, PostAuthor, PostKind, PostType } from "@/types";
 import ContentEditor from "@/components/post/ContentEditor";
 import DisplayPollItem from "@/components/post/DisplayPollItem";
 import { useNotifications } from "@toolpad/core";
@@ -49,7 +48,6 @@ const ThreadCardItem = ({
   handleBookmark,
   handleReply,
   onQuote,
-  isDivider,
   onFollowUserCallback,
   lastIndex = false,
 }: {
@@ -95,6 +93,43 @@ const ThreadCardItem = ({
     setAnchorEl(null);
   };
 
+  // menu options
+  const [openMenu, setOpenMenu] = React.useState(false);
+  const anchorMenuRef = React.useRef<HTMLButtonElement>(null);
+
+  const onToggleOptionsMenu = () => {
+    setOpenMenu((prevOpen) => !prevOpen);
+  };
+
+  const onCloseOptionsMenu = (event: Event | React.SyntheticEvent) => {
+    if (
+      anchorMenuRef.current &&
+      anchorMenuRef.current.contains(event.target as HTMLElement)
+    ) {
+      return;
+    }
+    setOpenMenu(false);
+  };
+
+  function handleListKeyDown(event: React.KeyboardEvent) {
+    if (event.key === "Tab") {
+      event.preventDefault();
+      setOpenMenu(false);
+    } else if (event.key === "Escape") {
+      setOpenMenu(false);
+    }
+  }
+
+  // return focus to the button when we transitioned from !open -> open
+  const prevOpen = React.useRef(openMenu);
+  React.useEffect(() => {
+    if (prevOpen.current === true && openMenu === false) {
+      anchorMenuRef.current!.focus();
+    }
+
+    prevOpen.current = openMenu;
+  }, [openMenu]);
+
   const handlePost = (
     ev: React.MouseEvent<HTMLDivElement, MouseEvent>,
     item: FeedPost
@@ -112,24 +147,18 @@ const ThreadCardItem = ({
     ev.preventDefault();
     ev.stopPropagation();
     router.push(
-      user.id === user?.id ? `/profile` : `/profile/@${user.username}`
+      user.id === user?.id ? `/profile` : `/@${user.username}`
     );
   };
 
-  // const handleFollowUser = (
-  //   ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-  //   recipientId: string
-  // ) => {
-  //   ev.preventDefault();
-  //   ev.stopPropagation();
-  //   onFollowUserCallback({ senderId: user.id, recipientId });
-  // };
 
   const handleFollowUser = (recipientId: string, isFollow: boolean) => {
     onFollowUserCallback({ senderId: user.id, recipientId }, isFollow);
   };
 
   const item = post.kind === PostKind.REPOST ? post.parent : post;
+
+  const isDeleted = !!item.deletedAt;
 
   // check if the current author is followed by the current reader
   const isFollowed =
@@ -141,9 +170,14 @@ const ThreadCardItem = ({
       : post?.parent?.kind === PostKind.QUOTE
         ? post?.parent?.parent
         : undefined;
-
+  // track post thread or reply impression
+  const  ref = useTrackImpression(item.id, 5)
+  // track post thread or reply view
+  const viewRef = useTrackPostReplyView(item.id)
+  
   return (
     <Card
+      ref={ref}
       key={item.id}
       id={item.id}
       elevation={0}
@@ -158,8 +192,10 @@ const ThreadCardItem = ({
           pb: 0,
           px: 0.5,
           borderBottom: `0.1px solid #eaeaec`,
+          borderTop: `0.1px solid #eaeaec`,
           ...theme.applyStyles("dark", {
             borderBottom: `0.1px solid #46454d`,
+            borderTop: `0.1px solid #46454d`,
           }),
           // px: 1,
           cursor: "pointer",
@@ -168,6 +204,7 @@ const ThreadCardItem = ({
       onClick={(ev) => handlePost(ev, item)}
     >
       <CardContent
+        ref={viewRef}
         sx={{
           pt: 0.3,
           mt: 0,
@@ -185,7 +222,7 @@ const ThreadCardItem = ({
                 height: 14,
                 width: 14,
                 transform: "rotate(90deg)",
-                color: (theme) => theme.palette.text.disabled,
+                color: (theme) => theme.vars.palette.text.disabled,
               }}
             />
             <Typography
@@ -204,100 +241,122 @@ const ThreadCardItem = ({
           </Stack>
         )}
 
-        <Stack direction={"row"}>
-          <Box>
-            <Badge
-              overlap="circular"
-              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-              badgeContent={
-                !isFollowed && (
-                  <IconButton
-                    onClick={(ev) => {
-                      ev.preventDefault();
-                      ev.stopPropagation();
-                      handleFollowUser(
-                        item.userId,
-                        !item.author.conn.isFollowed
-                      );
-                    }}
-                    size="small"
-                  >
-                    <AddCircleOutlinedIcon sx={{ width: 24, height: 24 }} />
-                  </IconButton>
-                )
-              }
-            >
-              <Avatar
-                sx={{
-                  height: 50,
-                  width: 50,
-                  border: (theme) =>
-                    `4px solid ${theme.palette.background.paper}`,
-                }}
-                alt={item?.author?.name}
-                src={item?.author?.avatar}
-                onClick={(ev) => redirectToProfile(ev, item.author)}
-              />
-            </Badge>
-          </Box>
-          <Stack
-            direction={"row"}
-            sx={{
-              justifyContent: "space-between",
-              alignItems: "center",
-              width: "100%",
-            }}
-          >
-            <Stack onClick={(ev) => redirectToProfile(ev, item.author)}>
-              <AuthorHoverPreview
-                author={item?.author}
-                isName={true}
-                onFollowUserCallback={onFollowUserCallback}
-              />
-
-              <Stack
-                direction={"row"}
-                sx={{
-                  position: "relative",
-                  alignItems: "center",
-                  mt: -1,
-                  pt: -2,
-                }}
-                spacing={0.3}
+        {!isDeleted && (
+          <Stack direction={"row"}>
+            <Box>
+              <Badge
+                overlap="circular"
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                badgeContent={
+                  !isFollowed && (
+                    <IconButton
+                      onClick={(ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        handleFollowUser(
+                          item.userId,
+                          !item.author.conn.isFollowed
+                        );
+                      }}
+                      size="small"
+                    >
+                      <AddCircleOutlinedIcon sx={{ width: 24, height: 24 }} />
+                    </IconButton>
+                  )
+                }
               >
+                <Avatar
+                  sx={{
+                    height: 50,
+                    width: 50,
+                    border: (theme) =>
+                      `4px solid ${theme.vars.palette.background.paper}`,
+                  }}
+                  alt={item?.author?.name}
+                  src={item?.author?.avatar}
+                  onClick={(ev) => redirectToProfile(ev, item.author)}
+                />
+              </Badge>
+            </Box>
+            <Stack
+              direction={"row"}
+              sx={{
+                justifyContent: "space-between",
+                alignItems: "center",
+                width: "100%",
+              }}
+            >
+              <Stack onClick={(ev) => redirectToProfile(ev, item.author)}>
                 <AuthorHoverPreview
                   author={item?.author}
+                  isName={true}
                   onFollowUserCallback={onFollowUserCallback}
                 />
 
-                <Typography
-                  sx={{ display: "block", position: "relative" }}
-                  variant="caption"
-                >
-                  •
-                </Typography>
-                <Typography
-                  sx={{ display: "block" }}
-                  color="textDisabled"
-                  variant="caption"
-                >
-                  {formatRelativeTime(item?.createdAt)}
-                </Typography>
-              </Stack>
-            </Stack>
-            <Box>
-              <IconButton size="small" aria-label="Options">
-                <MoreVertIcon
+                <Stack
+                  direction={"row"}
                   sx={{
-                    height: 20,
-                    width: 20,
-                    color: (theme) => theme.palette.text.disabled,
+                    position: "relative",
+                    alignItems: "center",
+                    mt: -1,
+                    pt: -2,
                   }}
+                  spacing={0.3}
+                >
+                  <AuthorHoverPreview
+                    author={item?.author}
+                    onFollowUserCallback={onFollowUserCallback}
+                  />
+
+                  <Typography
+                    sx={{ display: "block", position: "relative" }}
+                    variant="caption"
+                  >
+                    •
+                  </Typography>
+                  <Typography
+                    sx={{ display: "block" }}
+                    color="textDisabled"
+                    variant="caption"
+                  >
+                    {formatRelativeTime(item?.createdAt)}
+                  </Typography>
+                </Stack>
+              </Stack>
+              <Box onClick={(ev) => ev.stopPropagation()}>
+                <Tooltip title="Options" placement="top">
+                  <IconButton
+                    onClick={(ev) => onToggleOptionsMenu()}
+                    size="small"
+                    aria-label="Options"
+                    ref={anchorMenuRef}
+                    id="composition-button"
+                    aria-controls={openMenu ? "composition-menu" : undefined}
+                    aria-expanded={openMenu ? "true" : undefined}
+                    aria-haspopup="true"
+                  >
+                    <MoreVertIcon
+                      sx={{
+                        height: 20,
+                        width: 20,
+                        color: (theme) => theme.vars.palette.text.disabled,
+                      }}
+                    />
+                  </IconButton>
+                </Tooltip>
+                <PostOptions
+                  item={item}
+                  handleClose={onCloseOptionsMenu}
+                  handleListKeyDown={handleListKeyDown}
+                  open={openMenu}
+                  anchorRef={anchorMenuRef}
+                  handleBookmark={handleBookmark}
+                  handleFollowUser={handleFollowUser}
                 />
-              </IconButton>
-            </Box>
+              </Box>
+            </Stack>
           </Stack>
-        </Stack>
+        )}
         <Stack sx={{ pl: 3 }} direction={"row"} spacing={2}>
           <Box>
             <Divider orientation="vertical" variant="fullWidth" />
@@ -308,40 +367,61 @@ const ThreadCardItem = ({
               position: "relative",
             }}
           >
-            <ContentEditor
-              disablePadding={true}
-              readOnly={true}
-              content={item?.content?.trim()}
-            />
-
-            {item.type === PostType.POLL && item?.poll?.isMultiVote && (
-              <Typography
-                color="textDisabled"
-                sx={{
-                  display: "-webkit-box",
-                  WebkitLineClamp: 4, // Number of lines before truncating
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                  maxWidth: "100%", // Ensures it adapts to container width
-                  fontStyle: "italic",
-                }}
-                variant="caption"
-              >
-                You can select multiple options
-              </Typography>
+            {isDeleted && item.totalReplies > 0 && (
+              <Box>
+                <Typography
+                  sx={{ pt: 4 }}
+                  textAlign={"center"}
+                  color="textDisabled"
+                >
+                  This content is not available.
+                </Typography>
+                <Box sx={{ textAlign: "center", display: "block" }}>
+                  <Button size="small" disableFocusRipple disableRipple disableTouchRipple>
+                    Show replies
+                  </Button>
+                </Box>
+              </Box>
             )}
-            <Box
-              onClick={(ev) => ev.stopPropagation()}
-              className="feed_item"
-              sx={{ position: "relative", mt: 0.5 }}
-            >
-              {item.type === PostType.QUIZ && (
-                <DisplayQuizItem fullwidth post={item} />
-              )}
-              {item.type === PostType.POLL && <DisplayPollItem post={item} />}
-              {item.media.length > 0 && <DisplayFeedMedia media={item.media} />}
-            </Box>
+            {!isDeleted && (
+              <React.Fragment>
+                <ContentEditor
+                  disablePadding={true}
+                  readOnly={true}
+                  content={item?.content?.trim()}
+                />
 
+                {item.type === PostType.POLL && item?.poll?.isMultiVote && (
+                  <Typography
+                    color="textDisabled"
+                    sx={{
+                      display: "-webkit-box",
+                      WebkitLineClamp: 4, // Number of lines before truncating
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      maxWidth: "100%", // Ensures it adapts to container width
+                      fontStyle: "italic",
+                    }}
+                    variant="caption"
+                  >
+                    You can select multiple options
+                  </Typography>
+                )}
+                <Box
+                  onClick={(ev) => ev.stopPropagation()}
+                  className="feed_item"
+                  sx={{ position: "relative", mt: 0.5 }}
+                >
+                  {item.type === PostType.QUIZ && (
+                    <DisplayQuizItem fullwidth post={item} />
+                  )}
+                  {item.type === PostType.POLL && (
+                    <DisplayPollItem post={item} />
+                  )}
+                  {item.media.length > 0 && <DisplayFeedMedia post={item} />}
+                </Box>
+              </React.Fragment>
+            )}
             {/* <Box
               onClick={(ev) => ev.stopPropagation()}
               className="feed_item"
@@ -349,376 +429,386 @@ const ThreadCardItem = ({
             >
               {item.media.length > 0 && <DisplayFeedMedia media={item.media} />}
             </Box> */}
-            {quotedPost && <FeedQuoteItem post={quotedPost} onFollowUserCallback={onFollowUserCallback} />}
+            {quotedPost && (
+              <FeedQuoteItem
+                post={quotedPost}
+                onFollowUserCallback={onFollowUserCallback}
+              />
+            )}
             {/* show post stats */}
-
-            {lastIndex && (
+            {!isDeleted && (
               <Box sx={{}}>
-                <Stack
-                  direction={"row"}
-                  sx={{ alignItems: "center", py: 0.5 }}
-                  spacing={0.3}
-                >
-                  <Typography
-                    sx={{ display: "block" }}
-                    color="textDisabled"
-                    variant="caption"
-                  >
-                    {formatDateTime(item?.createdAt)}
-                  </Typography>
+                {lastIndex && (
+                  <Box sx={{}}>
+                    <Stack
+                      direction={"row"}
+                      sx={{ alignItems: "center", py: 0.5 }}
+                      spacing={0.3}
+                    >
+                      <Typography
+                        sx={{ display: "block" }}
+                        color="textDisabled"
+                        variant="caption"
+                      >
+                        {formatDateTime(item?.createdAt)}
+                      </Typography>
 
-                  <Typography
-                    sx={{ display: "block", position: "relative" }}
-                    variant="caption"
-                    color="textDisabled"
-                  >
-                    •
-                  </Typography>
-                  <Typography
-                    sx={{ display: "block" }}
-                    color="textDisabled"
-                    variant="caption"
-                  >
-                    {formatFeedNumber(item?.totalViews)}
-                  </Typography>
-                  <Typography
-                    sx={{ display: "block", position: "relative" }}
-                    variant="caption"
-                    color="textDisabled"
-                  >
-                    Views
-                  </Typography>
-                  <Typography
-                    sx={{ display: "block", position: "relative" }}
-                    variant="caption"
-                    color="textDisabled"
-                  >
-                    •
-                  </Typography>
+                      <Typography
+                        sx={{ display: "block", position: "relative" }}
+                        variant="caption"
+                        color="textDisabled"
+                      >
+                        •
+                      </Typography>
+                      <Typography
+                        sx={{ display: "block" }}
+                        color="textDisabled"
+                        variant="caption"
+                      >
+                        {formatFeedNumber(item?.totalViews)}
+                      </Typography>
+                      <Typography
+                        sx={{ display: "block", position: "relative" }}
+                        variant="caption"
+                        color="textDisabled"
+                      >
+                        Views
+                      </Typography>
+                      <Typography
+                        sx={{ display: "block", position: "relative" }}
+                        variant="caption"
+                        color="textDisabled"
+                      >
+                        •
+                      </Typography>
 
-                  <Typography
-                    sx={{ display: "block" }}
-                    color="textDisabled"
-                    variant="caption"
-                  >
-                    {formatFeedNumber(item?.totalLikes)}
-                  </Typography>
-                  <Typography
-                    sx={{ display: "block", position: "relative" }}
-                    variant="caption"
-                    color="textDisabled"
-                  >
-                    Likes
-                  </Typography>
-                  <Typography
-                    sx={{ display: "block", position: "relative" }}
-                    variant="caption"
-                    color="textDisabled"
-                  >
-                    •
-                  </Typography>
-                  <Stack
-                    direction={"row"}
-                    sx={{ alignItems: "center" }}
-                    spacing={0.3}
-                  >
-                    <Typography
-                      sx={{
-                        display: "block",
-                      }}
-                      variant="caption"
-                    >
-                      {formatFeedNumber(item?.totalBookmarks)}
-                    </Typography>
-                    <Typography
-                      sx={{ display: "block", position: "relative" }}
-                      variant="caption"
-                      color="textDisabled"
-                    >
-                      Bookmarks
-                    </Typography>
-                  </Stack>
-                  <Typography
-                    sx={{ display: "block", position: "relative" }}
-                    variant="caption"
-                    color="textDisabled"
-                  >
-                    •
-                  </Typography>
-                  <Typography
-                    sx={{ display: "block" }}
-                    color="textDisabled"
-                    variant="caption"
-                  >
-                    {formatFeedNumber(item?.totalReplies)}
-                  </Typography>
-                  <Typography
-                    sx={{ display: "block", position: "relative" }}
-                    variant="caption"
-                    color="textDisabled"
-                  >
-                    Replies
-                  </Typography>
-                  <Typography
-                    sx={{ display: "block", position: "relative" }}
-                    variant="caption"
-                    color="textDisabled"
-                  >
-                    •
-                  </Typography>
-                  <Typography
-                    sx={{ display: "block" }}
-                    color="textDisabled"
-                    variant="caption"
-                  >
-                    {formatFeedNumber(item?.totalShares)}
-                  </Typography>
-                  <Typography
-                    sx={{ display: "block", position: "relative" }}
-                    variant="caption"
-                    color="textDisabled"
-                  >
-                    Shares
-                  </Typography>
-                  <Typography
-                    sx={{ display: "block", position: "relative" }}
-                    variant="caption"
-                    color="textDisabled"
-                  >
-                    •
-                  </Typography>
-                  <Stack
-                    direction={"row"}
-                    sx={{ alignItems: "center" }}
-                    spacing={0.3}
-                  >
-                    <Typography
-                      sx={{
-                        display: "block",
-                      }}
-                      variant="caption"
-                    >
-                      {formatFeedNumber(item?.totalReposts)}
-                    </Typography>
-                    <Typography
-                      sx={{ display: "block", position: "relative" }}
-                      variant="caption"
-                      color="textDisabled"
-                    >
-                      Reposts
-                    </Typography>
-                  </Stack>
-                  <Typography
-                    sx={{ display: "block", position: "relative" }}
-                    variant="caption"
-                    color="textDisabled"
-                  >
-                    •
-                  </Typography>
-                  <Stack
-                    direction={"row"}
-                    sx={{ alignItems: "center" }}
-                    spacing={0.3}
-                  >
-                    <Typography
-                      sx={{
-                        display: "block",
-                      }}
-                      variant="caption"
-                    >
-                      {formatFeedNumber(item?.totalQuotes)}
-                    </Typography>
-                    <Typography
-                      sx={{ display: "block", position: "relative" }}
-                      variant="caption"
-                      color="textDisabled"
-                    >
-                      Quotes
-                    </Typography>
-                  </Stack>
-                </Stack>
+                      <Typography
+                        sx={{ display: "block" }}
+                        color="textDisabled"
+                        variant="caption"
+                      >
+                        {formatFeedNumber(item?.totalLikes)}
+                      </Typography>
+                      <Typography
+                        sx={{ display: "block", position: "relative" }}
+                        variant="caption"
+                        color="textDisabled"
+                      >
+                        Likes
+                      </Typography>
+                      <Typography
+                        sx={{ display: "block", position: "relative" }}
+                        variant="caption"
+                        color="textDisabled"
+                      >
+                        •
+                      </Typography>
+                      <Stack
+                        direction={"row"}
+                        sx={{ alignItems: "center" }}
+                        spacing={0.3}
+                      >
+                        <Typography
+                          sx={{
+                            display: "block",
+                          }}
+                          variant="caption"
+                        >
+                          {formatFeedNumber(item?.totalBookmarks)}
+                        </Typography>
+                        <Typography
+                          sx={{ display: "block", position: "relative" }}
+                          variant="caption"
+                          color="textDisabled"
+                        >
+                          Bookmarks
+                        </Typography>
+                      </Stack>
+                      <Typography
+                        sx={{ display: "block", position: "relative" }}
+                        variant="caption"
+                        color="textDisabled"
+                      >
+                        •
+                      </Typography>
+                      <Typography
+                        sx={{ display: "block" }}
+                        color="textDisabled"
+                        variant="caption"
+                      >
+                        {formatFeedNumber(item?.totalReplies)}
+                      </Typography>
+                      <Typography
+                        sx={{ display: "block", position: "relative" }}
+                        variant="caption"
+                        color="textDisabled"
+                      >
+                        Replies
+                      </Typography>
+                      <Typography
+                        sx={{ display: "block", position: "relative" }}
+                        variant="caption"
+                        color="textDisabled"
+                      >
+                        •
+                      </Typography>
+                      <Typography
+                        sx={{ display: "block" }}
+                        color="textDisabled"
+                        variant="caption"
+                      >
+                        {formatFeedNumber(item?.totalShares)}
+                      </Typography>
+                      <Typography
+                        sx={{ display: "block", position: "relative" }}
+                        variant="caption"
+                        color="textDisabled"
+                      >
+                        Shares
+                      </Typography>
+                      <Typography
+                        sx={{ display: "block", position: "relative" }}
+                        variant="caption"
+                        color="textDisabled"
+                      >
+                        •
+                      </Typography>
+                      <Stack
+                        direction={"row"}
+                        sx={{ alignItems: "center" }}
+                        spacing={0.3}
+                      >
+                        <Typography
+                          sx={{
+                            display: "block",
+                          }}
+                          variant="caption"
+                        >
+                          {formatFeedNumber(item?.totalReposts)}
+                        </Typography>
+                        <Typography
+                          sx={{ display: "block", position: "relative" }}
+                          variant="caption"
+                          color="textDisabled"
+                        >
+                          Reposts
+                        </Typography>
+                      </Stack>
+                      <Typography
+                        sx={{ display: "block", position: "relative" }}
+                        variant="caption"
+                        color="textDisabled"
+                      >
+                        •
+                      </Typography>
+                      <Stack
+                        direction={"row"}
+                        sx={{ alignItems: "center" }}
+                        spacing={0.3}
+                      >
+                        <Typography
+                          sx={{
+                            display: "block",
+                          }}
+                          variant="caption"
+                        >
+                          {formatFeedNumber(item?.totalQuotes)}
+                        </Typography>
+                        <Typography
+                          sx={{ display: "block", position: "relative" }}
+                          variant="caption"
+                          color="textDisabled"
+                        >
+                          Quotes
+                        </Typography>
+                      </Stack>
+                    </Stack>
+                  </Box>
+                )}
               </Box>
             )}
             {/* Action buttons */}
-            <Stack
-              direction={"row"}
-              sx={{
-                position: "relative",
-                alignItems: "center",
-                justifyContent: "space-between",
-                px: 0,
-                mx: 0,
-                left: -9,
-                maxWidth: "100%",
-              }}
-            >
-              <Tooltip title="Reply" placement="top">
-                <Stack
-                  direction={"row"}
-                  sx={{
-                    alignItems: "center",
-                    color: (theme) => theme.palette.text.disabled,
-                  }}
-                  spacing={-0.7}
-                >
-                  <IconButton
-                    disabled={!item.actions.canReply}
-                    onClick={(ev) => {
-                      if (!item.actions.canReply) {
-                        return notif.show(scopeMessage, {
-                          autoHideDuration: 3000,
-                          severity: "warning",
-                        });
+            {!isDeleted && (
+              <Stack
+                direction={"row"}
+                sx={{
+                  position: "relative",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  px: 0,
+                  mx: 0,
+                  left: -9,
+                  maxWidth: "100%",
+                }}
+              >
+                <Tooltip title="Reply" placement="top">
+                  <Stack
+                    direction={"row"}
+                    sx={{
+                      alignItems: "center",
+                      color: (theme) => theme.vars.palette.text.disabled,
+                    }}
+                    spacing={-0.7}
+                  >
+                    <IconButton
+                      disabled={!item.actions.canReply}
+                      onClick={(ev) => {
+                        if (!item.actions.canReply) {
+                          return notif.show(scopeMessage, {
+                            autoHideDuration: 3000,
+                            severity: "warning",
+                          });
+                        }
+                        handleReply(ev, item);
+                      }}
+                    >
+                      <QuickreplyOutlinedIcon
+                        sx={{
+                          height: 16,
+                          width: 16,
+                          color: (theme) => theme.vars.palette.text.disabled,
+                        }}
+                      />
+                    </IconButton>
+                    <RollingNumber number={item?.totalReplies} />
+                  </Stack>
+                </Tooltip>
+                <Tooltip title="Repost" placement="top">
+                  <Stack
+                    direction={"row"}
+                    sx={{
+                      alignItems: "center",
+                      color: (theme) => theme.vars.palette.text.disabled,
+                    }}
+                    spacing={-0.7}
+                  >
+                    <IconButton
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        setAnchorEl(ev.currentTarget);
+                      }}
+                    >
+                      <RepeatOutlinedIcon
+                        sx={{
+                          height: 16,
+                          width: 16,
+                          transform: "rotate(90deg)",
+                          color: (theme) =>
+                            item.actions.hasReposted
+                              ? theme.vars.palette.success.light
+                              : theme.vars.palette.text.disabled,
+                        }}
+                      />
+                    </IconButton>
+                    <RollingNumber
+                      number={item?.totalReposts + item?.totalQuotes}
+                    />
+                  </Stack>
+                </Tooltip>
+                <Tooltip title="Like" placement="top">
+                  <Stack
+                    direction={"row"}
+                    sx={{
+                      alignItems: "center",
+                      color: (theme) => theme.vars.palette.text.disabled,
+                    }}
+                    spacing={-0.7}
+                  >
+                    <AnimateLikeButton
+                      liked={item.actions.hasLiked}
+                      handleReaction={(ev) =>
+                        handleReaction(ev, item.id, !item.actions.hasLiked)
                       }
-                      handleReply(ev, item);
+                    />
+                    <RollingNumber number={item?.totalLikes} />
+                  </Stack>
+                </Tooltip>
+                <Tooltip title="View" placement="top">
+                  <Stack
+                    direction={"row"}
+                    sx={{
+                      alignItems: "center",
+                      color: (theme) => theme.vars.palette.text.disabled,
                     }}
+                    spacing={-0.7}
                   >
-                    <QuickreplyOutlinedIcon
-                      sx={{
-                        height: 16,
-                        width: 16,
-                        color: (theme) => theme.palette.text.disabled,
-                      }}
-                    />
-                  </IconButton>
-                  <RollingNumber number={item?.totalReplies} />
-                </Stack>
-              </Tooltip>
-              <Tooltip title="Repost" placement="top">
-                <Stack
-                  direction={"row"}
-                  sx={{
-                    alignItems: "center",
-                    color: (theme) => theme.palette.text.disabled,
-                  }}
-                  spacing={-0.7}
-                >
-                  <IconButton
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      setAnchorEl(ev.currentTarget);
-                    }}
-                  >
-                    <RepeatOutlinedIcon
-                      sx={{
-                        height: 16,
-                        width: 16,
-                        transform: "rotate(90deg)",
-                        color: (theme) =>
-                          item.actions.hasReposted
-                            ? theme.vars.palette.success.light
-                            : theme.vars.palette.text.disabled,
-                      }}
-                    />
-                  </IconButton>
-                  <RollingNumber
-                    number={item?.totalReposts + item?.totalQuotes}
-                  />
-                </Stack>
-              </Tooltip>
-              <Tooltip title="Like" placement="top">
-                <Stack
-                  direction={"row"}
-                  sx={{
-                    alignItems: "center",
-                    color: (theme) => theme.palette.text.disabled,
-                  }}
-                  spacing={-0.7}
-                >
-                  <AnimateLikeButton
-                    liked={item.actions.hasLiked}
-                    handleReaction={(ev) =>
-                      handleReaction(ev, item.id, !item.actions.hasLiked)
-                    }
-                  />
-                  <RollingNumber number={item?.totalLikes} />
-                </Stack>
-              </Tooltip>
-              <Tooltip title="View" placement="top">
-                <Stack
-                  direction={"row"}
-                  sx={{
-                    alignItems: "center",
-                    color: (theme) => theme.palette.text.disabled,
-                  }}
-                  spacing={-0.7}
-                >
-                  <IconButton
-                    color="default"
-                    disableFocusRipple
-                    disableTouchRipple
-                    disableRipple
-                  >
-                    <BarChartOutlinedIcon
-                      sx={{
-                        height: 16,
-                        width: 16,
-                        color: (theme) => theme.palette.text.disabled,
-                      }}
-                    />
-                  </IconButton>
-                  <RollingNumber number={item?.totalViews} />
-                </Stack>
-              </Tooltip>
-              <Tooltip title="Bookmark" placement="top">
-                <Stack
-                  direction={"row"}
-                  sx={{
-                    alignItems: "center",
-                    color: (theme) => theme.palette.text.disabled,
-                  }}
-                  spacing={-0.7}
-                >
-                  <IconButton
-                    onClick={(ev) =>
-                      handleBookmark(ev, item.id, !item.actions.hasSaved)
-                    }
-                  >
-                    {!item.actions.hasSaved ? (
-                      <BookmarkBorderOutlinedIcon
+                    <IconButton
+                      color="default"
+                      disableFocusRipple
+                      disableTouchRipple
+                      disableRipple
+                    >
+                      <BarChartOutlinedIcon
                         sx={{
                           height: 16,
                           width: 16,
-                          color: (theme) => theme.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.disabled,
                         }}
                       />
-                    ) : (
-                      <BookmarkOutlinedIcon
+                    </IconButton>
+                    <RollingNumber number={item?.totalImpressions} />
+                  </Stack>
+                </Tooltip>
+                <Tooltip title="Bookmark" placement="top">
+                  <Stack
+                    direction={"row"}
+                    sx={{
+                      alignItems: "center",
+                      color: (theme) => theme.vars.palette.text.disabled,
+                    }}
+                    spacing={-0.7}
+                  >
+                    <IconButton
+                      onClick={(ev) =>
+                        handleBookmark(ev, item.id, !item.actions.hasSaved)
+                      }
+                    >
+                      {!item.actions.hasSaved ? (
+                        <BookmarkBorderOutlinedIcon
+                          sx={{
+                            height: 16,
+                            width: 16,
+                            color: (theme) => theme.vars.palette.text.disabled,
+                          }}
+                        />
+                      ) : (
+                        <BookmarkOutlinedIcon
+                          sx={{
+                            height: 16,
+                            width: 16,
+                            color: (theme) => theme.vars.palette.info.main,
+                            transition: "color 0.3s ease",
+                          }}
+                        />
+                      )}
+                    </IconButton>
+                    <RollingNumber number={item?.totalBookmarks} />
+                  </Stack>
+                </Tooltip>
+                <Tooltip title="Share" placement="top">
+                  <Stack
+                    direction={"row"}
+                    sx={{
+                      alignItems: "center",
+                      // justifyContent: "center",
+                      color: (theme) => theme.vars.palette.text.disabled,
+                    }}
+                    spacing={-0.7}
+                  >
+                    <IconButton onClick={(ev) => handleShare(ev, item)}>
+                      <IosShareOutlinedIcon
                         sx={{
                           height: 16,
                           width: 16,
-                          color: (theme) => theme.palette.info.main,
-                          transition: "color 0.3s ease",
+                          color: (theme) => theme.vars.palette.text.disabled,
                         }}
                       />
-                    )}
-                  </IconButton>
-                  <RollingNumber number={item?.totalBookmarks} />
-                </Stack>
-              </Tooltip>
-              <Tooltip title="Share" placement="top">
-                <Stack
-                  direction={"row"}
-                  sx={{
-                    alignItems: "center",
-                    // justifyContent: "center",
-                    color: (theme) => theme.palette.text.disabled,
-                  }}
-                  spacing={-0.7}
-                >
-                  <IconButton onClick={(ev) => handleShare(ev, item)}>
-                    <IosShareOutlinedIcon
-                      sx={{
-                        height: 16,
-                        width: 16,
-                        color: (theme) => theme.palette.text.disabled,
-                      }}
-                    />
-                  </IconButton>
-                  <RollingNumber number={item?.totalShares} />
-                </Stack>
-              </Tooltip>
-            </Stack>
+                    </IconButton>
+                    <RollingNumber number={item?.totalShares} />
+                  </Stack>
+                </Tooltip>
+              </Stack>
+            )}
           </Box>
         </Stack>
       </CardContent>

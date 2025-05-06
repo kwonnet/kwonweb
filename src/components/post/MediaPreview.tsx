@@ -2,146 +2,204 @@
 import {
   Box,
   Container,
-  Grid2,
   IconButton,
-  Button,
-  Typography,
   SwipeableDrawer,
   CardMedia,
   Stack,
   CircularProgress,
 } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
-import React, { useCallback, useState } from "react";
-import { PostMedia } from "@/types";
-import VideoJsPlayer from "./VideoJsPlayer";
-import Player from "video.js/dist/types/player";
+import { ArrowBack, Close } from "@mui/icons-material";
+import React, { useRef, useState } from "react";
+import { FeedPost, PostMedia } from "@/types";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import { toast } from "react-toastify";
-import { openLink } from "@telegram-apps/sdk-react";
+import Slider from "react-slick";
+import { VideoPlayer } from "../common";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { getSessionId, shouldSendLog } from "@/utils";
+import { PostMediaAction, PostMediaKind, PostMediaLog } from "@/types/post";
+import { sendPostLog } from "@/lib/posts";
+import { useAuthSession } from "@/hooks";
 
-// const downloadFile = (fileUrl: string, fileName: string) => {
-//   const link = document.createElement("a");
-//   link.href = fileUrl;
-//   link.download = fileName;
-//   document.body.appendChild(link);
-//   link.click();
-//   document.body.removeChild(link);
-// };
+const downloadFile = async (url: string, filename: string) => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
 
-const downloadFile = (fileUrl: string, fileName: string) => {
-    fetch(fileUrl)
-      .then(response => response.blob())
-      .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        toast.success("Download completed")
-      })
-      .catch(error => console.error("Download failed:", error));
-  };
-  
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = filename || "download";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (err) {}
+};
 
-function getMobileScaledDimensions(
-  originalWidth: number,
-  originalHeight: number,
-  screenWidth: number,
-  screenHeight: number
-): { width: number; height: number } {
-  const aspectRatio = originalWidth / originalHeight;
-
-  let newWidth = screenWidth;
-  let newHeight = newWidth / aspectRatio;
-
-  if (newHeight > screenHeight) {
-    newHeight = screenHeight;
-    newWidth = newHeight * aspectRatio;
+const MediaItem = ({ item, post }: { item: PostMedia; post: FeedPost }) => {
+  if (item.fileType.startsWith("video")) {
+    return (
+      <Box sx={{ px: 2 }}>
+        <Box
+          key={item.id}
+          sx={{
+            width: "100%",
+            height: "calc(100vh - 80px)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            overflow: "hidden",
+            borderRadius: 2,
+            position: "relative",
+            py: 2,
+          }}
+        >
+          <VideoPlayer item={item} post={post} />
+        </Box>
+      </Box>
+    );
   }
-
-  return { width: Math.round(newWidth), height: Math.round(newHeight) };
-}
-
-const VideoPreviewItem = ({
-  item,
-  height,
-}: {
-  item: PostMedia;
-  height?: number;
-}) => {
-  const playerRef = React.useRef<Player | null>(null);
-
-  const dim = getMobileScaledDimensions(item.width, item.height, 400, 200);
-
-  const videoJsOptions = {
-    autoplay: false,
-    controls: true,
-    responsive: false,
-    fluid: true,
-    playsinline: true,
-    pip: true,
-    userActions: {
-      hotkeys: true,
-    },
-    preload: "auto",
-    width: "100%",
-    height: height ? height : Math.min(dim.height, 200),
-    maxHeight: 200,
-    sources: [
-      // {
-      //     src: `https://725xlp02-3000.usw3.devtunnels.ms/test-video.mov`, //`${item.url}?tr=w-${dim.width},h-${dim.height},c-maintain_ratio`,
-      //     type: "video/mp4",
-      //     withCredentials: true
-      //   },
-      {
-        src: `https://725xlp02-3000.usw3.devtunnels.ms/torazone_short_version.mp4`, //`${item.url}?tr=w-${dim.width},h-${dim.height},c-maintain_ratio`,
-        type: "video/mp4",
-        withCredentials: true,
-      },
-    ],
-  };
-
-  const handlePlayerReady = useCallback((player: Player) => {
-    playerRef.current = player;
-    // You can handle player events here, for example:
-    player.on("waiting", () => {
-      console.log("player is waiting");
-    });
-
-    player.on("dispose", () => {
-      console.log("player will dispose");
-    });
-  }, []);
-
-  return <VideoJsPlayer options={videoJsOptions} onReady={handlePlayerReady} />;
+  const isPortrait = item.width < item.height;
+  return (
+    <Box sx={{ px: 2 }}>
+      <Box
+        key={item.id}
+        sx={{
+          width: "100%",
+          height: "calc(100vh - 100px)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          overflow: "hidden",
+          borderRadius: 2,
+          position: "relative",
+        }}
+      >
+        <TransformWrapper
+          initialScale={1}
+          minScale={1}
+          maxScale={16}
+          doubleClick={{ disabled: false }}
+          centerOnInit={true}
+          centerZoomedOut={true}
+          wheel={{ step: 0.1 }}
+        >
+          <TransformComponent>
+            <CardMedia
+              component="img"
+              image={item.url}
+              alt={item.altText}
+              sx={{
+                objectFit: "contain",
+                maxWidth: "100%",
+                maxHeight: !isPortrait ? "100%" : "calc(100vh - 100px)",
+                height: "100%",
+                margin: "auto",
+                borderRadius: 2,
+                userSelect: "none",
+                pointerEvents: "all",
+                display: "block",
+              }}
+            />
+          </TransformComponent>
+        </TransformWrapper>
+      </Box>
+    </Box>
+  );
 };
 
 const MediaPreview = ({
   isOpen,
   toggleDrawer,
-  media,
+  item,
+  post,
 }: {
   isOpen: boolean;
   toggleDrawer: (ev: any, open: boolean) => void;
-  media: PostMedia;
+  item: PostMedia;
+  post: FeedPost;
 }) => {
-  const [state, setState] = useState({ loading: false });
+  const media = React.useMemo(() => {
+    return post?.media ?? [];
+  }, []);
+
+  const initialSlide = React.useMemo(() => {
+    const index = media.findIndex((m) => m.id === item.id);
+    return index > -1 ? index : 0;
+  }, [item, media]);
+
+  const sliderRef = useRef<Slider | null>(null);
+
+  const [state, setState] = useState({
+    loading: false,
+    currentSlide: initialSlide,
+  });
+
   const open = React.useMemo(() => isOpen, [isOpen]);
 
-  const isVideo = media.fileType !== "image";
+  const { user, token } = useAuthSession();
 
-  const handleDownload = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  // const isVideo = item.fileType?.includes("video")
+
+  const handleDownload = (
+    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
     ev.preventDefault();
-    toast.info(`Downloading file...`);
     setState((prev) => ({ ...prev, loading: true }));
     setTimeout(() => setState((prev) => ({ ...prev, loading: false })), 1500);
+    // const currentSlide = sliderRef.current?.state
     // openLink(media.url)
-    downloadFile(media.url, media.name);
-    
+    const currItem = media.find((m, index) => index === state.currentSlide);
+    if (currItem) {
+      downloadFile(currItem.url, currItem.name);
+      const sessionId = getSessionId();
+      const shouldSend = shouldSendLog(currItem.id, "MEDIA_IMAGE_SAVE");
+      const payload: PostMediaLog = {
+        action: PostMediaAction.DOWNLOAD,
+        kind: PostMediaKind.IMAGE,
+        mediaId: currItem.id,
+        postId: post.id,
+        muted: true,
+        duration: 0,
+        playbackRate: 0,
+        timestamp: new Date().toISOString(),
+        watchedPct: 0,
+        sessionId,
+      };
+      if (open && shouldSend && post.userId !== user.id) {
+        sendPostLog(payload, token);
+      }
+    }
+  };
+  const getCurrItem = () => {
+    return media.find((_m, index) => index === state.currentSlide);
+  };
+  const isVideoItem = () => {
+    return !!getCurrItem()?.fileType?.includes("video");
+  };
+
+  const handleTrackLog = (currentSlide: number) => {
+    const currItem = media.find((_m, index) => index === currentSlide);
+    if (currItem && currItem.fileType?.includes("image")) {
+      const sessionId = getSessionId();
+      const shouldSend = shouldSendLog(currItem.id, "MEDIA_IMAGE_VIEW");
+      const payload: PostMediaLog = {
+        action: PostMediaAction.VIEW,
+        kind: PostMediaKind.IMAGE,
+        mediaId: currItem.id,
+        postId: post.id,
+        muted: true,
+        duration: 0,
+        playbackRate: 0,
+        timestamp: new Date().toISOString(),
+        watchedPct: 0,
+        sessionId,
+      };
+      if (open && shouldSend && post.userId !== user.id) {
+        sendPostLog(payload, token);
+      }
+    }
   };
 
   return (
@@ -155,67 +213,95 @@ const MediaPreview = ({
       open={open}
       onClose={(ev) => toggleDrawer(ev, false)}
       onOpen={(ev) => {}}
-      PaperProps={{
-        sx: {
-          top: "0",
-          borderTopLeftRadius: "8px",
-          borderTopRightRadius: "8px",
-          zIndex: 999999,
-          height: "100vh",
-          overflow: "hidden",
+      ModalProps={{
+        keepMounted: true, // Better open performance on mobile.
+      }}
+      slotProps={{
+        paper: {
+          sx: [(theme) => ({
+            top: "0",
+            borderTopLeftRadius: "8px",
+            borderTopRightRadius: "8px",
+            zIndex: 999999,
+            height: "100vh",
+            overflow: "hidden",
+            background: "rgba(255, 255, 255, 0.6)",
+            ...theme.applyStyles("dark", {
+              background: "rgba(0, 0, 0, 0.8)",
+            })
+          })],
         },
       }}
     >
-      <Box sx={{ width: "auto" }} role="presentation">
-        <Stack
-          direction={"row"}
-          sx={{ alignItems: "center", mx: 1, justifyContent: "space-between" }}
+      <Box
+        sx={{
+          height: "100vh",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Top Actions */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            p: 1.5,
+            // mt: 4,
+            zIndex: 1000,
+          }}
         >
           <IconButton color="inherit" onClick={(ev) => toggleDrawer(ev, false)}>
-            <ArrowBack />
+            <Close />
           </IconButton>
+          {!isVideoItem() &&
+            (() => {
+              const fileItem = getCurrItem();
+              if (!fileItem?.url) return null;
+              return (
+                <IconButton color="inherit" onClick={(ev) => handleDownload(ev)}>
+                  <FileDownloadOutlinedIcon />
+                </IconButton>
+              );
+            })()}
+        </Box>
 
-          <IconButton
-            sx={{ borderRadius: 30 }}
-            onClick={(ev) => handleDownload(ev)}
-            disabled={state.loading}
-          >
-            {state.loading ? (
-              <CircularProgress size={16} />
-            ) : (
-              <FileDownloadOutlinedIcon />
-            )}
-          </IconButton>
-        </Stack>
-        <Container maxWidth="xl" sx={{ mt: 0, pb: 2 }}>
-          {isVideo ? (
-            <VideoPreviewItem item={media} />
+        {/* Centered Content */}
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+            px: { lg: 6, md: 6, sm: 6, xs: 6 }, // small padding on mobile
+          }}
+        >
+          {media.length === 1 ? (
+            <MediaItem item={media[0]} post={post} />
           ) : (
-            <Box
-              sx={{
-                py: 1,
-                display: "block",
+            <Slider
+              ref={sliderRef}
+              {...{
+                autoplay: false,
+                infinite: true,
+                speed: 500,
+                slidesToShow: 1,
+                slidesToScroll: 1,
+                arrows: true,
+                swipeToSlide: true,
+                dots: false,
+                initialSlide,
+                afterChange(currentSlide) {
+                  setState((prev) => ({ ...prev, currentSlide }));
+                  handleTrackLog(currentSlide);
+                },
               }}
             >
-              <CardMedia
-                height={media.height}
-                component={"img"}
-                src={media.url}
-                alt={media.altText}
-                sx={{
-                  cursor: "pointer",
-                  borderRadius: 5,
-                  position: "relative",
-                  display: "block",
-                  width: media.width,
-                  maxWidth: "100%",
-                  maxHeight: "70vh",
-                  objectFit: "contain",
-                }}
-              />
-            </Box>
+              {media.map((item) => (
+                <MediaItem key={item.id} item={item} post={post} />
+              ))}
+            </Slider>
           )}
-        </Container>
+        </Box>
       </Box>
     </SwipeableDrawer>
   );

@@ -8,10 +8,7 @@ import {
   TextField,
 } from "@mui/material";
 
-import { FeedSection, TopUserStories } from "@/components/common";
-import { useSession } from "next-auth/react";
-import { PostCard } from "@/components/post";
-import { MentionsInput, Mention } from "react-mentions";
+import { TopUserStories } from "@/components/common";
 import dynamic from "next/dynamic";
 import { useAuthSession } from "@/hooks";
 
@@ -45,7 +42,14 @@ export default function PageClient({FeedServer}: { FeedServer: React.ReactNode})
   return (
     <Box sx={{ px: 1 }}>
       {/* Content for the left section */}
-      <Card sx={{ p: 2, mb: 1 }}>
+      <Card elevation={0} sx={ [(theme) => ({
+          p: 2, mb: 1,
+          boxShadow: theme.shadows[1],
+          ...theme.applyStyles("dark", {
+            boxShadow: theme.shadows[8]
+          })
+        }),
+      ]} >
         <Stack
           direction={"row"}
           alignItems={"center"}

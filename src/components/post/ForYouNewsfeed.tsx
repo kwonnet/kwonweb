@@ -1,8 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Box from "@mui/material/Box";
-import { Typography } from "@mui/material";
-import useSWR, { useSWRConfig } from "swr";
+import { CircularProgress, Typography } from "@mui/material";
 import {
   bookmarkPost,
   getNewsfeed,
@@ -11,18 +10,15 @@ import {
   updateRePost,
 } from "@/lib/posts";
 import { getErrorMessage } from "@/utils";
-import FeedSkeleton from "./FeedSkeleton";
-import JSConfetti from "js-confetti";
 import FeedSocialShare from "./FeedSocialShare";
 import { FeedPost } from "@/types";
 import { siteUrl } from "@/config";
-import FeedQuoteAction from "./FeedQuoteActionDrawer";
 import CreateQuoteDrawer from "./CreateQuoteDrawer";
 import FeedCardItem from "./FeedCardItem";
-import { useAuthSession } from "@/hooks";
+import { useAuthSession, useFeedCacheUpdater, useLoadMore, usePostSseListeners } from "@/hooks";
 import { FeedTypeEnum } from "@/types/post";
-import { useSSEContext } from "@/context/SSEContext";
 import { updateUserFollower } from "@/lib/users";
+import useSWRInfinite from "swr/infinite";
 
 type LocalState = {
   open: boolean;
@@ -34,28 +30,11 @@ type LocalState = {
   post?: FeedPost;
 };
 
-const findCacheKey = (feedKey: string, cache: any) => {
-  let cacheKey = null;
-  for (const key of cache.keys()) {
-    if (key.includes(feedKey)) {
-      cacheKey = key;
-      break;
-    }
-  }
-
-  return cacheKey;
-};
+const PAGE_SIZE = 21
 
 const ForYouNewsfeed = ({ posts }: { posts: FeedPost[] }) => {
-  // const jsConfetti = new JSConfetti();
 
   const { token, user } = useAuthSession();
-
-  const { sseSource } = useSSEContext();
-
-  const { mutate, cache } = useSWRConfig();
-
-  const feedKey = `foryou_feed_${user.id}`;
 
   const [state, setState] = useState<LocalState>({
     open: false,
@@ -66,254 +45,40 @@ const ForYouNewsfeed = ({ posts }: { posts: FeedPost[] }) => {
     postId: "",
   });
 
-  const { data, isLoading, error } = useSWR(
-    feedKey,
-    () => getNewsfeed(FeedTypeEnum.FORYOU, token),
-    {
-      fallbackData: posts,
+  const getKey = (pageIndex: number, previousPageData?: FeedPost[]) => {
+    if (pageIndex !== 0 && previousPageData && !previousPageData.length)
+      return null; // Stop when no more data
+    return {
+      type: "fyp_newsfeed",
+      limit: PAGE_SIZE,
+      page: pageIndex + 1,
+      feed: FeedTypeEnum.FORYOU
+    };
+  };
+
+  const { data, error, isLoading, mutate, setSize } =
+    useSWRInfinite(getKey, (args) => getNewsfeed(args, token), {
       keepPreviousData: true,
       refreshWhenOffline: false,
-    }
-  );
+      // suspense: true,
+      fallbackData: [posts],
+    });
 
-  const mutateData = (updateFeedData: (feed: FeedPost[]) => FeedPost[]) => {
-    const cacheKey = findCacheKey(feedKey, cache);
-    mutate(
-      cacheKey,
-      (data?: FeedPost[]) => (data ? updateFeedData(data) : undefined),
-      {
-        optimisticData: (data?: any) =>
-          data ? updateFeedData(data) : undefined,
-        populateCache: true,
-        rollbackOnError: true,
-        revalidate: false,
-      }
-    );
-  };
+  const flatData = data ? data?.flat() : [];
 
-  const updatePostLikes = (
-    args: { id: string; liked: boolean },
-    local: boolean = true
-  ) => {
-    // check if it's global or local update
-    // if local update, update if the user has liked or unliked but if global ignore
-    const getFeedData = (cacheData: FeedPost[]) => {
-      return cacheData?.map((d) => {
-        if (d.id === args?.id) {
-          d = {
-            ...d,
-            ...(local && { actions: { ...d.actions, hasLiked: args.liked } }),
-            totalLikes: args.liked ? d.totalLikes + 1 : d.totalLikes - 1,
-          };
-        }
-        if (d?.parent && d?.parentId === args.id) {
-          d = {
-            ...d,
-            parent: {
-              ...d.parent,
-              ...(local && { actions: { ...d?.parent.actions, hasLiked: args.liked } }),
-              totalLikes: args.liked
-                ? d?.parent.totalLikes + 1
-                : d?.parent.totalLikes - 1,
-            },
-          };
-        }
-        return d;
-      });
-    };
-    mutateData(getFeedData);
-  };
+  const isReachingEnd =
+    (data && data[data.length - 1]?.length === 0) || !!error;
 
-  const updatePostBookmarks = (
-    args: { id: string; saved: boolean },
-    local: boolean = true
-  ) => {
-    // check if it's global or local update
-    // if local update, update if the user has liked or unliked but if global ignore
-    const getFeedData = (cacheData: FeedPost[]) => {
-      return cacheData?.map((d) => {
-        if (d.id === args?.id) {
-          d = {
-            ...d,
-            ...(local && { actions: { ...d.actions, hasSaved: args.saved } }),
-            totalBookmarks: args.saved
-              ? d.totalBookmarks + 1
-              : d.totalBookmarks - 1,
-          };
-        }
-        if (d?.parent && d?.parentId === args.id) {
-          d = {
-            ...d,
-            parent: {
-              ...d.parent,
-              ...(local && { actions: { ...d?.parent.actions, hasSaved: args.saved } }),
-              totalBookmarks: args.saved
-                ? d?.parent.totalBookmarks + 1
-                : d?.parent.totalBookmarks - 1,
-            },
-          };
-        }
-        return d;
-      });
-    };
-    mutateData(getFeedData);
-  };
+  const loadMore = () => {
+    console.log("Load more called in newsfeed....")
+    setSize((num) => num + 1);
+  }
+  // feed cache update
+  const { mutatePostLikes, mutatePostBookmarks, mutatePostQuotes, mutatePostShares, mutatePostReposts, mutatePostAuthor } = useFeedCacheUpdater(mutate)
 
-  const updatePostReposts = (
-    args: { id?: string; postId: string; reposted: boolean },
-    local: boolean = true
-  ) => {
-    // id is the post  repost and can be undefined when a user first reposts
-    // postId is the ID of the reposted post
-    //
-    // check if it's global or local update
-    // if local update, update if the user has liked or unliked but if global ignore
-    const calc = (val: number) => {
-      return val < 1 ? 0 : val;
-    };
-    const getFeedData = (cacheData: FeedPost[]) => {
-      let updated = cacheData?.map((d) => {
-        if (d.id === args?.postId) {
-          d = {
-            ...d,
-            ...(local && { actions: { ...d.actions, hasReposted: args.reposted } }),
-            totalReposts: args.reposted
-              ? d.totalReposts + 1
-              : calc(d.totalReposts - 1),
-          };
-        }
-        if (d?.parent && d?.parentId === args.postId) {
-          d = {
-            ...d,
-            parent: {
-              ...d.parent,
-              ...(local && { actions: { ...d?.parent.actions, hasReposted: args.reposted } }),
-              totalReposts: args.reposted
-                ? d?.parent.totalReposts + 1
-                : calc(d?.parent.totalReposts - 1),
-            },
-          };
-        }
-        return d;
-      });
-      // if a user undo the repost, filter out the post
-      if (args.id && !args.reposted) {
-        updated = updated.filter((p) => p.id !== args.id);
-      }
-      return updated;
-    };
-    mutateData(getFeedData);
-  };
+  // listen to sse streams
+  usePostSseListeners(user, mutate)
 
-  const updatePostQuotes = (args: { id: string; quoted: boolean }) => {
-    // check if it's global or local update
-    // if local update, update if the user has liked or unliked but if global ignore
-    const getFeedData = (cacheData: FeedPost[]) => {
-      return cacheData?.map((d) => {
-        if (d.id === args?.id) {
-          d = {
-            ...d,
-            totalQuotes: args.quoted ? d.totalQuotes + 1 : d.totalQuotes - 1,
-          };
-        }
-        if (d?.parent && d?.parentId === args.id) {
-          d = {
-            ...d,
-            parent: {
-              ...d.parent,
-              totalQuotes: args.quoted
-                ? d?.parent.totalQuotes + 1
-                : d?.parent.totalQuotes - 1,
-            },
-          };
-        }
-        return d;
-      });
-    };
-    mutateData(getFeedData);
-  };
-
-  const updatePostReplies = (args: { id: string; replied: boolean }) => {
-    // check if it's global or local update
-    // if local update, update if the user has liked or unliked but if global ignore
-    const getFeedData = (cacheData: FeedPost[]) => {
-      return cacheData?.map((d) => {
-        if (d.id === args?.id) {
-          d = {
-            ...d,
-            totalReplies: args.replied
-              ? d.totalReplies + 1
-              : d.totalReplies - 1,
-          };
-        }
-        if (d?.parent && d?.parentId === args.id) {
-          d = {
-            ...d,
-            parent: {
-              ...d.parent,
-              totalReplies: args.replied
-                ? d?.parent.totalReplies + 1
-                : d?.parent.totalReplies - 1,
-            },
-          };
-        }
-        return d;
-      });
-    };
-    mutateData(getFeedData);
-  };
-
-  const updatePostShares = (id: string) => {
-    // check if it's global or local update
-    // if local update, update if the user has liked or unliked but if global ignore
-    const getFeedData = (cacheData: FeedPost[]) => {
-      return cacheData?.map((d) => {
-        if (d.id === id) {
-          d = { ...d, totalShares: d.totalShares + 1 };
-        }
-        if (d?.parent && d?.parentId === id) {
-          d = {
-            ...d,
-            parent: { ...d.parent, totalShares: d?.parent.totalShares + 1 },
-          };
-        }
-        return d;
-      });
-    };
-    mutateData(getFeedData);
-  };
-
-  const updatePostAuthor = (userId: string, isFollow: boolean) => {
-    // check if it's global or local update
-    // if local update, update if the user has liked or unliked but if global ignore
-    const getFeedData = (cacheData: FeedPost[]) => {
-      return cacheData?.map((d) => {
-        if (d.userId === userId) {
-          d = {
-            ...d,
-            author: {
-              ...d.author,
-              conn: { ...d.author.conn, isFollowed: isFollow },
-            },
-          };
-        }
-        if (d?.parent && d?.parent?.author?.id === userId) {
-          d = {
-            ...d,
-            parent: {
-              ...d.parent,
-              author: {
-                ...d?.parent?.author,
-                conn: { ...d?.parent?.author?.conn, isFollowed: isFollow },
-              },
-            },
-          };
-        }
-        return d;
-      });
-    };
-    mutateData(getFeedData);
-  };
 
   const handleReaction = async (
     ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -323,7 +88,7 @@ const ForYouNewsfeed = ({ posts }: { posts: FeedPost[] }) => {
     ev.preventDefault();
     ev.stopPropagation();
     // handle local update
-    updatePostLikes({ id, liked: hasLiked });
+    mutatePostLikes({ id, liked: hasLiked });
     await postReaction(id, token);
   };
 
@@ -335,7 +100,7 @@ const ForYouNewsfeed = ({ posts }: { posts: FeedPost[] }) => {
     ev.preventDefault();
     ev.stopPropagation();
     // handle local update
-    updatePostBookmarks({ id, saved: hasSaved });
+    mutatePostBookmarks({ id, saved: hasSaved });
     // api update
     await bookmarkPost(id, token);
   };
@@ -344,16 +109,16 @@ const ForYouNewsfeed = ({ posts }: { posts: FeedPost[] }) => {
     ev.preventDefault();
     ev.stopPropagation();
     // handle local update
-    updatePostReposts({ postId: id, reposted });
+    mutatePostReposts({ postId: id, reposted });
     await updateRePost(id, token);
   };
 
   const onQuoteCallback = (id: string, quoted: boolean) => {
-    updatePostQuotes({ id, quoted });
+    mutatePostQuotes({ id, quoted });
   };
 
   const onQuoteClick = async (id: string) => {
-    const post = data?.find((d) => d.id === id);
+    const post = flatData?.find((d) => d.id === id);
     setState((prev) => ({ ...prev, post, isOpen: true }));
   };
 
@@ -380,7 +145,7 @@ const ForYouNewsfeed = ({ posts }: { posts: FeedPost[] }) => {
 
   const onSocialClick = async (id: string) => {
     console.log("share post ID ", id);
-    updatePostShares(id);
+    mutatePostShares(id);
     await shareFeedPost(id, token);
   };
   // follow user
@@ -388,121 +153,25 @@ const ForYouNewsfeed = ({ posts }: { posts: FeedPost[] }) => {
     args: { senderId: string; recipientId: string },
     isFollow: boolean
   ) => {
-    updatePostAuthor(args.recipientId, isFollow);
+    mutatePostAuthor(args.recipientId, isFollow);
     // send to api
     updateUserFollower(args, token);
   };
-  // listen to realtime events
-  useEffect(() => {
-    console.log("sseSource ", sseSource);
-    // SSE stream to update post likes
-    const likeListener = (ev: MessageEvent) => {
-      console.log("SSE stream received ", ev);
-      const arg: any = JSON.parse(ev.data);
-      console.log("data ", arg, user.id);
-      if (arg.userId !== user.id) {
-        // handle stream update
-        updatePostLikes(arg, false);
-      }
-    };
-    sseSource?.addEventListener("post_reaction", likeListener);
-    // SSE stream to update post bookmarks
-    const bookmarkListener = (ev: MessageEvent) => {
-      console.log("SSE stream received ", ev);
-      const arg: any = JSON.parse(ev.data);
-      console.log("data ", arg, user.id);
-      if (arg.userId !== user.id) {
-        // handle stream update
-        updatePostBookmarks(arg, false);
-      }
-    };
-    sseSource?.addEventListener("post_bookmark", bookmarkListener);
-    // SSE stream to update post bookmarks
-    const shareListener = (ev: MessageEvent) => {
-      console.log("SSE stream received ", ev);
-      const arg: any = JSON.parse(ev.data);
-      console.log("data ", arg, user.id);
-      if (arg.userId !== user.id) {
-        // handle stream update
-        updatePostShares(arg.id);
-      }
-    };
-    sseSource?.addEventListener("post_share", shareListener);
-    // SSE stream to update post reposts
-    const repostListener = (ev: MessageEvent) => {
-      console.log("SSE stream received ", ev);
-      const arg: any = JSON.parse(ev.data);
-      console.log("data ", arg, user.id);
-      if (!arg.reposted || arg.userId !== user.id) {
-        // handle stream update
-        updatePostReposts(arg, false);
-      }
-    };
-    sseSource?.addEventListener("post_repost", repostListener);
-    // SSE stream to update post quotes
-    const quoteListener = (ev: MessageEvent) => {
-      console.log("SSE stream received ", ev);
-      const arg: any = JSON.parse(ev.data);
-      console.log("data ", arg, user.id);
-      if (arg.userId !== user.id) {
-        // handle stream update
-        updatePostQuotes(arg);
-      }
-    };
-    sseSource?.addEventListener("post_quote", quoteListener);
-    // SSE stream to update post replies
-    const replyListener = (ev: MessageEvent) => {
-      console.log("SSE stream received ", ev);
-      const arg: any = JSON.parse(ev.data);
-      console.log("data ", arg, user.id);
-      if (arg.userId !== user.id) {
-        // handle stream update
-        updatePostReplies(arg);
-      }
-    };
-    sseSource?.addEventListener("post_reply", replyListener);
+  // track load more posts
+  const ref = useLoadMore(loadMore)
 
-    // SSE stream to update user follower
-    const followerListener = (ev: MessageEvent) => {
-      console.log("SSE stream received ", ev);
-      const arg: any = JSON.parse(ev.data);
-      console.log("data ", arg, user.id);
-      if (arg.senderId === user.id) {
-        // handle stream update
-        updatePostAuthor(arg.recipient, arg.isFollow);
-      }
-    };
-    sseSource?.addEventListener("user_follower", followerListener);
-    // clean up
-    return () => {
-      sseSource?.removeEventListener("post_reaction", likeListener);
-      sseSource?.removeEventListener("post_bookmark", bookmarkListener);
-      sseSource?.removeEventListener("post_share", shareListener);
-      sseSource?.removeEventListener("post_repost", repostListener);
-      sseSource?.removeEventListener("post_quote", quoteListener);
-      sseSource?.removeEventListener("post_reply", replyListener);
-      sseSource?.removeEventListener("user_follower", followerListener);
-    };
-  }, [sseSource]);
-
-  if (isLoading && !data) {
-    return <FeedSkeleton />;
-  }
-  if (error || !data) {
-    return (
+  return (
+    <Box sx={{ mt: 1 }}>
+      {error && !data && (
       <Box>
         <Typography>
           {error?.status === 404 ? "No feed yet" : getErrorMessage(error)}{" "}
         </Typography>
       </Box>
-    );
-  }
-
-  return (
-    <Box sx={{ mt: 1 }}>
-      {data.map((item, index) => {
+    )}
+      {flatData.map((item) => {
         return (
-          <FeedCardItem
+            <FeedCardItem
             key={item.id}
             post={item}
             handleBookmark={handleBookmark}
@@ -530,6 +199,10 @@ const ForYouNewsfeed = ({ posts }: { posts: FeedPost[] }) => {
         onQuoteCallback={onQuoteCallback}
         onFollowUserCallback={onFollowUserCallback}
       />
+      {!isReachingEnd ? <div ref={ref} style={{padding: "10px 0px 10px 0px"}} /> : <Typography variant="caption" textAlign={"center"} sx={{display: "block"}} color="textDisabled">No More Feed</Typography>}
+      <Box sx={{display: 'block', textAlign: 'center'}}>
+        {isLoading && <CircularProgress size={24} color="warning" />}
+      </Box>
     </Box>
   );
 };

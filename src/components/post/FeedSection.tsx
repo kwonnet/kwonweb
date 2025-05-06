@@ -2,19 +2,23 @@
 import { Stack, Typography } from "@mui/material";
 import React from "react";
 import Box from "@mui/material/Box";
-// import { useAppContext } from "@/contexts/AppContext";
 import debounce from "lodash/debounce";
-import ForYouNewsfeed from "./ForYouNewsfeed";
 import { FeedPost } from "@/types";
+import dynamic from "next/dynamic";
+import FeedSkeleton from "./FeedSkeleton";
 
+const ForYouNewsfeed = dynamic(() => import("./ForYouNewsfeed"), {
+  ssr: false, // Optional: disables server-side rendering
+  loading: () => <FeedSkeleton items={10} height={100} /> // Optional fallback while loading
+});
+
+const feedType = [
+  { id: "1", name: "For You" },
+  { id: "2", name: "Following" },
+  { id: "3", name: "Friends" },
+  { id: "4", name: "Latest" },
+];
 export default function FeedSection({ posts }: { posts: FeedPost[] }) {
-  const data = [
-    { id: "1", name: "For You" },
-    { id: "2", name: "Following" },
-    { id: "3", name: "Friends" },
-    { id: "4", name: "Latest" },
-  ];
-
   // const { setCategory } = useAppContext();
 
   const [state, setState] = React.useState({ active: "1" });
@@ -43,7 +47,7 @@ export default function FeedSection({ posts }: { posts: FeedPost[] }) {
         spacing={0.5}
         sx={{ px: 1 }}
       >
-        {data.map((feed) => (
+        {feedType.map((feed) => (
           <Typography
             key={feed.id}
             color={state.active === feed.id ? "textPrimary" : "textDisabled"}

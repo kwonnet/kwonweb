@@ -1,13 +1,14 @@
-"use client";
+'use client'
 import React, {
   useRef,
   useState,
   useCallback,
   useEffect,
   useMemo,
+  memo,
 } from "react";
-import { EditorState } from "draft-js";
-import Editor, { createEditorStateWithText } from "@draft-js-plugins/editor";
+import { convertFromRaw, EditorState } from "draft-js";
+import Editor from "@draft-js-plugins/editor";
 import editorStyles from "./ContentEditor.module.css";
 
 // custom hashtag plugin
@@ -67,183 +68,17 @@ const MentionComponent = (mentionProps: MentionItemProps) => {
   );
 };
 
-const mentions: MentionItem[] = [
-  {
-    id: "1",
-    name: "Matthew Russell",
-    link: "/@mrussell247",
-    avatar:
-      "https://pbs.twimg.com/profile_images/517863945/mattsailing_400x400.jpg",
-    username: "matthew_russell",
-  },
-  {
-    id: "2",
-    name: "Julian Krispel-Samsel",
-    link: "/@juliandoesstuff",
-    avatar: "https://avatars2.githubusercontent.com/u/1188186?v=3&s=400",
-    username: "julian_krispel",
-  },
-  {
-    id: "3",
-    name: "Jyoti Puri",
-    link: "/@jyopur",
-    avatar: "https://avatars0.githubusercontent.com/u/2182307?v=3&s=400",
-    username: "jyoti_puri",
-  },
-  {
-    id: "4",
-    name: "Max Stoiber",
-    link: "/@mxstbr",
-    avatar: "https://avatars0.githubusercontent.com/u/7525670?s=200&v=4",
-    username: "max_stoiber",
-  },
-  {
-    id: "5",
-    name: "Nik Graf",
-    link: "/@nikgraf",
-    avatar: "https://avatars0.githubusercontent.com/u/223045?v=3&s=400",
-    username: "nik_graf",
-  },
-  {
-    id: "6",
-    name: "Pascal Brandt",
-    link: "/@psbrandt",
-    avatar:
-      "https://pbs.twimg.com/profile_images/688487813025640448/E6O6I011_400x400.png",
-    username: "pascal_brandt",
-  },
-];
-
-const apiMentions: MentionItem[] = [
-  {
-    id: "7",
-    name: "Alice Johnson",
-    link: "/@alicej",
-    avatar:
-      "https://pbs.twimg.com/profile_images/517863945/mattsailing_400x400.jpg",
-    username: "alice_j",
-  },
-  {
-    id: "8",
-    name: "Bob Smith",
-    link: "/@bobsmith",
-    avatar: "https://avatars2.githubusercontent.com/u/1188186?v=3&s=400",
-    username: "bob_smith",
-  },
-  {
-    id: "9",
-    name: "Catherine Lee",
-    link: "/@catherinelee",
-    avatar: "https://avatars0.githubusercontent.com/u/2182307?v=3&s=400",
-    username: "catherine_lee",
-  },
-  {
-    id: "10",
-    name: "David Brown",
-    link: "/@davidb",
-    avatar: "https://avatars0.githubusercontent.com/u/7525670?s=200&v=4",
-    username: "david_b",
-  },
-  {
-    id: "11",
-    name: "Emma Wilson",
-    link: "/@emmawilson",
-    avatar: "https://avatars0.githubusercontent.com/u/223045?v=3&s=400",
-    username: "emma_wilson",
-  },
-  {
-    id: "12",
-    name: "Frank Taylor",
-    link: "/@frankt",
-    avatar:
-      "https://pbs.twimg.com/profile_images/688487813025640448/E6O6I011_400x400.png",
-    username: "frank_t",
-  },
-];
-
-const hashTags: HashTagItem[] = [
-  {
-    id: "1",
-    name: "code",
-    link: "/hashtags?tag=code",
-    count: Math.floor(Math.random() * 1000000),
-  },
-  {
-    id: "2",
-    name: "javascript",
-    link: "/hashtags?tag=javascript",
-    count: Math.floor(Math.random() * 10009),
-  },
-  {
-    id: "3",
-    name: "typescript",
-    link: "/hashtags?tag=typescript",
-    count: Math.floor(Math.random() * 90),
-  },
-  {
-    id: "4",
-    name: "John Doe",
-    link: "/hashtags?tag=John Doe",
-    count: Math.floor(Math.random() * 10090),
-  },
-  {
-    id: "5",
-    name: "aprilfool",
-    link: "/hashtags?tag=aprilfool",
-    count: Math.floor(Math.random() * 10300),
-  },
-];
-
-const apiHashtags = [
-  {
-    id: "6",
-    name: "comedy",
-    link: "/hashtags?tag=comedy",
-    count: Math.floor(Math.random() * 10100),
-  },
-  {
-    id: "7",
-    name: "Chris Won",
-    link: "/hashtags?tag=Chris Won",
-    count: Math.floor(Math.random() * 10090),
-  },
-  {
-    id: "8",
-    name: "funny",
-    link: "/hashtags?tag=funny",
-    count: Math.floor(Math.random() * 10100),
-  },
-  {
-    id: "9",
-    name: "Blessing Fletcher",
-    link: "/hashtags?tag=Blessing Fletcher",
-    count: Math.floor(Math.random() * 10090),
-  },
-  {
-    id: "10",
-    name: "fastapi",
-    link: "/hashtags?tag=fastapi",
-    count: Math.floor(Math.random() * 10100),
-  },
-  {
-    id: "11",
-    name: "python",
-    link: "/hashtags?tag=python",
-    count: Math.floor(Math.random() * 10100),
-  },
-];
-
 const ContentEditor = ({
   onContentChange,
-  content,
   placeholder,
   readOnly = false,
-  disablePadding = false
+  disablePadding = false,
+  content=""
 }: {
   content?: string;
   readOnly?: boolean;
-  disablePadding?: boolean
-  placeholder?: string
+  disablePadding?: boolean;
+  placeholder?: string;
   onContentChange?: (args: {
     content: string;
     tags: string[];
@@ -308,22 +143,46 @@ const ContentEditor = ({
         mentionRef.current = mentions;
       },
     });
+    // eslint-disable-next-line
   }, []);
   // emoji plugin
   const emojiPlugin = useMemo(
     () => createEmojiPlugin({ useNativeArt: true }),
+    // eslint-disable-next-line
     []
   );
   const { EmojiSuggestions, EmojiSelect } = emojiPlugin;
   // declare the plugins
   const plugins = useMemo(
+    // eslint-disable-next-line
     () => [mentionPlugin, hashtagPlugin, linkifyPlugin, emojiPlugin],
     [mentionPlugin, linkifyPlugin, hashtagPlugin, emojiPlugin]
   );
   const ref = useRef<Editor>(null);
-  const [editorState, setEditorState] = useState(
-    content ? createEditorStateWithText(content) : EditorState.createEmpty()
-  );
+  // const [editorState, setEditorState] = useState(
+  //   content ? createEditorStateWithText(content) : EditorState.createEmpty()
+  // );
+    // const [editorState, setEditorState] = useState(createEditorStateWithText(content));
+
+
+  const _editorState = EditorState.createWithContent(convertFromRaw({
+    entityMap: {},
+    blocks: [
+      {
+        text: content,
+        key: 'foo',
+        type: 'unstyled',
+        entityRanges: [],
+        depth: 0,
+        inlineStyleRanges: [],
+      },
+    ],
+  }));
+
+
+const [editorState, setEditorState] = useState(_editorState);
+
+
 
   const onChange = useCallback((_editorState: EditorState) => {
     const textContent = _editorState.getCurrentContent().getPlainText();
@@ -336,11 +195,13 @@ const ContentEditor = ({
     // onTagsChange(getCurrentTags())
     setState((prev) => ({ ...prev, counter: textContent.length }));
     setEditorState(_editorState);
+    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
+    // setEditorState(() => createEditorStateWithText(content))
     setTimeout(() => {
-      ref.current?.focus();
+      !readOnly && ref.current?.focus();
     }, 500);
     return () => {};
   }, [ref]);
@@ -348,8 +209,9 @@ const ContentEditor = ({
   return (
     <div>
       <div
-        className={`${editorStyles.editor} ${disablePadding ? editorStyles.editorNoPadding : ''}`}
-        onClick={() => ref.current?.focus()}
+        className={`${editorStyles.editor} ${disablePadding ? editorStyles.editorNoPadding : ""}`}
+        // onClick={() => ref.current?.focus()}
+        suppressHydrationWarning
       >
         <Editor
           editorState={editorState}
@@ -403,4 +265,4 @@ const ContentEditor = ({
   );
 };
 
-export default ContentEditor;
+export default ContentEditor

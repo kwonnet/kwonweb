@@ -15,8 +15,9 @@ export default function Home() {
           alignItems: "flex-start",
           gap: 2,
         }}
+        className="page_wrapper"
       >
-        <Box sx={{ width: { lg: "65%", md: "65%", sm: "100%", xs: "100%"} }}>
+        <Box className="page_content">
           <PageContent FeedServer={<FeedServer />} />
         </Box>
         <StickySidebar ConnectionSection={<ConnectionServer />} />
@@ -24,3 +25,4 @@ export default function Home() {
     </React.Fragment>
   );
 }
+

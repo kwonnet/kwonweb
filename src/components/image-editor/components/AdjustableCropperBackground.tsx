@@ -43,3 +43,4 @@ export const AdjustableCropperBackground = forwardRef<HTMLCanvasElement, Props>(
 		);
 	},
 );
+AdjustableCropperBackground.displayName = "AdjustableCropperBackground"

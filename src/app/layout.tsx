@@ -5,8 +5,13 @@ import { SessionProvider } from "next-auth/react";
 import React from "react";
 import { auth } from "@/auth";
 import NextjsAppProvider from "@/providers/NextjsAppProvider";
+// slick slider
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+//  video plyer
+// import "@vidstack/react/player/styles/base.css";
+// import "@vidstack/react/player/styles/plyr/theme.css";
+// global styles
 import "./globals.css";
 import SocketIoProvider from "@/context/SocketIoContext";
 import { constant } from "@/config";
@@ -24,16 +29,14 @@ export default async function RootLayout({
 }>) {
   const session = await auth();
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-toolpad-color-scheme="system" suppressHydrationWarning>
       <body>
         <SessionProvider session={session}>
           <AppRouterCacheProvider>
             <React.Suspense fallback={<LinearProgress />}>
               <NextjsAppProvider session={session}>
                 <SocketIoProvider>
-                  <SSEContextProvider>
-                    {children}
-                  </SSEContextProvider>
+                  <SSEContextProvider>{children}</SSEContextProvider>
                 </SocketIoProvider>
               </NextjsAppProvider>
             </React.Suspense>

@@ -6,7 +6,7 @@ import {
   Badge,
   Card,
   CardContent,
-  Grid2,
+  Grid,
   IconButton,
   Stack,
   Typography,
@@ -48,6 +48,8 @@ const FeedQuoteItem = ({ post, onFollowUserCallback }: { post: FeedPost, onFollo
 
   const item = post.kind === PostKind.REPOST ? post.parent : post;
 
+  const isDeleted = !!item.deletedAt
+
   return (
     <Card
       key={item.id}
@@ -55,7 +57,7 @@ const FeedQuoteItem = ({ post, onFollowUserCallback }: { post: FeedPost, onFollo
       sx={[
         (theme) => ({
           borderRadius: 3,
-          mt: 0,
+          mt: 0.5,
           mb: 0,
           pt: 0,
           pb: 0,
@@ -77,11 +79,13 @@ const FeedQuoteItem = ({ post, onFollowUserCallback }: { post: FeedPost, onFollo
           mr: 0,
           p: 0,
           maxWidth: "100%",
-          "&:last-child": { pb: 0 },
+          // "&:last-child": { pb: 0 },
+
         }}
       >
-        <Grid2 container>
-          <Grid2 size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
+        {isDeleted && <Typography sx={{py: 4}} textAlign={"center"} color="textDisabled">This content is not available.</Typography>}
+        {!isDeleted && (<Grid container>
+          <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
             <Stack>
               <Stack direction={"row"} sx={{ alignItems: "center" }}>
                 <Avatar
@@ -89,7 +93,7 @@ const FeedQuoteItem = ({ post, onFollowUserCallback }: { post: FeedPost, onFollo
                     height: 35,
                     width: 35,
                     border: (theme) =>
-                      `4px solid ${theme.palette.background.paper}`,
+                      `4px solid ${theme.vars.palette.background.paper}`,
                     cursor: "pointer",
                   }}
                   alt={item?.author?.name}
@@ -135,8 +139,8 @@ const FeedQuoteItem = ({ post, onFollowUserCallback }: { post: FeedPost, onFollo
               </Stack>
               </Stack>
             </Stack>
-          </Grid2>
-          <Grid2 size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
+          </Grid>
+          <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
             <Box
               sx={{
                 mt: 0,
@@ -167,12 +171,12 @@ const FeedQuoteItem = ({ post, onFollowUserCallback }: { post: FeedPost, onFollo
                 sx={{ position: "relative" }}
               >
                 {item.media.length > 0 && (
-                  <DisplayFeedMedia media={item.media} />
+                  <DisplayFeedMedia post={item} height={250} preview={false} />
                 )}
               </Box>
             </Box>
-          </Grid2>
-        </Grid2>
+          </Grid>
+        </Grid>)}
       </CardContent>
     </Card>
   );

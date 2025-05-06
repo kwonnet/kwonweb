@@ -16,7 +16,7 @@ const SSEContext = createContext<SSEContextType>({ sseSource: null });
 const SSEContextProvider = (props: any) => {
   const { user } = useAuthSession();
 
-  console.log(`Auth User`, user);
+  // console.log(`Auth User`, user);
 
   const notif = useNotifications();
 
@@ -96,7 +96,8 @@ const SSEContextProvider = (props: any) => {
     return () => {
         eventSource?.removeEventListener("user_follower", followerListener);
     };
-  }, [eventSource]);
+    // eslint-disable-next-line
+  }, []);
 
   return (
     <SSEContext.Provider value={{ sseSource: eventSource }}>

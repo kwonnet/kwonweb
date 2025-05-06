@@ -1,4 +1,53 @@
+import { MutatorCallback } from "swr";
 import { PostScopeEnum } from "./post";
+import { SWRInfiniteMutatorOptions } from "swr/infinite";
+
+
+export type SwrGenericMutateFunction<T> = (
+  data?:
+    | T[][]
+    | Promise<T[][] | undefined>
+    | MutatorCallback<T[][]>
+    | undefined,
+  opts?:
+    | boolean
+    | SWRInfiniteMutatorOptions<T[][], T[][]>
+    | undefined
+) => Promise<T[][] | undefined>;
+
+
+// export type FeedMutateFunction = (
+//   data?:
+//     | FeedPost[][]
+//     | Promise<FeedPost[][] | undefined>
+//     | MutatorCallback<FeedPost[][]>
+//     | undefined,
+//   opts?:
+//     | boolean
+//     | SWRInfiniteMutatorOptions<FeedPost[][], FeedPost[][]>
+//     | undefined
+// ) => Promise<FeedPost[][] | undefined>;
+
+
+export enum PostPinContext {
+  PROFILE = "PROFILE",
+  COMMUNITY = "COMMUNITY",
+  GLOBAL = "GLOBAL"
+}
+
+export enum ReportReasonCode {
+  HATE = "HATE",
+  ABUSE = "ABUSE",
+  VIOLENCE = "VIOLENCE",
+  CHILD_SAFETY = "CHILD_SAFETY",
+  PRIVACY = "PRIVACY",
+  SPAM = "SPAM",
+  SELF_HARM = "SELF_HARM",
+  SENSITIVE_MEDIA = "SENSITIVE_MEDIA",
+  IMPERSONATION = "IMPERSONATION",
+  VIOLENT_ENTITIES = "VIOLENT_ENTITIES",
+  COPYRIGHT = "COPYRIGHT",
+}
 
 export enum UserRoleEnum {
     SUPER = "SUPER",
@@ -11,16 +60,36 @@ export enum UserRoleEnum {
     ORGANIZATION = "ORGANIZATION",
     GOVERNMENT = "GOVERNMENT",
   }
-  
+
   export type User = {
+    id: string;
+    name: string;
+    telId?: string;
+    username: string;
+    // avatar: string;
+    // role: UserRoleEnum;
+    email: string;
+    accessToken: string;
+    // userType: UserTypeEnum;
+    // meta: {
+    //   type: "LEGACY" | "PRO";
+    //   status: "ACTIVE" | "INACTIVE" | "PAUSED";
+    //   color: "blue" | "gold" | "grey";
+    //   isActive: boolean;
+    //   isPro: boolean;
+    //   isLegacy: boolean;
+    // };
+  };
+  
+  export type CurrentAuthUser = {
     id: string;
     name: string;
     telId: string;
     username: string;
     avatar: string;
     role: UserRoleEnum;
-    userType: UserTypeEnum;
     email: string;
+    userType: UserTypeEnum;
     meta: {
       type: "LEGACY" | "PRO";
       status: "ACTIVE" | "INACTIVE" | "PAUSED";
@@ -30,6 +99,7 @@ export enum UserRoleEnum {
       isLegacy: boolean;
     };
   };
+
   export enum GameRoomRankingEnum {
     MONTH = "month",
     WEEK = "week",
@@ -477,7 +547,7 @@ export enum UserRoleEnum {
       items: {
         id: string;
         title: string;
-        description: string;
+        label: string;
         [key: string]: any;
       }[];
       planId: string;
@@ -611,6 +681,7 @@ export enum UserRoleEnum {
     type: PostType;
     kind: PostKind;
     scope: PostScopeEnum;
+    deletedAt?: string | Date | null;
     totalViews: number;
     totalLikes: number;
     totalReplies: number;
@@ -619,6 +690,8 @@ export enum UserRoleEnum {
     totalReposts: number;
     totalQuotes: number;
     totalImpressions: number;
+    totalHiddenReplies: number;
+    isHidden: boolean;
     media: PostMedia[];
     parentId?: string;
     quotedPostId?: string;
@@ -635,6 +708,7 @@ export enum UserRoleEnum {
         hasSaved: boolean;
         hasLiked: boolean;
         canReply: boolean; 
+        canHideReply: boolean;
     }
     poll?: {
       id: string;

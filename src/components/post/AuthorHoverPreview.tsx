@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { formatNumber, shortenText } from "@/utils";
 import { PostAuthor } from "@/types";
-import { useAuthSession } from "@/hooks";
+import { useAuthSession, useBadgeColor } from "@/hooks";
 import { useRef } from "react";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import useSWR, { useSWRConfig } from "swr";
@@ -105,6 +105,13 @@ const AuthorHoverPreview = ({
   const isCurrentUser = user.id === author?.id;
   //   check if both follow each other
 
+  // const currUserBadgeColor = useBadgeColor(user?.meta?.color)
+
+  const badgeColor = useBadgeColor(author?.meta?.color)
+
+  const isProUser = author?.meta?.isPro
+
+
   return (
     <Box
       display="inline"
@@ -121,14 +128,16 @@ const AuthorHoverPreview = ({
             <Typography sx={{ fontWeight: "bold" }} variant="subtitle1">
               {author?.name}
             </Typography>
+            {isProUser &&
             <IconButton
               disableFocusRipple
               disableRipple
               disableTouchRipple
               size="small"
             >
-              <VerifiedIcon color="info" sx={{ width: 16, height: 16 }} />
+              <VerifiedIcon sx={{ width: 16, height: 16, color: badgeColor }} />
             </IconButton>
+          }
           </Stack>
         </Link>
       ) : (
@@ -175,24 +184,23 @@ const AuthorHoverPreview = ({
                   overlap="circular"
                   anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                   badgeContent={
-                    <IconButton
-                      size="small"
-                    >
-                      <VerifiedIcon
-                        color="info"
-                        sx={{ width: 16, height: 16 }}
-                      />
-                    </IconButton>
+                    isProUser && <IconButton
+                    size="small"
+                  >
+                    <VerifiedIcon
+                      sx={{ width: 16, height: 16, color: badgeColor }}
+                    />
+                  </IconButton>
                   }
                   onClick={(ev) => ev.stopPropagation()}
                 >
                   <Link href={`/@${author?.username}`}>
                     <Avatar
                       sx={{
-                        height: 50,
-                        width: 50,
+                        height: 45,
+                        width: 45,
                         border: (theme) =>
-                          `4px solid ${theme.palette.background.paper}`,
+                          `4px solid ${theme.vars.palette.background.paper}`,
                       }}
                       alt={author?.name}
                       src={author?.avatar}

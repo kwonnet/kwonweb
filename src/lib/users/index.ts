@@ -1,5 +1,5 @@
 import { axiosAPI } from "@/config/axios";
-import { GameAchievement, Subscription } from "@/types"
+import { GameAchievement, ReportReasonCode, Subscription } from "@/types"
 import { UserConnection, UserMiniProfile } from "@/types/user";
 import { composeUrlQuery, getErrorMessage } from "@/utils"
 import { cache } from "react";
@@ -72,6 +72,38 @@ export const updateUserFollower = async(args: { senderId: string, recipientId: s
     }
 }
 
+export const blockUser = async (id: string, accessToken?: string) => {
+    try {
+      axiosAPI.accessToken = accessToken;
+      const result = await axiosAPI.post(`/v1/users/${id}/block`, { id });
+      return result.data as { id: string, blockerId: string, blockedId: string, isBlocked: true};
+    } catch (error: any) {
+      throw error
+    }
+  }
+
+  export const muteUser = async (id: string, accessToken?: string) => {
+    try {
+      axiosAPI.accessToken = accessToken;
+      const result = await axiosAPI.post(`/v1/users/${id}/mute`, { id });
+      return result.data as { id: string, muterId: string, mutedId: string, isMuted: true};
+    } catch (error: any) {
+      throw error
+    }
+  }
+
+export const reportUser = async (body: {code: ReportReasonCode, id: string, message?: string, meta: { title: string, description: string, code: ReportReasonCode }}, accessToken?: string) => {
+    try {
+      axiosAPI.accessToken = accessToken;
+      const result = await axiosAPI.post(`/v1/users/${body.id}/reports`, body);
+      return { data: result.data, message: "User reported successfully" };
+    } catch (error: any) {
+      return { data: null, message: getErrorMessage(error) }
+    }
+  }
+
+
+
 export const getSuggestedConnections = cache(async(args:{limit: number, type?: string, page?: number}, accessToken?: string)=> {
     try {
         const queryString = composeUrlQuery(args)
@@ -87,6 +119,16 @@ export const logUserLocation = async(body:{latitude: number, longitude: number},
     try {
         axiosAPI.accessToken = accessToken
         const result = await axiosAPI.post(`/v1/users/locations`, body )
+        return result.data 
+    } catch (error: any) {
+        throw error
+    }
+}
+
+export const trackUserProfileVisit = async(body:{userId: string, sessionId: string; postId?: string}, accessToken?: string)=> {
+    try {
+        axiosAPI.accessToken = accessToken
+        const result = await axiosAPI.post(`/v1/users/${body.userId}/visitors`, body )
         return result.data 
     } catch (error: any) {
         throw error

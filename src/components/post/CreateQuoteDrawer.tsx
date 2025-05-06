@@ -3,7 +3,7 @@ import {
   Box,
   Avatar,
   Container,
-  Grid2,
+  Grid,
   IconButton,
   Stack,
   Tooltip,
@@ -59,6 +59,11 @@ import {
 } from "@/types/post";
 import { useNotifications } from "@toolpad/core";
 import FeedQuoteItem from "./FeedQuoteItem";
+import {
+  ensureSignedInAnon,
+  uploadMultipleFilesWithMetadata,
+} from "@/firebase/utils";
+import { uploadBunnyFilesWithMetadata } from "@/utils/bunny";
 
 function CircularProgressWithLabel(
   props: CircularProgressProps & { value: number; max: number }
@@ -211,16 +216,19 @@ export default function CreateQuoteDrawer({
   toggleDrawer,
   post,
   onQuoteCallback,
-  onFollowUserCallback
+  onFollowUserCallback,
 }: {
   isOpen: boolean;
   toggleDrawer: (ev: any, open: boolean) => void;
   post?: FeedPost;
   onQuoteCallback: (id: string, quoted: boolean) => void;
-  onFollowUserCallback: (args: {
-    senderId: string;
-    recipientId: string;
-}, isFollow: boolean) => void
+  onFollowUserCallback: (
+    args: {
+      senderId: string;
+      recipientId: string;
+    },
+    isFollow: boolean
+  ) => void;
 }) {
   const open = React.useMemo(() => isOpen, [isOpen]);
 
@@ -334,6 +342,10 @@ export default function CreateQuoteDrawer({
           item.id === id ? { ...item, files: [...item.files, ...files] } : item
         ),
       }));
+      const input = document.getElementById(`input_${id}`) as HTMLInputElement;
+        if (input) {
+          input.value = "";
+        }
     }
   };
 
@@ -557,27 +569,33 @@ export default function CreateQuoteDrawer({
           });
         }
       }
-      // Function to get the current content of the editor and log it
-      // const getContent = () => {
-      //   const rawState = convertToRaw(editorState.getCurrentContent());
-      //   const mentions = getMentions(rawState);
-      //   const uniqueMentions = Array.from(new Set(mentions)); // Remove duplicates
-      //   console.log("Mentioned Users : ", getMentions(rawState));
-      //   console.log("Unique Mentioned Users: ", uniqueMentions);
-      //   console.log("Plain Text: ", editorState.getCurrentContent().getPlainText());
-      // };
+      // sign in to firebase anonymously to upload files
+      await ensureSignedInAnon();
       const posts = await Promise.all(
         state.threads.map(async (thread) => {
-          const postFiles = thread.files;
-          const media =
-            postFiles.length > 0
-              ? await handleImagikPostFileUpload(user?.id, postFiles, token)
-              : [];
+          const media = await Promise.all(
+            thread.files.map(async (f) => {
+              if (f.file.type.startsWith("image/")) {
+                const [uploadedImage] = await uploadMultipleFilesWithMetadata(
+                  user?.id,
+                  [f]
+                );
+                return uploadedImage;
+              } else if (f.file.type.startsWith("video/")) {
+                const [uploadedVideo] = await uploadBunnyFilesWithMetadata([f]);
+                return uploadedVideo;
+              } else {
+                return null; // Or handle unknown types if needed
+              }
+            })
+          );
+          const finalMedia = media.filter((m) => m !== null);
           return {
             content: thread.content,
-            media,
+            media: finalMedia,
             type: thread.type,
             poll: thread.poll,
+            quiz: thread.quiz,
             mentions: thread.mentions,
             tags: thread.tags,
             scope: state.scope,
@@ -599,7 +617,7 @@ export default function CreateQuoteDrawer({
           autoHideDuration: 2500,
         });
       }
-      onQuoteCallback(post?.id!, true)
+      onQuoteCallback(post?.id!, true);
       toggleDrawer(ev, false);
       notif.show(result.message, {
         severity: "success",
@@ -685,12 +703,19 @@ export default function CreateQuoteDrawer({
           <DialogContent dividers sx={{ m: 0, p: 0 }}>
             <Box role="presentation">
               <Container maxWidth="xl" sx={{ mt: 1, pb: 2 }}>
-                <Grid2 size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-                  <Box>{post && <FeedQuoteItem post={post} onFollowUserCallback={onFollowUserCallback} />}</Box>
-                </Grid2>
+                <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
+                  <Box>
+                    {post && (
+                      <FeedQuoteItem
+                        post={post}
+                        onFollowUserCallback={onFollowUserCallback}
+                      />
+                    )}
+                  </Box>
+                </Grid>
                 {state.threads.map((thread, index) => (
-                  <Grid2 sx={{ mb: 1 }} key={thread.id} container spacing={2}>
-                    <Grid2 size={{ lg: 1, md: 1, sm: 1, xs: 1 }}>
+                  <Grid sx={{ mb: 1 }} key={thread.id} container spacing={2}>
+                    <Grid size={{ lg: 1, md: 1, sm: 1, xs: 1 }}>
                       <Box
                         sx={{
                           height: "100%",
@@ -710,8 +735,8 @@ export default function CreateQuoteDrawer({
                           orientation="vertical"
                         />
                       </Box>
-                    </Grid2>
-                    <Grid2
+                    </Grid>
+                    <Grid
                       sx={{ pl: 0 }}
                       size={{ lg: 11, md: 11, sm: 11, xs: 11 }}
                     >
@@ -728,7 +753,7 @@ export default function CreateQuoteDrawer({
                           type="file"
                           ref={fileRef}
                           id={`input_${thread.id}`}
-                          accept="image/*"
+                          accept="image/*,video/*"
                         />
                       </Box>
                       {thread.type === PostType.POLL && (
@@ -952,8 +977,8 @@ export default function CreateQuoteDrawer({
                           }
                         />
                       </Box>
-                    </Grid2>
-                  </Grid2>
+                    </Grid>
+                  </Grid>
                 ))}
                 <Box sx={{ m: 0, p: 0, position: "relative", mt: 5 }}>
                   <Stack

@@ -8,7 +8,7 @@ import React from "react";
 
 const FeedServer = async () => {
   const session = await auth();
-  const result = await fetch(`${apiUrl}/posts/feed/${FeedTypeEnum.FORYOU}`, {
+  const result = await fetch(`${apiUrl}/posts/feed/${FeedTypeEnum.FORYOU}?limit=21&page=1`, {
     cache: "no-store",
     method: "GET",
     credentials: "include",

@@ -47,7 +47,7 @@ interface IAxios extends AxiosInstance {
 }
 
 export const axiosAPI:IAxios = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL + '/api',
+    baseURL: process.env.NEXT_PUBLIC_API_URL + '/api',
     withCredentials: true,
     
 })

@@ -93,7 +93,7 @@ function TopUserStories() {
         }}
       >
         {Array.from({ length: 50 }).map((_, index) => (
-          <Box>
+          <Box key={index}>
             <Paper
               key={index}
               elevation={3}

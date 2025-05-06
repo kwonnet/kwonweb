@@ -11,7 +11,7 @@ import {
   OutlinedInput,
   SelectChangeEvent,
   Typography,
-  Grid2,
+  Grid,
   Button,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
@@ -144,8 +144,8 @@ const QuizDurationDrawer = ({
         </Stack>
         <Container maxWidth="xl" sx={{ mt: 0, pb: 2 }}>
           <Box component="form" sx={{}}>
-            <Grid2 container spacing={1}>
-              <Grid2 size={{ lg: 4, md: 4, sm: 4, xs: 4 }}>
+            <Grid container spacing={1}>
+              <Grid size={{ lg: 4, md: 4, sm: 4, xs: 4 }}>
                 <FormControl fullWidth>
                   <InputLabel htmlFor="days">Days</InputLabel>
                   <Select
@@ -163,8 +163,8 @@ const QuizDurationDrawer = ({
                     ))}
                   </Select>
                 </FormControl>
-              </Grid2>
-              <Grid2 size={{ lg: 4, md: 4, sm: 4, xs: 4 }}>
+              </Grid>
+              <Grid size={{ lg: 4, md: 4, sm: 4, xs: 4 }}>
                 <FormControl fullWidth>
                   <InputLabel id="hours">Hours</InputLabel>
                   <Select
@@ -183,8 +183,8 @@ const QuizDurationDrawer = ({
                     ))}
                   </Select>
                 </FormControl>
-              </Grid2>
-              <Grid2 size={{ lg: 4, md: 4, sm: 4, xs: 4 }}>
+              </Grid>
+              <Grid size={{ lg: 4, md: 4, sm: 4, xs: 4 }}>
                 <FormControl fullWidth>
                   <InputLabel id="minutes">Minutes</InputLabel>
                   <Select
@@ -203,8 +203,8 @@ const QuizDurationDrawer = ({
                     ))}
                   </Select>
                 </FormControl>
-              </Grid2>
-            </Grid2>
+              </Grid>
+            </Grid>
           </Box>
         </Container>
       </Box>

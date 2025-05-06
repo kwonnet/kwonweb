@@ -82,7 +82,7 @@ const AnimateLikeButton = ({
               sx={{
                 height: 16,
                 width: 16,
-                color: (theme) => theme.palette.text.disabled,
+                color: (theme) => theme.vars.palette.text.disabled,
                 transition: "color 0.3s ease",
               }}
             />

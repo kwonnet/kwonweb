@@ -5,7 +5,7 @@ import {
   Card,
   CardContent,
   FormControl,
-  Grid2,
+  Grid,
   IconButton,
   Stack,
   TextField,
@@ -155,8 +155,8 @@ const CreatePollCard = ({
           }}
         >
           {state.options.map((item, index) => (
-            <Grid2 key={item.id} container sx={{ alignItems: "center", pt: 1 }} spacing={2}>
-              <Grid2 size={{ lg: 10, md: 10, sm: 10, xs: 10 }}>
+            <Grid key={item.id} container sx={{ alignItems: "center", pt: 1 }} spacing={2}>
+              <Grid size={{ lg: 10, md: 10, sm: 10, xs: 10 }}>
                 <FormControl key={item.id} fullWidth sx={{ mb: 0.5 }}>
                   <TextField
                     size="small"
@@ -179,8 +179,8 @@ const CreatePollCard = ({
                     }}
                   />
                 </FormControl>
-              </Grid2>
-              <Grid2 sx={{ lg: 2, md: 2, sm: 2, xs: 2 }}>
+              </Grid>
+              <Grid sx={{ lg: 2, md: 2, sm: 2, xs: 2 }}>
                 {index > 1 && (
                   <Tooltip title="Add option">
                     <IconButton
@@ -203,8 +203,8 @@ const CreatePollCard = ({
                     </IconButton>
                   </Tooltip>
                 )}
-              </Grid2>
-            </Grid2>
+              </Grid>
+            </Grid>
           ))}
           <Box sx={{ m: 0, p: 0, position: "relative", mt: 5 }}>
             <Stack

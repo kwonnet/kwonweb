@@ -5,6 +5,7 @@ namespace NodeJS {
     // api
     NEXT_PUBLIC_API_URL: string;
     NEXT_PUBLIC_APP_URL: string;
+    NEXT_PUBLIC_APP_LOGO: streing;
     // vapid
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: string;
     // db config
@@ -27,5 +28,11 @@ namespace NodeJS {
     BUNNY_STORAGE_API_KEY: string;
     NEXT_PUBLIC_BUNNY_STORAGE_UPLOAD_FILE_UID: string;
     NEXT_PUBLIC_BUNNY_STORAGE_URL: string;
+
+    // flutterwave
+    NEXT_PUBLIC_FLUTTERWAVE_REDIRECT_URL: strin;
+    NEXT_PUBLIC_FLUTTERWAVE_PUBK: strin;
+    FLUTTERWAVE_SECK: strin;
+    FLUTTERWAVE_ENCK: strin;
   }
 }

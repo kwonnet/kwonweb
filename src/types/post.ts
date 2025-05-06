@@ -8,7 +8,32 @@ export enum FeedTypeEnum {
   FRIENDS = "friends"
 }
 
+export enum PostMediaAction {
+  VIEW = "VIEW",
+  WATCH = "WATCH",
+  DOWNLOAD = "DOWNLOAD"
+}
+
+export enum PostMediaKind {
+  IMAGE = "IMAGE",
+  VIDEO = "VIDEO"
+}
+export interface PostMediaLog {
+  postId: string;
+  mediaId: string;
+  muted: boolean;
+  timestamp: string;
+  duration: number;
+  playbackRate: number;
+  watchedPct: number;
+  sessionId?: string | null
+  kind: PostMediaKind,
+  action: PostMediaAction
+  sessionDuration?: number
+}
+
 export type PostFile = { file: File; id: string; altText: string; flags: string[] };
+
 
 export type TagUser = {
   id: string;

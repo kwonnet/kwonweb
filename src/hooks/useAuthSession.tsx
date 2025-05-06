@@ -3,7 +3,8 @@ import { Session } from 'next-auth';
 import { useSession } from 'next-auth/react';
 
 const useAuthSession = () => {
-    const { data: session } = useSession();
+  
+  const { data: session } = useSession();
 
   const user = session?.user as Session['user']
 

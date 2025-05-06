@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import MediaItem from "./MediaItem";
 import Slider from "react-slick";
 import { Box, IconButton } from "@mui/material";
@@ -43,7 +43,12 @@ const CarouselContainer = ({
   const handleFileUpdate = (id: string, file: File) => {
     onUpdatePostFile(item.id, id, file);
   };
+  const sliderRef = useRef<Slider | null>(null);
 
+
+  useEffect(() => {
+    return () => {}
+  }, [item.files]);
   
 
   if (item.files.length === 0) return null;
@@ -51,6 +56,7 @@ const CarouselContainer = ({
   if (isSingle) {
     return (
       <MediaItem
+        key={0}
         isSingle={isSingle}
         removeFileItem={removeMediaFile}
         item={item.files[0]}
@@ -61,45 +67,8 @@ const CarouselContainer = ({
     );
   }
 
-  const sliderRef = useRef<Slider | null>(null);
   return (
-    <Box sx={{ maxWidth: "100%", position: "relative" }}>
-      <Box
-        sx={{
-          zIndex: 9,
-          display: "flex",
-          height: "100%",
-          justifyContent: "center",
-          alignItems: "center",
-          position: "absolute",
-          left: 10,
-        }}
-      >
-        <IconButton
-          sx={{ border: "1px solid grey" }}
-          onClick={() => sliderRef?.current?.slickPrev()}
-        >
-          <ArrowBackIosNewOutlinedIcon />
-        </IconButton>
-      </Box>
-      <Box
-        sx={{
-          zIndex: 9,
-          display: "flex",
-          height: "100%",
-          justifyContent: "center",
-          alignItems: "center",
-          position: "absolute",
-          right: 10,
-        }}
-      >
-        <IconButton
-          sx={{ border: "1px solid grey" }}
-          onClick={() => sliderRef?.current?.slickNext()}
-        >
-          <ArrowForwardIosOutlinedIcon />
-        </IconButton>
-      </Box>
+    <Box sx={{ maxWidth: "100%", position: "relative", mx: 1 }}>
       <Slider
         ref={sliderRef}
         {...{
@@ -109,7 +78,10 @@ const CarouselContainer = ({
           speed: 500,
           slidesToShow: 1,
           slidesToScroll: 1,
-          arrows: false,
+          arrows: true,
+          vertical: false,
+          verticalSwiping: false,
+          centerMode: false,
         }}
       >
         {item.files.map((f) => (

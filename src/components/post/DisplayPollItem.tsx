@@ -224,7 +224,7 @@ const DisplayPollItem = ({
                   color="inherit"
                   sx={{ textTransform: "lowercase" }}
                   size="small"
-                  href={`/${post?.user?.username}/feed/${post.id}`}
+                  href={`/${post?.author?.username}/feed/${post.id}`}
                   LinkComponent={Link}
                 >
                   Show more
@@ -390,7 +390,7 @@ const DisplayPollItem = ({
                 color="inherit"
                 sx={{ textTransform: "lowercase" }}
                 size="small"
-                href={`/${post?.user?.username}/feed/${post.id}?u=${user.id}`}
+                href={`/${post?.author?.username}/feed/${post.id}?u=${user.id}`}
                 LinkComponent={Link}
               >
                 Show more

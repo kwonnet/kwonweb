@@ -4,6 +4,7 @@ import { cache } from "react";
 import useSWR from "swr";
 import { getUserCoinsWallet } from "../wallets";
 import { AxiosResponse } from "axios";
+import { getAuthUser } from "../auth";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL + "/api"
 
@@ -84,3 +85,8 @@ export const getUserTaskSettings = cache(async (
     }
   }
 );
+
+export const useCurrentAuthUser = (token?: string) => {
+  const result = useSWR(['/current-user', token], ([_, token]) => getAuthUser( token), { keepPreviousData: true})
+  return result
+}

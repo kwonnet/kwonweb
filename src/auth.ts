@@ -4,10 +4,11 @@ import { AccountSchema } from "./schema";
 import { apiUrl } from "./config";
 import { ZodError } from "zod";
 import { nanoid } from "nanoid";
+import { UserPublic } from "./types/user";
 
 // Augment the User type in next-auth
 declare module "next-auth" {
-  interface User {
+  interface User extends UserPublic {
     id?: string;
     email?: string | null;
     name?: string | null;
@@ -25,7 +26,7 @@ declare module "next-auth" {
   //   };
   // }
   interface Session extends DefaultSession {
-    user: {
+    user: UserPublic & {
       id: string;
       email: string;
       name: string;
@@ -43,6 +44,7 @@ class NextAuthError extends CredentialsSignin {
     this.message = message;
   }
 }
+
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
@@ -157,7 +159,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.user = user;
       }
       if (token && !user) {
-        console.log("token & no user ")
+        // console.log("token & no user ")
         // refresh access token
         const currAccessToken = (token.user as { accessToken: string }).accessToken;
         const res = await fetch(`${apiUrl}/auth/refresh-token`, {

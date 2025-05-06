@@ -46,3 +46,6 @@ export { default as DisplayQuizItem } from "./DisplayQuizItem"
 
 export { default as AuthorHoverPreview } from "./AuthorHoverPreview"
 
+export { default as PostReportModal } from "./PostReportModal"
+
+export { default as PostOptions } from "./PostOptions"

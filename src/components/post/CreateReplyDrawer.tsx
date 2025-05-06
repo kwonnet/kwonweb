@@ -3,7 +3,7 @@ import {
   Box,
   Avatar,
   Container,
-  Grid2,
+  Grid,
   IconButton,
   Stack,
   Tooltip,
@@ -58,6 +58,8 @@ import CreatePollCard from "./CreatePollCard";
 import { debounce } from "lodash";
 import PostScheduleDrawer from "./PostScheduleDrawer";
 import PostLocationDrawer from "./PostLocationDrawer";
+import { ensureSignedInAnon, uploadMultipleFilesWithMetadata } from "@/firebase/utils";
+import { uploadBunnyFilesWithMetadata } from "@/utils/bunny";
 
 type LocalState = {
   isOpenTagUser: boolean;
@@ -70,7 +72,6 @@ type LocalState = {
   scheduleAt?: string | Date;
   isOpenLocation?: boolean;
   isDraft: boolean;
-
 };
 
 const initialState: LocalState = {
@@ -89,7 +90,7 @@ const initialState: LocalState = {
     isOpenTagUser: false,
   },
   isOpenSchedule: false,
-  isDraft: false
+  isDraft: false,
 };
 
 export default function CreateReplyDrawer({
@@ -97,16 +98,19 @@ export default function CreateReplyDrawer({
   toggleDrawer,
   post,
   onReplyCallback,
-  onFollowUserCallback
+  onFollowUserCallback,
 }: {
   isOpen: boolean;
   toggleDrawer: (ev: any, open: boolean) => void;
   post?: FeedPost;
   onReplyCallback: (id: string, replied: boolean) => void;
-  onFollowUserCallback: (args: {
-    senderId: string;
-    recipientId: string;
-}, isFollow: boolean) => void
+  onFollowUserCallback: (
+    args: {
+      senderId: string;
+      recipientId: string;
+    },
+    isFollow: boolean
+  ) => void;
 }) {
   const open = React.useMemo(() => isOpen, [isOpen]);
 
@@ -158,6 +162,10 @@ export default function CreateReplyDrawer({
         ...prev,
         post: { ...prev.post, files: [...prev.post.files, ...files] },
       }));
+      const input = document.getElementById(`input_${id}`) as HTMLInputElement;
+        if (input) {
+          input.value = "";
+        }
     }
   };
 
@@ -347,31 +355,38 @@ export default function CreateReplyDrawer({
   ) => {
     try {
       ev.preventDefault();
-      // if (!post) return; //toast.warn("No quoted post")
+      if (!post) {
+        return notif.show("No quoted post", { severity: 'warning', autoHideDuration: 3000})
+      }
+      // sign in to firebase anonymously to upload files
+      await ensureSignedInAnon()
       setState((prev) => ({ ...prev, loading: true }));
-      // const media = state.post.files > 1 ? await Promise.all(
-      //   handleImagikPostFileUpload(
-      //   user?.id,
-      //   state.post.files,
-      //   token
-      // );): []
-      // const posts = await Promise.all(
-      //   // // state.threads.map(async (thread) => {
-      //   //   const postFiles = thread.files;
-      //   //   // if (postFiles.length > 0) {
-      //   //     const media = await handleImagikPostFileUpload(
-      //   //       user?.id,
-      //   //       postFiles,
-      //   //       token
-      //   //     );
-      //   //   //   return { content: thread.content, media };
-      //   //   // }
-      //   //   return { content: thread.content, media: [] };
-      //   // // })
-      // );
+      const uploadedFiles =
+        state.post.files.length > 0
+          ? await Promise.all(
+              state.post.files.map(async (f) => {
+                if (f.file.type.startsWith("image/")) {
+                  const [uploadedImage] = await uploadMultipleFilesWithMetadata(
+                    user?.id,
+                    [f]
+                  );
+                  return uploadedImage;
+                } else if (f.file.type.startsWith("video/")) {
+                  const [uploadedVideo] = await uploadBunnyFilesWithMetadata([
+                    f,
+                  ]);
+                  return uploadedVideo;
+                } else {
+                  return null; // Or handle unknown types if needed
+                }
+              })
+            )
+          : [];
+      const media = uploadedFiles.filter((m) => m !== null);
+      
       const thread = {
         content: state.post.content,
-        media: [],
+        media,
         poll: state.post.poll,
         type: state.post.type,
         mentions: state.post.mentions,
@@ -411,7 +426,7 @@ export default function CreateReplyDrawer({
         <Dialog
           maxWidth="xl"
           sx={{
-            zIndex: 9999,
+            zIndex: 999999999999,
           }}
           open={open}
           onClose={(ev) => {
@@ -473,11 +488,18 @@ export default function CreateReplyDrawer({
           <DialogContent dividers sx={{ m: 0, p: 0 }}>
             <Box sx={{ width: "auto" }} role="presentation">
               <Container maxWidth="xl" sx={{ pb: 2 }}>
-                <Grid2 sx={{ mb: 1 }} container spacing={2}>
-                  <Grid2 size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-                    <Box>{post && <FeedQuoteItem post={post} onFollowUserCallback={onFollowUserCallback} />}</Box>
-                  </Grid2>
-                  <Grid2 size={{ lg: 1, md: 1, sm: 1, xs: 1 }}>
+                <Grid sx={{ mb: 1 }} container spacing={2}>
+                  <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
+                    <Box>
+                      {post && (
+                        <FeedQuoteItem
+                          post={post}
+                          onFollowUserCallback={onFollowUserCallback}
+                        />
+                      )}
+                    </Box>
+                  </Grid>
+                  <Grid size={{ lg: 1, md: 1, sm: 1, xs: 1 }}>
                     <Box sx={{ height: "100%" }}>
                       <Avatar
                         sx={{ width: 36, height: 36 }}
@@ -485,8 +507,8 @@ export default function CreateReplyDrawer({
                         alt={user.name}
                       />
                     </Box>
-                  </Grid2>
-                  <Grid2
+                  </Grid>
+                  <Grid
                     sx={{ pl: 1 }}
                     size={{ lg: 11, md: 11, sm: 11, xs: 11 }}
                   >
@@ -505,7 +527,7 @@ export default function CreateReplyDrawer({
                           type="file"
                           ref={fileRef}
                           id={`input_${state.post.id}`}
-                          accept="image/*"
+                          accept="image/*,video/*"
                         />
                       </Box>
 
@@ -673,23 +695,48 @@ export default function CreateReplyDrawer({
                           </Typography>
                         </Stack>
                       </Stack>
-
-
                     </Box>
-                  </Grid2>
-                  <Grid2 size={{lg: 12, md: 12, sm: 12, xs: 12}}>
-                  <Stack
-                        direction={"row"}
-                        spacing={1}
-                        sx={{
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Stack direction={"row"} sx={{ alignItems: "center" }}>
+                  </Grid>
+                  <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
+                    <Stack
+                      direction={"row"}
+                      spacing={1}
+                      sx={{
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Stack direction={"row"} sx={{ alignItems: "center" }}>
+                        <IconButton
+                          disableRipple
+                          onClick={(ev) => togglePostSettingsDrawer(ev, true)}
+                          size="small"
+                          sx={[
+                            (theme) => ({
+                              backgroundColor: "rgba(0, 0, 0, 0.1)",
+                              padding: 0.5,
+                              color: theme.vars.palette.secondary.main,
+                              marginBottom: 0,
+                              ...theme.applyStyles("dark", {
+                                color: theme.vars.palette.grey[500],
+                              }),
+                            }),
+                          ]}
+                        >
+                          <SettingsOutlined sx={{ height: 15, width: 15 }} />
+                        </IconButton>
+                        <Typography
+                          variant="caption"
+                          sx={{ fontFamily: "PlayFair" }}
+                        >
+                          Who can reply?
+                        </Typography>
+                      </Stack>
+                      <Stack direction={"row"} sx={{ alignItems: "center" }}>
+                        <Tooltip title="Schedule">
                           <IconButton
+                            onClick={(ev) => togglePostScheduleDrawer(ev, true)}
                             disableRipple
-                            onClick={(ev) => togglePostSettingsDrawer(ev, true)}
                             size="small"
                             sx={[
                               (theme) => ({
@@ -703,83 +750,51 @@ export default function CreateReplyDrawer({
                               }),
                             ]}
                           >
-                            <SettingsOutlined sx={{ height: 15, width: 15 }} />
+                            <AccessAlarmOutlined
+                              sx={{ height: 15, width: 15 }}
+                            />
                           </IconButton>
-                          <Typography
-                            variant="caption"
-                            sx={{ fontFamily: "PlayFair" }}
-                          >
-                            Who can reply?
-                          </Typography>
-                        </Stack>
-                        <Stack direction={"row"} sx={{ alignItems: "center" }}>
-                          <Tooltip title="Schedule">
-                            <IconButton
-                              onClick={(ev) =>
-                                togglePostScheduleDrawer(ev, true)
-                              }
-                              disableRipple
-                              size="small"
-                              sx={[
-                                (theme) => ({
-                                  backgroundColor: "rgba(0, 0, 0, 0.1)",
-                                  padding: 0.5,
-                                  color: theme.vars.palette.secondary.main,
-                                  marginBottom: 0,
-                                  ...theme.applyStyles("dark", {
-                                    color: theme.vars.palette.grey[500],
-                                  }),
-                                }),
-                              ]}
-                            >
-                              <AccessAlarmOutlined
-                                sx={{ height: 15, width: 15 }}
-                              />
-                            </IconButton>
-                          </Tooltip>
-                          <Typography
-                            variant="caption"
-                            sx={{ fontFamily: "PlayFair" }}
-                          >
-                            Schedule
-                          </Typography>
-                        </Stack>
-                        <Stack direction={"row"} sx={{ alignItems: "center" }}>
-                          <Tooltip title="Location">
-                            <IconButton
-                              onClick={(ev) =>
-                                togglePostLocationDrawer(ev, true)
-                              }
-                              disableRipple
-                              size="small"
-                              sx={[
-                                (theme) => ({
-                                  backgroundColor: "rgba(0, 0, 0, 0.1)",
-                                  padding: 0.5,
-                                  color: theme.vars.palette.secondary.main,
-                                  marginBottom: 0,
-                                  ...theme.applyStyles("dark", {
-                                    color: theme.vars.palette.grey[500],
-                                  }),
-                                }),
-                              ]}
-                            >
-                              <LocationOnOutlinedIcon
-                                sx={{ height: 15, width: 15 }}
-                              />
-                            </IconButton>
-                          </Tooltip>
-                          <Typography
-                            variant="caption"
-                            sx={{ fontFamily: "PlayFair" }}
-                          >
-                            Location
-                          </Typography>
-                        </Stack>
-                        
+                        </Tooltip>
+                        <Typography
+                          variant="caption"
+                          sx={{ fontFamily: "PlayFair" }}
+                        >
+                          Schedule
+                        </Typography>
                       </Stack>
-                  </Grid2>
-                </Grid2>
+                      <Stack direction={"row"} sx={{ alignItems: "center" }}>
+                        <Tooltip title="Location">
+                          <IconButton
+                            onClick={(ev) => togglePostLocationDrawer(ev, true)}
+                            disableRipple
+                            size="small"
+                            sx={[
+                              (theme) => ({
+                                backgroundColor: "rgba(0, 0, 0, 0.1)",
+                                padding: 0.5,
+                                color: theme.vars.palette.secondary.main,
+                                marginBottom: 0,
+                                ...theme.applyStyles("dark", {
+                                  color: theme.vars.palette.grey[500],
+                                }),
+                              }),
+                            ]}
+                          >
+                            <LocationOnOutlinedIcon
+                              sx={{ height: 15, width: 15 }}
+                            />
+                          </IconButton>
+                        </Tooltip>
+                        <Typography
+                          variant="caption"
+                          sx={{ fontFamily: "PlayFair" }}
+                        >
+                          Location
+                        </Typography>
+                      </Stack>
+                    </Stack>
+                  </Grid>
+                </Grid>
               </Container>
             </Box>
           </DialogContent>

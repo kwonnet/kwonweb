@@ -26,7 +26,7 @@ import React, { useState, useEffect } from "react";
 import { debounce } from "lodash";
 import { searchUsers } from "@/lib/users";
 import { useAuthSession } from "@/hooks";
-import { TagUser } from "./types";
+import { TagUser } from "@/types/post";
 
 const TagPeopleDrawer = ({
   isOpen,
