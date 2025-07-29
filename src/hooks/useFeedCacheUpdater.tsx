@@ -691,6 +691,62 @@ const useFeedMutations = (
   );
 
   /**
+   * Update post tips and return posts
+   * @param feed FeedPost[]
+   * @param id string
+   * @returns FeedPost[]
+   */
+  const updatePostTips = (feed: FeedPost[], id: string): FeedPost[] => {
+    return feed.map((d) => {
+      if (d.id === id) {
+        return { ...d, totalTips: d.totalTips + 1 };
+      }
+      if (d.parent && d.parentId === id) {
+        return {
+          ...d,
+          parent: {
+            ...d.parent,
+            totalTips: d.parent.totalTips + 1,
+          },
+        };
+      }
+      return d;
+    });
+  };
+
+  /**
+   * SWR mutate post tips
+   */
+  const mutatePostTips = useCallback(
+    (id: string) => {
+      const update = (feed: FeedPost[]) => updatePostTips(feed, id);
+      mutateData(update);
+      if (!setState) return;
+      setState((prev: any) => {
+        let feedPost = prev.feedPost;
+        if (id === feedPost?.id) {
+          const _feedPost = updatePostTips([feedPost], id);
+          feedPost = { ...feedPost, ..._feedPost[0] };
+        }
+        const thread = updatePostTips(feedPost?.thread, id);
+        const replies = updatePostTips(feedPost?.replies, id);
+        const parentChain = updatePostTips(feedPost?.parentChain, id);
+
+        return {
+          ...prev,
+          feedPost: {
+            ...feedPost,
+            thread,
+            replies,
+            parentChain,
+          },
+        };
+      });
+    },
+    [mutateData]
+  );
+
+  /**
    * Update post views and return posts
    * @param feed FeedPost[]
    * @param id string
@@ -743,6 +799,7 @@ const useFeedMutations = (
     },
     [mutateData]
   );
+  
 
   /**
    * Update post author and return posts
@@ -844,382 +901,9 @@ const useFeedMutations = (
     mutatePostViews,
     updatePostAuthor,
     mutatePostAuthor,
+    updatePostTips,
+    mutatePostTips
   };
 };
 
 export default useFeedMutations;
-
-// "use client";
-
-// import { FeedPost, SwrGenericMutateFunction } from "@/types";
-// import { useCallback } from "react";
-// import { MutatorCallback } from "swr";
-// import { SWRInfiniteMutatorOptions } from "swr/infinite";
-
-// type UpdateFeedData = (feed: FeedPost[]) => FeedPost[];
-
-// const useFeedMutations = (mutate: SwrGenericMutateFunction<FeedPost>) => {
-
-//   const mutateData = useCallback(
-//     (updateFeedData: UpdateFeedData) => {
-//       mutate(
-//         (_data: FeedPost[][] | undefined) =>
-//           _data?.map((_d) => updateFeedData(_d)),
-//         {
-//           revalidate: false,
-//           populateCache: true,
-//           rollbackOnError: true,
-//         }
-//       );
-//     },
-//     [mutate]
-//   );
-
-//   /**
-//    * Update post likes and return posts
-//    * @param feed FeedPost[]
-//    * @param args object
-//    * @param local boolean
-//    * @returns FeedPost[]
-//    */
-//   const updatePostLikes = (
-//     feed: FeedPost[],
-//     args: { id: string; liked: boolean },
-//     local: boolean = true
-//   ): FeedPost[] => {
-//     return feed.map((d) => {
-//       if (d.id === args.id) {
-//         return {
-//           ...d,
-//           ...(local && { actions: { ...d.actions, hasLiked: args.liked } }),
-//           totalLikes: args.liked ? d.totalLikes + 1 : d.totalLikes - 1,
-//         };
-//       }
-//       if (d.parent && d.parentId === args.id) {
-//         return {
-//           ...d,
-//           parent: {
-//             ...d.parent,
-//             ...(local && {
-//               actions: { ...d.parent.actions, hasLiked: args.liked },
-//             }),
-//             totalLikes: args.liked
-//               ? d.parent.totalLikes + 1
-//               : d.parent.totalLikes - 1,
-//           },
-//         };
-//       }
-//       return d;
-//     });
-//   };
-
-//   /**
-//    * SWR mutate post likes
-//    */
-//   const mutatePostLikes = useCallback((args: { id: string; liked: boolean }, local: boolean = true) =>{
-//     const update = (feed: FeedPost[]) => updatePostLikes(feed, args, local);
-//     mutateData(update)
-//   },[])
-
-//   const updatePostBookmarks = useCallback(
-//     (args: { id: string; saved: boolean }, local: boolean = true) => {
-//       const getFeedData = (cacheData: FeedPost[]) => {
-//         return cacheData?.map((d) => {
-//           if (d.id === args?.id) {
-//             return {
-//               ...d,
-//               ...(local && { actions: { ...d.actions, hasSaved: args.saved } }),
-//               totalBookmarks: args.saved
-//                 ? d.totalBookmarks + 1
-//                 : d.totalBookmarks - 1,
-//             };
-//           }
-//           if (d?.parent && d?.parentId === args.id) {
-//             return {
-//               ...d,
-//               parent: {
-//                 ...d.parent,
-//                 ...(local && {
-//                   actions: { ...d?.parent.actions, hasSaved: args.saved },
-//                 }),
-//                 totalBookmarks: args.saved
-//                   ? d?.parent.totalBookmarks + 1
-//                   : d?.parent.totalBookmarks - 1,
-//               },
-//             };
-//           }
-//           return d;
-//         });
-//       };
-//       mutateData(getFeedData);
-//     },
-//     [mutateData]
-//   );
-
-//   const updatePostReposts = useCallback(
-//     (
-//       args: { id?: string; postId: string; reposted: boolean },
-//       local: boolean = true
-//     ) => {
-//       const calc = (val: number) => (val < 1 ? 0 : val);
-//       const getFeedData = (cacheData: FeedPost[]) => {
-//         let updated = cacheData?.map((d) => {
-//           if (d.id === args?.postId) {
-//             return {
-//               ...d,
-//               ...(local && {
-//                 actions: { ...d.actions, hasReposted: args.reposted },
-//               }),
-//               totalReposts: args.reposted
-//                 ? d.totalReposts + 1
-//                 : calc(d.totalReposts - 1),
-//             };
-//           }
-//           if (d?.parent && d?.parentId === args.postId) {
-//             return {
-//               ...d,
-//               parent: {
-//                 ...d.parent,
-//                 ...(local && {
-//                   actions: { ...d?.parent.actions, hasReposted: args.reposted },
-//                 }),
-//                 totalReposts: args.reposted
-//                   ? d?.parent.totalReposts + 1
-//                   : calc(d?.parent.totalReposts - 1),
-//               },
-//             };
-//           }
-//           return d;
-//         });
-//         if (args.id && !args.reposted) {
-//           updated = updated.filter((p) => p.id !== args.id);
-//         }
-//         return updated;
-//       };
-//       mutateData(getFeedData);
-//     },
-//     [mutateData]
-//   );
-
-//   const updatePostQuotes = useCallback(
-//     (args: { id: string; quoted: boolean }) => {
-//       const getFeedData = (cacheData: FeedPost[]) => {
-//         return cacheData?.map((d) => {
-//           if (d.id === args?.id) {
-//             return {
-//               ...d,
-//               totalQuotes: args.quoted ? d.totalQuotes + 1 : d.totalQuotes - 1,
-//             };
-//           }
-//           if (d?.parent && d?.parentId === args.id) {
-//             return {
-//               ...d,
-//               parent: {
-//                 ...d.parent,
-//                 totalQuotes: args.quoted
-//                   ? d?.parent.totalQuotes + 1
-//                   : d?.parent.totalQuotes - 1,
-//               },
-//             };
-//           }
-//           return d;
-//         });
-//       };
-//       mutateData(getFeedData);
-//     },
-//     [mutateData]
-//   );
-
-//   const updatePostReplies = useCallback(
-//     (args: { id: string; replied: boolean }) => {
-//       const getFeedData = (cacheData: FeedPost[]) => {
-//         return cacheData?.map((d) => {
-//           if (d.id === args?.id) {
-//             return {
-//               ...d,
-//               totalReplies: args.replied
-//                 ? d.totalReplies + 1
-//                 : d.totalReplies - 1,
-//             };
-//           }
-//           if (d?.parent && d?.parentId === args.id) {
-//             return {
-//               ...d,
-//               parent: {
-//                 ...d.parent,
-//                 totalReplies: args.replied
-//                   ? d?.parent.totalReplies + 1
-//                   : d?.parent.totalReplies - 1,
-//               },
-//             };
-//           }
-//           return d;
-//         });
-//       };
-//       mutateData(getFeedData);
-//     },
-//     [mutateData]
-//   );
-
-//   const updateDeletedPost = useCallback(
-//     (args: { id: string; userId: string; deletedAt?: string | Date }) => {
-//       const getFeedData = (cacheData: FeedPost[]) => {
-//         return cacheData?.map((d) => {
-//           if (d.id === args?.id) {
-//             return { ...d, deletedAt: args.deletedAt };
-//           }
-//           if (d?.parent && d?.parentId === args.id) {
-//             return {
-//               ...d,
-//               parent: { ...d.parent, deletedAt: args.deletedAt },
-//             };
-//           }
-//           return d;
-//         });
-//       };
-//       mutateData(getFeedData);
-//     },
-//     [mutateData]
-//   );
-
-//   const updatePostFilter = useCallback(
-//     (postId: string) => {
-//       const getFeedData = (cacheData: FeedPost[]) => {
-//         return cacheData?.filter(
-//           (d) => d.id !== postId && d.parentId !== postId
-//         );
-//       };
-//       mutateData(getFeedData);
-//     },
-//     [mutateData]
-//   );
-
-//   const updateBlockOrMuteUser = useCallback(
-//     (userId: string) => {
-//       const getFeedData = (cacheData: FeedPost[]) => {
-//         return cacheData?.filter(
-//           (d) => d.author.id !== userId && d?.parent?.author.id !== userId
-//         );
-//       };
-//       mutateData(getFeedData);
-//     },
-//     [mutateData]
-//   );
-
-//   const updatePostShares = useCallback(
-//     (id: string) => {
-//       const getFeedData = (cacheData: FeedPost[]) => {
-//         return cacheData?.map((d) => {
-//           if (d.id === id) {
-//             return { ...d, totalShares: d.totalShares + 1 };
-//           }
-//           if (d?.parent && d?.parentId === id) {
-//             return {
-//               ...d,
-//               parent: { ...d.parent, totalShares: d?.parent.totalShares + 1 },
-//             };
-//           }
-//           return d;
-//         });
-//       };
-//       mutateData(getFeedData);
-//     },
-//     [mutateData]
-//   );
-
-//   const updatePostImpressions = useCallback(
-//     (id: string) => {
-//       const getFeedData = (cacheData: FeedPost[]) => {
-//         return cacheData?.map((d) => {
-//           if (d.id === id) {
-//             return { ...d, totalImpressions: d.totalImpressions + 1 };
-//           }
-//           if (d?.parent && d?.parentId === id) {
-//             return {
-//               ...d,
-//               parent: {
-//                 ...d.parent,
-//                 totalImpressions: d?.parent.totalImpressions + 1,
-//               },
-//             };
-//           }
-//           return d;
-//         });
-//       };
-//       mutateData(getFeedData);
-//     },
-//     [mutateData]
-//   );
-
-//   const updatePostViews = useCallback(
-//     (id: string) => {
-//       const getFeedData = (cacheData: FeedPost[]) => {
-//         return cacheData?.map((d) => {
-//           if (d.id === id) {
-//             return { ...d, totalViews: d.totalViews + 1 };
-//           }
-//           if (d?.parent && d?.parentId === id) {
-//             return {
-//               ...d,
-//               parent: { ...d.parent, totalViews: d?.parent.totalViews + 1 },
-//             };
-//           }
-//           return d;
-//         });
-//       };
-//       mutateData(getFeedData);
-//     },
-//     [mutateData]
-//   );
-
-//   const updatePostAuthor = useCallback(
-//     (userId: string, isFollow: boolean) => {
-//       const getFeedData = (cacheData: FeedPost[]) => {
-//         return cacheData?.map((d) => {
-//           if (d.userId === userId) {
-//             return {
-//               ...d,
-//               author: {
-//                 ...d.author,
-//                 conn: { ...d.author.conn, isFollowed: isFollow },
-//               },
-//             };
-//           }
-//           if (d?.parent && d?.parent?.author?.id === userId) {
-//             return {
-//               ...d,
-//               parent: {
-//                 ...d.parent,
-//                 author: {
-//                   ...d?.parent?.author,
-//                   conn: { ...d?.parent?.author?.conn, isFollowed: isFollow },
-//                 },
-//               },
-//             };
-//           }
-//           return d;
-//         });
-//       };
-//       mutateData(getFeedData);
-//     },
-//     [mutateData]
-//   );
-
-//   return {
-//     updatePostLikes,
-//     updatePostBookmarks,
-//     updatePostReposts,
-//     updatePostQuotes,
-//     updatePostReplies,
-//     updateDeletedPost,
-//     updatePostFilter,
-//     updateBlockOrMuteUser,
-//     updatePostShares,
-//     updatePostImpressions,
-//     updatePostViews,
-//     updatePostAuthor,
-//     mutatePostLikes,
-//   };
-// };
-
-// export default useFeedMutations;

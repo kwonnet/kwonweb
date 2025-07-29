@@ -6,18 +6,32 @@ import { getUserCoinsWallet } from "../wallets";
 import { AxiosResponse } from "axios";
 import { getAuthUser } from "../auth";
 
-const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL + "/api"
+// const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL + "/api"
 
-export const getSwrPlayers = cache(async(url: string) => {
+const baseUrl = process.env.NEXT_PUBLIC_API_URL + "/api"
+
+
+// export const getSwrPlayers = cache(async(url: string) => {
+//     try {
+//         const result = await fetch(baseUrl+url, { 
+//             method: "GET", 
+//             next: { revalidate: 30 },
+//             credentials: "include",
+//             mode: "cors"
+//         })
+//         if(!result.ok) throw new Error("Sorry, en error occurred while fetching data")
+//         return await result.json() as GamePlayer[]
+//     } catch (error) {
+//         throw error
+//     }
+// })
+
+export const getSwrPlayers = cache(async({query, token}: { query: string; token?: string}) => {
     try {
-        const result = await fetch(baseUrl+url, { 
-            method: "GET", 
-            next: { revalidate: 30 },
-            credentials: "include",
-            mode: "cors"
-        })
-        if(!result.ok) throw new Error("Sorry, en error occurred while fetching data")
-        return await result.json() as GamePlayer[]
+        axiosAPI.accessToken = token
+        const result = await axiosAPI.get(query)
+        console.log("leaderboad data ",result.data)
+        return result.data as GamePlayer[]
     } catch (error) {
         throw error
     }

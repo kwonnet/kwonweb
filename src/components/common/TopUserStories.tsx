@@ -19,6 +19,7 @@ function TopUserStories() {
     speed: 500,
     slidesToShow: 5,
     slidesToScroll: 4,
+    
     responsive: [
       {
         breakpoint: 1024,
@@ -39,7 +40,7 @@ function TopUserStories() {
       {
         breakpoint: 480,
         settings: {
-          slidesToShow: 3,
+          slidesToShow: 2,
           slidesToScroll: 2,
         },
       },
@@ -90,6 +91,9 @@ function TopUserStories() {
           ...settings,
           arrows: false,
           swipe: true,
+          centerMode: false,
+          centerPadding: "0px",
+          
         }}
       >
         {Array.from({ length: 50 }).map((_, index) => (
@@ -101,8 +105,9 @@ function TopUserStories() {
                 borderRadius: 3,
                 mb: 1,
                 mx: 4,
+                
                 height: { lg: 200, md: 200, sm: 180, xs: 180 },
-                width: { lg: 140, md: 140, sm: 110, xs: 110 },
+                width: { lg: 140, md: 140, sm: 160, xs: 160 },
                 position: "relative",
               }}
             >

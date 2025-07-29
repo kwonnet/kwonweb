@@ -1,5 +1,5 @@
 "use client";
-import { apiUrl, appUrl } from "@/config";
+import { apiBaseUrl, apiUrl, appUrl } from "@/config";
 import {
   ChatMessage,
   GameEventEnum,
@@ -68,10 +68,13 @@ const SocketIoProvider = (props: any) => {
   const token  = user?.accessToken
 
   useEffect(() => {
-    const socketConn = io(apiUrl, {
+    const socketConn = io(apiBaseUrl, {
       withCredentials: true,
       auth: { token },
     });
+
+
+    console.log("socket.io connected ", socketConn.active)
 
 
     setState((prev) => ({ ...prev, socketIo: socketConn }));
@@ -167,6 +170,10 @@ const SocketIoProvider = (props: any) => {
     socketConn?.on("connect", () => {
       console.log("Connected TO SERVER", socketConn.id);
     });
+
+    socketConn?.on("error", (ev) => {
+      console.log("Socket connection error ", ev )
+    })
 
     socketConn?.on(GameEventEnum.MESSAGE, messageCallback);
 

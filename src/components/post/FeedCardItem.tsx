@@ -12,7 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { formatRelativeTime, getSessionId } from "@/utils";
+import { formatRelativeTime, getSessionId, shouldSendLog } from "@/utils";
 import QuickreplyOutlinedIcon from "@mui/icons-material/QuickreplyOutlined";
 import RepeatOutlinedIcon from "@mui/icons-material/RepeatOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
@@ -36,6 +36,9 @@ import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlin
 import { trackUserProfileVisit } from "@/lib/users";
 import Link from "next/link";
 import ContentEditor from "./ContentEditor";
+import { sendPostClick } from "@/lib/posts";
+import { PostMetricAction, PostMetricSource } from "@/types/post";
+import PostTipDrawer from "./PostTipDrawer";
 
 const FeedCardItem = ({
   post,
@@ -64,6 +67,10 @@ const FeedCardItem = ({
 
   const { user, token } = useAuthSession();
 
+  const [state, setState] = useState({isOpen: false})
+
+  const item = post.kind === PostKind.REPOST ? post.parent : post;
+
   const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(
     null
   );
@@ -74,23 +81,38 @@ const FeedCardItem = ({
     setAnchorEl(null);
   };
 
+  const toggleTipDrawer = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent>, open: boolean) => {
+    ev.stopPropagation()
+    ev.preventDefault()
+    setState((prev) => ({ ...prev, isOpen: open }));
+  };
+
+  const sendPostClickLog = (action: PostMetricAction ) => {
+    if(user.id !== item?.userId){
+      const sessionId = getSessionId()
+      sendPostClick({id: item.id, action, source: PostMetricSource.FORYOU, timestamp: new Date().toISOString(), sessionId }, token)
+    }
+  }
+
   const handlePost = (
     ev: React.MouseEvent<HTMLDivElement | HTMLButtonElement, MouseEvent>,
-    item: FeedPost
   ) => {
     ev.preventDefault();
     ev.stopPropagation();
+    sendPostClickLog(PostMetricAction.CONTENT)
     router.push(`/${item?.author?.username}/feed/${item.id}`);
   };
 
   const trackProfileVisit = (
+    ev: React.MouseEvent<HTMLDivElement | HTMLButtonElement, MouseEvent>,
     author: PostAuthor,
   ) => {
-    // ev.preventDefault();
-    // ev.stopPropagation();
+    ev.preventDefault();
+    ev.stopPropagation();
     if(user.id !== author.id){
       const sessionId = getSessionId()
       trackUserProfileVisit({postId: item.id, userId: author.id, sessionId}, token)
+      sendPostClickLog(PostMetricAction.PROFILE)
       // sessionStorage.setItem('tz_p_v', JSON.stringify({postId: item.id, userId: author.id}));
     }
     // if(redirect){
@@ -111,6 +133,11 @@ const FeedCardItem = ({
       anchorMenuRef.current &&
       anchorMenuRef.current.contains(event.target as HTMLElement)
     ) {
+      const canTrack = shouldSendLog(item.id, "POST_CLICK")
+      if(canTrack){
+        sendPostClickLog(PostMetricAction.OPTION)
+
+      }
       return;
     }
     setOpenMenu(false);
@@ -137,10 +164,27 @@ const FeedCardItem = ({
 
   // handle follower
   const handleFollowUser = (recipientId: string, isFollow: boolean) => {
+    sendPostClickLog(PostMetricAction.FOLLOW)
     onFollowUserCallback({ senderId: user.id, recipientId }, isFollow);
   };
 
-  const item = post.kind === PostKind.REPOST ? post.parent : post;
+  const handleToggleRepost = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> ) => {
+    ev.stopPropagation();
+    setAnchorEl(ev.currentTarget);
+    sendPostClickLog(PostMetricAction.REPOST)
+  }
+
+  const handleReply = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> ) => {
+    ev.stopPropagation()
+    sendPostClickLog(PostMetricAction.REPLY)
+    router.push(`/${item?.author?.username}/feed/${item.id}`);
+  }
+
+  const handleToggleTip = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> ) => {
+    ev.stopPropagation();
+    toggleTipDrawer(ev, true)
+    sendPostClickLog(PostMetricAction.TIP)
+  }
 
   // check if the current reader is following the post author
   const isFollowed = user.id === item.author.id || item.author.conn.isFollowed;
@@ -182,7 +226,7 @@ const FeedCardItem = ({
           // Prevent navigation if text is selected
           return;
         }
-        handlePost(ev, item);
+        handlePost(ev);
       }}
     >
       <CardContent
@@ -227,7 +271,7 @@ const FeedCardItem = ({
           <Box>
             <Badge
               overlap="circular"
-              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
               badgeContent={
                 !isFollowed && (
                   <IconButton
@@ -239,13 +283,13 @@ const FeedCardItem = ({
                     }}
                     size="small"
                   >
-                    <AddCircleOutlinedIcon sx={{ width: 24, height: 24 }} />
+                    <AddCircleOutlinedIcon sx={{ width: 16, height: 16 }} />
                   </IconButton>
                 )
               }
               onClick={(ev) => ev.stopPropagation()}
             >
-              <Box onClick={(ev) => trackProfileVisit(item.author)}>
+              <Box onClick={(ev) => trackProfileVisit(ev,item.author)}>
               <Link href={`/@${item?.author?.username}`}>
                 <Avatar
                   sx={{
@@ -269,7 +313,7 @@ const FeedCardItem = ({
               width: "100%",
             }}
           >
-            <Stack onClick={(ev) => trackProfileVisit(item.author)}>
+            <Stack onClick={(ev) => trackProfileVisit(ev,item.author)}>
               <AuthorHoverPreview
                 author={item?.author}
                 isName={true}
@@ -420,7 +464,7 @@ const FeedCardItem = ({
                     }}
                     spacing={-0.7}
                   >
-                    <IconButton onClick={(ev) => handlePost(ev, item)}>
+                    <IconButton onClick={(ev) => handleReply(ev)}>
                       <QuickreplyOutlinedIcon
                         sx={{
                           height: 16,
@@ -452,10 +496,7 @@ const FeedCardItem = ({
                     spacing={-0.7}
                   >
                     <IconButton
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        setAnchorEl(ev.currentTarget);
-                      }}
+                      onClick={(ev) => handleToggleRepost(ev)}
                     >
                       <RepeatOutlinedIcon
                         sx={{
@@ -580,7 +621,7 @@ const FeedCardItem = ({
                         </Typography> */}
                   </Stack>
                 </Tooltip>
-                <Tooltip title="Thanks" placement="top">
+                <Tooltip title="Tip Author" placement="top">
                   <Stack
                     direction={"row"}
                     sx={{
@@ -590,7 +631,7 @@ const FeedCardItem = ({
                     }}
                     spacing={-0.7}
                   >
-                    <IconButton onClick={(ev) => {}}>
+                    <IconButton onClick={(ev) => handleToggleTip(ev)}>
                       <MonetizationOnOutlinedIcon
                         sx={{
                           height: 16,
@@ -599,7 +640,7 @@ const FeedCardItem = ({
                         }}
                       />
                     </IconButton>
-                    <RollingNumber number={30000} />
+                    <RollingNumber number={item?.totalTips} />
                   </Stack>
                 </Tooltip>
                 <Tooltip title="Share" placement="top">
@@ -654,6 +695,8 @@ const FeedCardItem = ({
           setAnchorEl(null);
         }}
       />
+      {/* post tip drawer */}
+      <PostTipDrawer post={item} isOpen={state.isOpen} toggleDrawer={toggleTipDrawer} />
     </Card>
   );
 };

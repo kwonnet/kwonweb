@@ -3,23 +3,27 @@ import { FlutterwaveConfig } from "flutterwave-react-v3/dist/types";
 import { genUniqueRef, get_tzx_usd_rate } from ".";
 import { flwPublicKey, flwRedirectUrl } from "@/config";
 
-export const getFlutterWaveCoinConfig = (user: User, item: CoinPackage):FlutterwaveConfig => {
-    const amount = get_tzx_usd_rate(item.price)
+export const getFlutterWaveCoinConfig = (user: User, item: CoinPackage, isUSD: boolean):FlutterwaveConfig => {
+    // const amount = get_tzx_usd_rate(item.price)
+    const price = isUSD ? item.price : item.ngnPrice;
+    const bonus = isUSD ? item.bonus : item.ngnBonus;
+    const currencySymbol = isUSD ? "$" : "₦"
+    const currency = isUSD ? "USD" : "NGN"
     const config: FlutterwaveConfig = {
         public_key: process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBK as string,
-        redirect_url: process.env.NEXT_PUBLIC_FLUTTERWAVE_REDIRECT_URL,
+        // redirect_url: process.env.NEXT_PUBLIC_FLUTTERWAVE_REDIRECT_URL,
         tx_ref: genUniqueRef(),
-        amount,
-        currency: "USD",
+        amount: price,
+        currency,
         payment_options: "card,mobilemoney,ussd,nqr,barter,account,banktransfer",
         customer: {
           email: user.email,
           name: user.name,
-          phone_number: "0000000",
+          phone_number: genUniqueRef(11),
         },
         customizations: {
           title: item.name,
-          description: `Purchase ${item.name} coin package for $${amount}`,
+          description: `Purchase ${item.name} coin package for ${currencySymbol} ${price}`,
           logo: String(process.env.NEXT_PUBLIC_APP_LOGO),
         },
         meta: {
@@ -29,11 +33,11 @@ export const getFlutterWaveCoinConfig = (user: User, item: CoinPackage):Flutterw
             id: item.id,
             name: item.name,
             amount: item.amount.toString(),
-            price: item.price.toString(),
-            bonus: item.bonus.toString(),
+            price: price.toString(),
+            bonus: bonus.toString(),
             isActive: item.isActive ,
             gateway: TxnGatewayEnum.FLUTTERWAVE,
-            currency: TxnCurrencyEnum.USD, 
+            currency, 
             source: TxnSourceEnum.FIAT
        }
       };

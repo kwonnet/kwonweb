@@ -15,6 +15,8 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import CheckIcon from "@mui/icons-material/Check";
 import SubscribeDrawer from "./SubscribeDrawer";
+import { useAuthSession } from "@/hooks";
+import { formatNumberWithCommas } from "@/utils";
 
 const DisplayPlanItem = ({
     plan,
@@ -44,6 +46,11 @@ const DisplayPlanItem = ({
       }
       setState((prev) => ({ ...prev, isOpen: open }));
     };
+
+    const { user } = useAuthSession()
+    const isUSD = user?.country?.iso3 !== "NGA";
+    const itemCurrency = isUSD ? "$" : "₦"
+    const itemPrice = !isUSD ? plan.ngnPrice : plan.price;
   
     return (
       <React.Fragment>
@@ -104,7 +111,7 @@ const DisplayPlanItem = ({
               color="info"
               sx={{ width: "100%", mt: 1, borderRadius: 30, textAlign: "center" }}
             >
-              Starting ${plan.price}
+              Starting {itemCurrency}{formatNumberWithCommas(itemPrice)}
             </Button>
           </Box>
         </Box>

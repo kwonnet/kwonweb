@@ -11,6 +11,15 @@ type UserMeta = {
     [key: string]: any
 };
 
+type UserCountry =  {
+        id: string;
+        name: string;
+        iso2: string;
+        iso3: string;
+        emoji: string;
+        continentId: string;
+    }
+
 export interface UserPublic {
     id: string;
     avatar?: string | null;
@@ -20,6 +29,7 @@ export interface UserPublic {
     role: UserRoleEnum;
     userType: UserTypeEnum;
     meta: UserMeta
+    country?: UserCountry;
 }
 
 export interface UserConnection extends UserPublic {

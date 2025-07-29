@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import {
   Avatar,
@@ -30,6 +30,7 @@ import {
   DisplayQuizItem,
   FeedQuoteItem,
   PostOptions,
+  PostTipDrawer,
   RepostPopover,
   RollingNumber,
 } from "@/components/post";
@@ -38,6 +39,7 @@ import { FeedPost, PostAuthor, PostKind, PostType } from "@/types";
 import ContentEditor from "@/components/post/ContentEditor";
 import DisplayPollItem from "@/components/post/DisplayPollItem";
 import { useNotifications } from "@toolpad/core";
+import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 
 const ThreadCardItem = ({
   post,
@@ -79,6 +81,8 @@ const ThreadCardItem = ({
 }) => {
   const router = useRouter();
 
+  const [state, setState] = useState({isOpen: false})
+
   const { user } = useAuthSession();
 
   const notif = useNotifications();
@@ -91,6 +95,12 @@ const ThreadCardItem = ({
 
   const onClosePopover = () => {
     setAnchorEl(null);
+  };
+
+  const toggleTipDrawer = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent>, open: boolean) => {
+    ev.stopPropagation()
+    ev.preventDefault()
+    setState((prev) => ({ ...prev, isOpen: open }));
   };
 
   // menu options
@@ -155,6 +165,11 @@ const ThreadCardItem = ({
   const handleFollowUser = (recipientId: string, isFollow: boolean) => {
     onFollowUserCallback({ senderId: user.id, recipientId }, isFollow);
   };
+
+  const handleToggleTip = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> ) => {
+      ev.stopPropagation();
+      toggleTipDrawer(ev, true)
+    }
 
   const item = post.kind === PostKind.REPOST ? post.parent : post;
 
@@ -785,6 +800,29 @@ const ThreadCardItem = ({
                     <RollingNumber number={item?.totalBookmarks} />
                   </Stack>
                 </Tooltip>
+                <Tooltip title="Thanks" placement="top">
+                      <Stack
+                        direction={"row"}
+                        sx={{
+                          alignItems: "center",
+                          // justifyContent: "center",
+                          color: (theme) => theme.vars.palette.text.disabled,
+                        }}
+                        spacing={-0.7}
+                      >
+                        <IconButton onClick={(ev) => handleToggleTip(ev)}>
+                          <MonetizationOnOutlinedIcon
+                            sx={{
+                              height: 16,
+                              width: 16,
+                              color: (theme) =>
+                                theme.vars.palette.text.disabled,
+                            }}
+                          />
+                        </IconButton>
+                        <RollingNumber number={item?.totalTips} />
+                      </Stack>
+                    </Tooltip>
                 <Tooltip title="Share" placement="top">
                   <Stack
                     direction={"row"}
@@ -830,6 +868,8 @@ const ThreadCardItem = ({
           console.log("View Quotes clicked");
         }}
       />
+      {/* post tip drawer */}
+      <PostTipDrawer post={item} isOpen={state.isOpen} toggleDrawer={toggleTipDrawer} />
     </Card>
   );
 };

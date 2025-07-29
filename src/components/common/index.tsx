@@ -15,3 +15,13 @@ export { default as VideoPlayer } from "./VideoPlayer"
 export { default as MiniVideoPlayer } from "./MiniVideoPlayer"
 
 export { default as PageHeader } from "./PageHeader"
+
+export { default as BadgeAvatar } from "./BadgeAvatar"
+
+export { default as GetVerified } from "./GetVerified"
+
+export { default as JoinRoom } from "./JoinRoom"
+
+export { default as AppBottomNav } from "./AppBottomNav"
+
+export { default as SkeletonTable } from "./SkeletonTable"

@@ -7,12 +7,11 @@ import {
   Badge,
   Button,
   IconButton,
-  Link,
   Paper,
   Stack,
   Typography,
 } from "@mui/material";
-import { formatNumber, shortenText } from "@/utils";
+import { formatNumber, getSessionId, shortenText } from "@/utils";
 import { PostAuthor } from "@/types";
 import { useAuthSession, useBadgeColor } from "@/hooks";
 import { useRef } from "react";
@@ -21,6 +20,7 @@ import useSWR, { useSWRConfig } from "swr";
 import { getUserOverview } from "@/lib/users";
 import { UserFollower, UserMiniProfile } from "@/types/user";
 import { getConnBtnColor, getConnBtnText } from "@/utils/post";
+import Link from "next/link";
 
 const AuthorHoverPreview = ({
   author,

@@ -56,8 +56,8 @@ export enum UserRoleEnum {
   }
   
   export enum UserTypeEnum {
-    INDIVIDUAL = "INDIVIDUAL",
-    ORGANIZATION = "ORGANIZATION",
+    PERSONAL = "PERSONAL",
+    BUSINESS = "BUSINESS",
     GOVERNMENT = "GOVERNMENT",
   }
 
@@ -131,6 +131,8 @@ export enum UserRoleEnum {
     id: string;
     name: string;
     amount: number;
+    ngnPrice: number;
+    ngnBonus: number;
     price: number;
     bonus: number;
     isActive: boolean;
@@ -142,6 +144,8 @@ export enum UserRoleEnum {
     XTR = "XTR",
     USDT = "USDT",
     USD = "USD",
+    NGN = "NGN",
+    COINS = "COINS",
     FIAT = "FIAT",
     NONE = "NONE",
   }
@@ -187,6 +191,11 @@ export enum UserRoleEnum {
     BONUS = "BONUS",
     ADS = "ADS",
   }
+
+  export enum GameMode {
+    SINGLE = "SINGLE",
+    MULTI = "MULTI"
+  }
   
   export interface Game {
     id: string;
@@ -196,6 +205,7 @@ export enum UserRoleEnum {
     userId: string;
     createdAt: Date;
     updatedAt: Date;
+    modes: GameMode[];
   }
   
   export interface GameCategory {
@@ -364,7 +374,7 @@ export enum UserRoleEnum {
     createdAt: Date;
     updatedAt: Date;
     credit: number;
-    amount: number;
+    coins: number;
     bonus: number;
     isLocked?: boolean;
   }
@@ -535,11 +545,12 @@ export enum UserRoleEnum {
     id: string;
     name: string;
     price: number;
+    ngnPrice: number;
     discount: number;
     accountType: UserTypeEnum;
     createdAt: Date;
     updatedAt: Date;
-    tier: { id: string; name: string; price: number; message: string }[];
+    tier: { id: string; name: string; price: number; ngnPrice: number; message: string }[];
     metadata?: { flw: SubFlwPaymentPlan[]} | null;
     features: {
       id: string;
@@ -690,6 +701,7 @@ export enum UserRoleEnum {
     totalReposts: number;
     totalQuotes: number;
     totalImpressions: number;
+    totalTips: number;
     totalHiddenReplies: number;
     isHidden: boolean;
     media: PostMedia[];

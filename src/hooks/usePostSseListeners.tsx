@@ -215,6 +215,16 @@ const usePostSseListeners = (
             mutations.mutatePostImpressions(arg.id!);
           },
         },
+
+        {
+          event: "post_tip",
+          handler: (ev: MessageEvent) => {
+            console.log("SSE post_tip stream received ", ev);
+            const arg: SseEventArgs = JSON.parse(ev.data);
+            console.log("data ", arg, user.id);
+            mutations.mutatePostTips(arg.id!);
+          },
+        },
         {
           event: "post_view",
           handler: (ev: MessageEvent) => {

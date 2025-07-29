@@ -31,6 +31,9 @@ body {
     width: 35%;
     display: block;
   }
+  header h6{
+    display: block;
+  }
 }
 @media screen and (max-width: 600px) {
   .page_content {
@@ -38,6 +41,9 @@ body {
   }
   .page__content_sidebar{
     width: 0;
+    display: none;
+  }
+  header h6{
     display: none;
   }
 }

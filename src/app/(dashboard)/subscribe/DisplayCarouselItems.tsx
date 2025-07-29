@@ -11,6 +11,7 @@ import Carousel from "react-multi-carousel";
 import DisplayPlanItem from "./DisplayPlanItem";
 import 'react-multi-carousel/lib/styles.css';
 
+
 const DisplayCarouselItems = ({plans, tonRate, cryptoAddreses}:{ plans: SubscriptionPlan[]; tonRate: number; cryptoAddreses: CryptoAddress[]}) => {
     return (
       <Box>

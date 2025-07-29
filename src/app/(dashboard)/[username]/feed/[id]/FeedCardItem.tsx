@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import {
   Avatar,
@@ -29,6 +29,7 @@ import {
   DisplayQuizItem,
   FeedQuoteItem,
   PostOptions,
+  PostTipDrawer,
   RepostPopover,
   RollingNumber,
 } from "@/components/post";
@@ -84,6 +85,8 @@ const FeedCardItem = ({
 }) => {
   const router = useRouter();
 
+  const [state, setState] = useState({isOpen: false})
+
   const { user } = useAuthSession();
 
   const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(
@@ -95,6 +98,12 @@ const FeedCardItem = ({
   const onClosePopover = () => {
     setAnchorEl(null);
   };
+
+  const toggleTipDrawer = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent>, open: boolean) => {
+      ev.stopPropagation()
+      ev.preventDefault()
+      setState((prev) => ({ ...prev, isOpen: open }));
+    };
 
   // menu options
   const [openMenu, setOpenMenu] = React.useState(false);
@@ -154,6 +163,11 @@ const FeedCardItem = ({
   const handleFollowUser = (recipientId: string, isFollow: boolean) => {
     onFollowUserCallback({ senderId: user.id, recipientId }, isFollow);
   };
+
+  const handleToggleTip = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> ) => {
+    ev.stopPropagation();
+    toggleTipDrawer(ev, true)
+  }
 
   const notif = useNotifications();
 
@@ -800,7 +814,7 @@ const FeedCardItem = ({
                         }}
                         spacing={-0.7}
                       >
-                        <IconButton onClick={(ev) => {}}>
+                        <IconButton onClick={(ev) => handleToggleTip(ev)}>
                           <MonetizationOnOutlinedIcon
                             sx={{
                               height: 16,
@@ -810,7 +824,7 @@ const FeedCardItem = ({
                             }}
                           />
                         </IconButton>
-                        {/* <RollingNumber number={item?.totalShares} /> */}
+                        <RollingNumber number={item?.totalTips} />
                       </Stack>
                     </Tooltip>
                     <Tooltip title="Share" placement="top">
@@ -861,6 +875,8 @@ const FeedCardItem = ({
           }}
         />
       </Card>
+      {/* post tip drawer */}
+      <PostTipDrawer post={item} isOpen={state.isOpen} toggleDrawer={toggleTipDrawer} />
     </React.Fragment>
   );
 };

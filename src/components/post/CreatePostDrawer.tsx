@@ -600,7 +600,7 @@ export default function CreatePostDrawer({
   };
 
   const taggedUsersMessage = (tagUsers: TagUser[]) => {
-    let message = "Tag People";
+    let message = "Tag";
     if (tagUsers.length === 1) {
       message = `${tagUsers[0].username}`;
     }

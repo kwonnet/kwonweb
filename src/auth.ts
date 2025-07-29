@@ -3,7 +3,6 @@ import Credentials from "next-auth/providers/credentials";
 import { AccountSchema } from "./schema";
 import { apiUrl } from "./config";
 import { ZodError } from "zod";
-import { nanoid } from "nanoid";
 import { UserPublic } from "./types/user";
 
 // Augment the User type in next-auth

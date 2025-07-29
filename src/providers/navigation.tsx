@@ -55,6 +55,9 @@ import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import { CustomThemeSwitcher } from "@/components/common";
 import { Session } from "next-auth";
 import theme from "./theme";
+import PsychologyOutlinedIcon from '@mui/icons-material/PsychologyOutlined';
+import EarnIcon from "@mui/icons-material/AttachMoneyOutlined";
+// import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 
 
 export const NAVIGATION: Navigation = [
@@ -62,11 +65,11 @@ export const NAVIGATION: Navigation = [
       title: "Home",
       icon: <HomeOutlinedIcon />,
     },
-    // {
-    //   segment: "sparks",
-    //   title: "Sparks",
-    //   icon: <OfflineBoltOutlinedIcon />,
-    // },
+    {
+      segment: "sparks",
+      title: "Sparks",
+      icon: <OfflineBoltOutlinedIcon />,
+    },
     // {
     //   segment: "videos",
     //   title: "Videos",
@@ -87,21 +90,37 @@ export const NAVIGATION: Navigation = [
       title: "Discover",
       icon: <ExploreOutlinedIcon />,
     },
-    // {
-    //   segment: "live",
-    //   title: "Live",
-    //   icon: <LiveTvOutlinedIcon />,
-    // },
-    
     {
-      segment: "people",
-      title: "People",
-      icon: <GroupAddOutlinedIcon />,
+      segment: "live",
+      title: "Live",
+      icon: <LiveTvOutlinedIcon />,
     },
+    {
+      segment: "swem",
+      title: "Swem",
+      icon: <PsychologyOutlinedIcon />,
+    },
+
+    {
+      segment: "earn",
+      title: "Earn",
+      icon: <EarnIcon />,
+    },
+    
+    // {
+    //   segment: "people",
+    //   title: "People",
+    //   icon: <GroupAddOutlinedIcon />,
+    // },
     // {
     //   segment: "contests",
     //   title: "Contest",
     //   icon: <EmojiEventsOutlinedIcon />,
+    // },
+    // {
+    //   segment: "wallet",
+    //   title: "Wallet",
+    //   icon: <WalletOutlinedIcon />,
     // },
     {
       segment: "store",
@@ -187,9 +206,13 @@ export const NAVIGATION: Navigation = [
     //     },
     //   ]
     // },
-    
     {
-      segment: 'account',
+      segment: "settings",
+      title: "Settings",
+      icon: <SettingsOutlinedIcon />,
+    },
+    {
+      segment: '',
       title: 'My Account',
       icon: <AccountCircleOutlinedIcon />,
       children: [
@@ -212,6 +235,11 @@ export const NAVIGATION: Navigation = [
           segment: 'friends',
           title: 'Friends',
           icon: <GroupOutlinedIcon />,
+        },
+        {
+          segment: "invite",
+          title: "Invite",
+          icon: <GroupAddOutlinedIcon />,
         },
         {
           segment: "wallet",
@@ -252,14 +280,8 @@ export const NAVIGATION: Navigation = [
           segment: 'monetize',
           title: 'Monetize',
           icon: <MonetizationOnOutlinedIcon />,
-        },
-  
+        }
       ],
-    },
-    {
-      segment: "settings",
-      title: "Settings",
-      icon: <SettingsOutlinedIcon />,
     },
     {
       kind: "divider",

@@ -1,3 +1,4 @@
+'use client'
 import { convertJsonToFormBody, getSessionId, shouldSendLog } from "@/utils";
 import React, { useEffect, useRef } from "react";
 import { useInView } from "react-intersection-observer";

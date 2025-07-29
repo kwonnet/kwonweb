@@ -32,6 +32,43 @@ export interface PostMediaLog {
   sessionDuration?: number
 }
 
+export enum PostMetricSource {
+  FORYOU = "FORYOU",
+  FOLLOWING = "FOLLOWING",
+  FRIENDS = "FRIENDS",
+  LATEST = "LATEST",
+  SEARCH = "SEARCH",
+  TRENDING = "TRENDING",
+  PROFILE = "PROFILE"
+}
+
+export enum PostMetricAction {
+  CONTENT = "CONTENT",
+  FOLLOW = "FOLLOW",
+  PROFILE = "PROFILE",
+  OPTION = "OPTION",
+  REPOST = "REPOST",
+  REPLY = "REPLY",  
+  TIP = "TIP"
+}
+
+export interface PostClickLog {
+  id: string;
+  timestamp: string;
+  sessionId?: string | null
+  source: PostMetricSource,
+  action: PostMetricAction
+}
+
+export interface PostTipBody {
+  tipId: string;
+  postId: string;
+  recipientId: string;
+  timestamp: string;
+  isAnon: boolean;
+  message?: string
+}
+
 export type PostFile = { file: File; id: string; altText: string; flags: string[] };
 
 

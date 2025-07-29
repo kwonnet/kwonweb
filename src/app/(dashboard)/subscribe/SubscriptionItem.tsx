@@ -1,3 +1,4 @@
+import { useAuthSession } from "@/hooks";
 import {
   PaymentSubscriptionOptions,
   PlanTypeEnum,
@@ -8,6 +9,7 @@ import {
 } from "@/types";
 import {
   formatNumberWithCommas,
+  get_coins_rate,
   get_usd_stars_rate,
   get_usd_ton_rate,
   get_usd_tzx_rate,
@@ -29,6 +31,7 @@ import React from "react";
 const SubscriptionItem = ({
   price,
   discount,
+  ngnPrice,
   isRecurring,
   handleRecurringChange,
   isLoading,
@@ -46,6 +49,7 @@ const SubscriptionItem = ({
 }: {
   price: number;
   discount: number;
+  ngnPrice: number;
   isRecurring: boolean;
   isLoading: boolean;
   tonRate: number;
@@ -81,6 +85,19 @@ const SubscriptionItem = ({
     tierId?: string;
   }) => void;
 }) => {
+
+  const { user, token } = useAuthSession();
+
+  const isUSD = user?.country?.iso3 !== "NGA";
+
+  const ngnCurrency =  "₦";
+
+  const usdCurrency = "$"
+
+  const itemCurrency = isUSD ? usdCurrency : ngnCurrency
+
+  const itemPrice = isUSD ? price : ngnPrice;
+
   const getBorder = (planType: PlanTypeEnum, color: string) => {
     return selectedPlanType === planType ? `1px solid ${color}` : "none";
   };
@@ -88,10 +105,10 @@ const SubscriptionItem = ({
   const getElevation = (planType: PlanTypeEnum) => {
     return selectedPlanType === planType ? 5 : 3;
   };
-  const calculateAmount = (isRounded: boolean = false) => {
+  const calculateAmount = (amount: number, isRounded: boolean = false) => {
     const amt =  selectedPlanType === PlanTypeEnum.YEARLY
-      ? parseFloat((price * (1 - discount) * 12).toFixed(2))
-      : price;
+      ? parseFloat((amount * (1 - discount) * 12).toFixed(2))
+      : amount;
       return isRounded ? Math.round(amt) : amt
   };
   return (
@@ -115,10 +132,10 @@ const SubscriptionItem = ({
           <Chip size="small" color="info" label={`Save ${discount * 100}%`} />
         </Stack>
         <Typography sx={{ fontFamily: "PlayFair" }} variant="h6">
-          ${(price * (1 - discount)).toFixed(2)} / month{" "}
+          {itemCurrency}{formatNumberWithCommas(itemPrice * (1 - discount))} / month{" "}
         </Typography>
         <Typography sx={{ fontFamily: "PlayFair" }} variant="caption">
-          ${(price * (1 - discount) * 12).toFixed(2)} per year, billed annually{" "}
+          {itemCurrency}{formatNumberWithCommas(itemPrice * (1 - discount) * 12)} per year, billed annually{" "}
         </Typography>
       </Paper>
       <Paper
@@ -144,10 +161,10 @@ const SubscriptionItem = ({
           </Typography>
         </Stack>
         <Typography sx={{ fontFamily: "PlayFair" }} variant="h6">
-          ${price.toFixed(2)} / month{" "}
+          {itemCurrency}{formatNumberWithCommas(itemPrice)} / month{" "}
         </Typography>
         <Typography sx={{ fontFamily: "PlayFair" }} variant="caption">
-          ${(price * 12).toFixed(2)} per year, billed monthly{" "}
+          {itemCurrency}{formatNumberWithCommas(itemPrice * 12)} per year, billed monthly{" "}
         </Typography>
       </Paper>
       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
@@ -171,36 +188,6 @@ const SubscriptionItem = ({
       </Typography>
       <Box>
         <Grid container spacing={2}>
-          {Math.round(get_usd_stars_rate(calculateAmount(true))) <= 2500 && <Grid size={{ lg: 6, md: 6, sm: 6, xs: 6 }}>
-            <Button
-              size="small"
-              variant="outlined"
-              color="warning"
-              onClick={(ev) =>
-                handleTmaPurchase(ev, {
-                  amount: Math.round(get_usd_stars_rate(calculateAmount(true))),
-                  currency: TxnCurrencyEnum.XTR,
-                  price,
-                  discount,
-                  planId,
-                  tierId,
-                  gateway: TxnGatewayEnum.STARS,
-                  source: TxnSourceEnum.STARS,
-                  planName,
-                })
-              }
-              disabled={isLoading}
-              loading={isLoading}
-              sx={{
-                p: 2,
-                width: "100%",
-              }}
-            >
-              {formatNumberWithCommas(Math.round(get_usd_stars_rate(calculateAmount(true))))}{" "}
-              ⭐️
-            </Button>
-          </Grid>}
-
           <Grid size={{ lg: 6, md: 6, sm: 6, xs: 6 }}>
             <Button
               size="small"
@@ -208,7 +195,7 @@ const SubscriptionItem = ({
               color="error"
               onClick={(ev) =>
                 handleTonPurchase(ev, {
-                  amount: get_usd_ton_rate(calculateAmount(), tonRate),
+                  amount: get_usd_ton_rate(calculateAmount(price), tonRate),
                   price,
                   discount,
                   planId,
@@ -227,7 +214,7 @@ const SubscriptionItem = ({
               }}
             >
               {formatNumberWithCommas(
-                get_usd_ton_rate(calculateAmount(), tonRate)
+                get_usd_ton_rate(calculateAmount(price), tonRate)
               )}{" "}
               TON
             </Button>
@@ -240,14 +227,14 @@ const SubscriptionItem = ({
               color="primary"
               onClick={(ev) =>
                 handleWalletPurchase(ev, {
-                  amount: get_usd_tzx_rate(calculateAmount()),
+                  amount: get_coins_rate(calculateAmount(itemPrice), isUSD),
                   price,
                   discount,
                   planId,
                   tierId,
-                  currency: TxnCurrencyEnum.TZX,
+                  currency: TxnCurrencyEnum.COINS,
                   gateway: TxnGatewayEnum.VIRTUAL,
-                  source: TxnSourceEnum.CREDIT,
+                  source: TxnSourceEnum.COINS,
                   planName,
                 })
               }
@@ -258,79 +245,9 @@ const SubscriptionItem = ({
                 width: "100%",
               }}
             >
-              {formatNumberWithCommas(get_usd_tzx_rate(calculateAmount()))} TZX
+              {formatNumberWithCommas(get_coins_rate(calculateAmount(itemPrice), isUSD))} {TxnCurrencyEnum.COINS}
             </Button>
           </Grid>
-
-          <Grid size={{ lg: 6, md: 6, sm: 6, xs: 6 }}>
-            <Button
-              size="small"
-              variant="outlined"
-              color="success"
-              onClick={(ev) =>
-                handleTmaPurchase(ev, {
-                  amount: calculateAmount(),
-                  currency: TxnCurrencyEnum.USD,
-                  price,
-                  discount,
-                  planId,
-                  tierId,
-                  gateway: TxnGatewayEnum.SMART_GLOCAL,
-                  source: TxnSourceEnum.FIAT,
-                  planName,
-                })
-              }
-              disabled={isLoading}
-              loading={isLoading}
-              sx={{
-                p: 2,
-                width: "100%",
-              }}
-              endIcon={
-                <CardMedia
-                  image="/smart-glocal.png"
-                  sx={{ height: 20, width: 20 }}
-                />
-              }
-            >
-              Pay ${formatNumberWithCommas(calculateAmount())}
-            </Button>
-          </Grid>
-
-          {/* <Grid size={{ lg: 6, md: 6, sm: 6, xs: 6 }}>
-            <Button
-              size="small"
-              variant="outlined"
-              color="success"
-              onClick={(ev) =>
-                handleTmaPurchase(ev, {
-                  amount: calculateAmount(),
-                  currency: TxnCurrencyEnum.USD,
-                  price,
-                  discount,
-                  planId,
-                  tierId,
-                  gateway: TxnGatewayEnum.UNLIMINT,
-                  source: TxnSourceEnum.FIAT,
-                  planName,
-                })
-              }
-              disabled={isLoading}
-              loading={isLoading}
-              sx={{
-                p: 2,
-                width: "100%",
-              }}
-              endIcon={
-                <CardMedia
-                  image="/unlimint.png"
-                  sx={{ height: 20, width: 20 }}
-                />
-              }
-            >
-              Pay ${formatNumberWithCommas(calculateAmount())}
-            </Button>
-          </Grid> */}
 
           <Grid size={{ lg: 6, md: 6, sm: 6, xs: 6 }}>
             <Button
@@ -339,8 +256,8 @@ const SubscriptionItem = ({
               color="success"
               onClick={(ev) =>
                 handleFlwPurchase(ev, {
-                  amount: calculateAmount(),
-                  currency: TxnCurrencyEnum.USD,
+                  amount: calculateAmount(itemPrice),
+                  currency: isUSD ? TxnCurrencyEnum.USD : TxnCurrencyEnum.NGN,
                   price,
                   discount,
                   planId,
@@ -364,7 +281,7 @@ const SubscriptionItem = ({
                 />
               }
             >
-              Pay ${formatNumberWithCommas(calculateAmount())}
+              Pay {itemCurrency}{formatNumberWithCommas(calculateAmount(itemPrice))}
             </Button>
           </Grid>
         </Grid>

@@ -23,7 +23,7 @@
    .editor {
     box-sizing: border-box;
     /* border: 0.2px solid #181818; */
-    cursor: text;
+    cursor: pointer;
     padding: var(--editor-padding, 4px 4px 16px 4px);
     /* border-radius: 5px; */
     /* margin-bottom: 2em; */

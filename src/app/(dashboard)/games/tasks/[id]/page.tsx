@@ -1,0 +1,37 @@
+import { redirect } from "next/navigation";
+import { Container, Paper, Typography } from "@mui/material";
+import Link from "next/link";
+import TaskClient from "./TaskClient";
+import { Task } from "@/types";
+import { apiUrl } from "@/config";
+
+const url = apiUrl + "/tasks/";
+
+export default async function Page({ params }: { params: { id: string } }) {
+
+  if (!params.id) return redirect("/tasks");
+
+  const result = await fetch(url + params.id, {
+    method: "GET",
+    next: { revalidate: 0 },
+  });
+
+  const task: Task | null = result.ok ? await result.json() : null;
+
+  if (!task) {
+    return (
+      <Container maxWidth="xl">
+        <Paper sx={{ p: 3 }}>
+          <Typography>Task not found</Typography>
+          <Link href={"/tasks"}>Explore other tasks</Link>
+        </Paper>
+      </Container>
+    );
+  }
+
+  return (
+    <div>
+      <TaskClient task={task} />
+    </div>
+  );
+}

@@ -2,7 +2,7 @@ import { axiosAPI } from "@/config/axios";
 import { FeedPost, PostAuthor, PostPinContext, ReportReasonCode } from "@/types";
 import { composeUrlQuery, getErrorMessage } from "@/utils";
 import { cache } from "react";
-import { FeedTypeEnum, PostCreate, PostMediaLog } from "@/types/post";
+import { FeedTypeEnum, PostClickLog, PostCreate, PostMediaLog, PostTipBody } from "@/types/post";
 import debounce from "lodash/debounce";
 
 export const createPost = async (body: PostCreate, accessToken?: string) => {
@@ -192,6 +192,28 @@ export const reportPost = async (body: {code: ReportReasonCode, id: string, mess
       return { data: null, message: getErrorMessage(error) };
     }
   };
+
+  export const sendPostClick = async (body: PostClickLog, accessToken?: string) => {
+    try {
+      axiosAPI.accessToken = accessToken;
+      const result = await axiosAPI.post(`/v1/posts/${body.id}/clicks`, body);
+      return { data: result.data, message: "Post click logged successfully" };
+    } catch (error: any) {
+      return { data: null, message: getErrorMessage(error) };
+    }
+  };
+
+  export const sendPostTip = async (body: PostTipBody, accessToken?: string) => {
+    try {
+      axiosAPI.accessToken = accessToken;
+      const result = await axiosAPI.post(`/v1/posts/${body.postId}/tips`, body);
+      return { data: result.data, message: "Tip sent" };
+    } catch (error: any) {
+      return { data: null, message: getErrorMessage(error) };
+    }
+  };
+
+  
 
 export const getPostReplies = cache(async (args:{id: string, limit: number, page?: number; hidden?:boolean}, accessToken?: string) => {
   try {

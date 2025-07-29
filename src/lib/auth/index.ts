@@ -12,7 +12,6 @@ export const getAuthUser = async(token?: string) => {
       }
 }
 
-
 export const getTmaAuthUser = async(payload: {
     tmaData: any;
     ref?: string;

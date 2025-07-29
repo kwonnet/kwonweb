@@ -49,3 +49,5 @@ export { default as AuthorHoverPreview } from "./AuthorHoverPreview"
 export { default as PostReportModal } from "./PostReportModal"
 
 export { default as PostOptions } from "./PostOptions"
+
+export { default as PostTipDrawer } from "./PostTipDrawer"

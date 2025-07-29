@@ -34,8 +34,8 @@ export function shuffleArray<T>(array: T[]): T[] {
 }
 
 export const getInviteLink = (refId?: string | number) => {
-  const url = `${process.env.NEXT_PUBLIC_TELEGRAM_BOT_APP_URL}`;
-  return refId ? `${url}?startapp=${refId}` : url;
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}`;
+  return refId ? `${url}?refId=${refId}` : url;
 };
 
 export const delayExecution = (ms: number): Promise<void> => {
@@ -93,11 +93,11 @@ export function formatNumberWithCommas(num: number): string {
 
 export function getTONRate(
   curr_ton_rate: number,
-  stars_amount: number
+  usd_amount: number
 ): number {
   const rate = curr_ton_rate - 0.9;
-  const stars_usd = stars_amount * 0.013;
-  const tonRate = stars_usd / rate;
+  // const stars_usd = stars_amount * 0.013;
+  const tonRate = usd_amount / rate;
   return parseFloat(tonRate.toFixed(2));
 }
 
@@ -115,6 +115,13 @@ export const get_tzx_usd_rate = (tzxAmount: number): number => {
 
 export const get_usd_tzx_rate = (usdAmount: number): number => {
   return parseFloat((usdAmount / 0.013).toFixed(2));
+};
+
+export const get_coins_rate = (amount: number, isUSD: boolean): number => {
+  if(isUSD){
+    return parseFloat((amount / 0.013).toFixed(2));
+  }
+  return parseFloat((amount / 18).toFixed(2))
 };
 
 export const get_usd_stars_rate = (usdAmount: number): number => {
@@ -512,7 +519,8 @@ export const shouldSendLog = (
     | "MEDIA_VIDEO_SAVE"
     | "POST_LAST_SEEN"
     | "POST_LAST_VIEWED"
-    | "REPLY_LAST_VIEWED",
+    | "REPLY_LAST_VIEWED"
+    | "POST_CLICK",
   ttlMinutes = 5
 ) => {
   const kId =
@@ -528,6 +536,8 @@ export const shouldSendLog = (
             ? "m_v_s"
             : kind === "MEDIA_VIDEO_IMPRESSION"
               ? "m_v_i"
+              : kind === "POST_CLICK" 
+              ? "l_c"
               : kind === "POST_LAST_SEEN"
                 ? "l_s"
                 : kind === "POST_LAST_VIEWED" 

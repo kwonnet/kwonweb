@@ -220,6 +220,7 @@ const [editorState, setEditorState] = useState(_editorState);
           ref={ref}
           placeholder={placeholder || "What's happening?"}
           readOnly={readOnly}
+          
         />
         {!readOnly && (
           <>

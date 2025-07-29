@@ -1,19 +1,53 @@
 "use client";
-import {
-  CryptoAddress,
-  SubscriptionPlan,
-} from "@/types";
+import { CryptoAddress, SubscriptionPlan, UserTypeEnum } from "@/types";
 import { PageHeader } from "@/components/common";
-import {
-  Box,
-  Button,
-  Container,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Container, Typography } from "@mui/material";
 import React, { useState } from "react";
 import DisplayCarouselItems from "./DisplayCarouselItems";
 import { useAuthSession } from "@/hooks";
 import { useCurrentAuthUser } from "@/lib/swrHooks";
+
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+
+function ScrollableTabsButtonAuto({
+  onTabCallback,
+}: {
+  onTabCallback?: (userType: UserTypeEnum) => void;
+}) {
+  const [value, setValue] = React.useState(0);
+
+  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+    setValue(newValue);
+    onTabCallback &&
+      onTabCallback(
+        newValue === 0
+          ? UserTypeEnum.PERSONAL
+          : newValue === 1
+            ? UserTypeEnum.BUSINESS
+            : UserTypeEnum.GOVERNMENT
+      );
+  };
+
+  return (
+    <Box sx={{ bgcolor: "background.paper", my: 2 }}>
+      <Tabs
+        value={value}
+        onChange={handleChange}
+        // variant="scrollable"
+        // scrollButtons="auto"
+        aria-label="scrollable auto tabs example"
+        // centered={true}
+        sx={{ justifyContent: "space-between", width: "100%" }}
+
+      >
+        <Tab label="Personal" />
+        <Tab label="Business" />
+        <Tab label="Government" />
+      </Tabs>
+    </Box>
+  );
+}
 
 const PageClient = ({
   plans,
@@ -24,28 +58,38 @@ const PageClient = ({
   tonRate: number;
   cryptoAddreses: CryptoAddress[];
 }) => {
-
   const { token, user } = useAuthSession();
 
   // const  { data: user } = useCurrentAuthUser(token)
 
-  const subPlans = plans.filter((item) => item.accountType === user?.userType);
-  
+  // const subPlans = plans.filter((item) => item.accountType === user?.userType);
+
+  const [selectedUserType, setSelectedUserType] = useState<UserTypeEnum>(user?.userType);
+
+  const onTabCallback = (userType: UserTypeEnum) => {
+    setSelectedUserType(userType);
+  };
+
+  const subPlans = plans.filter(
+    (item) => item.accountType === selectedUserType
+  );
+
   return (
     <Box>
       <Container maxWidth="xl">
         <PageHeader title="Upgrade Account" />
         <Box sx={{}}>
-          {subPlans.length === 0 && (
+          {plans.length === 0 && (
             <Typography>No premium plans yet! </Typography>
           )}
-            <Box>
-              <DisplayCarouselItems 
-                plans={subPlans} 
-                cryptoAddreses={cryptoAddreses}
-                tonRate={tonRate}
-                />
-            </Box>
+          <ScrollableTabsButtonAuto onTabCallback={onTabCallback} />
+          <Box>
+            <DisplayCarouselItems
+              plans={subPlans}
+              cryptoAddreses={cryptoAddreses}
+              tonRate={tonRate}
+            />
+          </Box>
         </Box>
       </Container>
     </Box>
@@ -53,8 +97,6 @@ const PageClient = ({
 };
 
 export default PageClient;
-
-
 
 // <Paper
 //                     onClick={() => handlePlanSelection(PlanTypeEnum.YEARLY)}

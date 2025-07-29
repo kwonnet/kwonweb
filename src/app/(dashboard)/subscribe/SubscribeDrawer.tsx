@@ -401,6 +401,10 @@ const SubscribeDrawer = ({
 
   const isTier = plan.tier.length > 0;
 
+  const isUSD = user?.country?.iso3 !== "NGA";
+  const itemCurrency = isUSD ? "$" : "₦"
+  const itemPrice = !isUSD ? plan.ngnPrice : plan.price;
+
   return (
     <div>
       <React.Fragment>
@@ -452,6 +456,7 @@ const SubscribeDrawer = ({
                 <Box>
                   <SubscriptionItem
                     price={plan.price}
+                    ngnPrice={plan.ngnPrice}
                     discount={plan.discount}
                     isLoading={state.isLoading}
                     isRecurring={state.isRecurring}
@@ -490,11 +495,13 @@ const SubscribeDrawer = ({
                       ))}
                     </Tabs>
                   </Box>
-                  {plan.tier.map((tier, index) => (
+                  {plan.tier.map((tier, index) =>{
+                    return (
                     <TabPanel key={tier.id} value={value} index={index}>
                       <Box>
                         <SubscriptionItem
                           price={tier.price}
+                          ngnPrice={tier.ngnPrice}
                           discount={plan.discount}
                           isLoading={state.isLoading}
                           isRecurring={state.isRecurring}
@@ -513,7 +520,7 @@ const SubscribeDrawer = ({
                         />
                       </Box>
                     </TabPanel>
-                  ))}
+                  )})}
                 </Box>
               )}
               <Typography mt={2} variant="body2">

@@ -1,0 +1,285 @@
+"use client";
+import { PageHeader } from "@/components/common";
+import { TransferModal, WithdrawalModal } from "@/components/modal";
+import { WalletSkeleton } from "@/components/skeleton";
+import { CoinsSvgIcon } from "@/components/svg";
+import { useUserCoinsWallet } from "@/lib/swrHooks";
+import { formatNumber, formatNumberWithCommas, getTONRate } from "@/utils";
+import {
+  Box,
+  Button,
+  Container,
+  Divider,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
+// import { TonConnectButton } from "@tonconnect/ui-react";
+import Link from "next/link";
+import React, { useState } from "react";
+import TxnHistory from "./TxnHistory";
+import { useAuthSession } from "@/hooks";
+
+const WalletClient = ({tonRate}: { tonRate: number}) => {
+
+  const [state, setState] = useState({
+    isOpenTransfer: false, 
+    isOpenWithdrawal: false,
+    formatShortAmount: true, 
+    formatShortBonus: true, 
+    formatShortCredit: true,
+    refreshHistory: false
+  });
+
+  const { token } = useAuthSession()
+
+  const { data: wallet, isLoading, mutate} = useUserCoinsWallet(token)
+  
+
+  if(isLoading || !wallet) return <WalletSkeleton />
+
+  const disableWithdraw = wallet.credit === 0 || wallet.isLocked
+
+  const disableTransfer = wallet.coins < 100
+
+  const toggleTransferModal = () => {
+    setState(prev => ({...prev, isOpenTransfer: !prev.isOpenTransfer }))
+  }
+
+  const toggleWithdrawalModal = () => {
+    setState(prev => ({...prev, isOpenWithdrawal: !prev.isOpenWithdrawal }))
+  }
+
+  const onCompleted = () => {
+    mutate()
+    setState(prev => ({...prev, refreshHistory: true }))
+    setTimeout(() => {
+      setState(prev => ({...prev, refreshHistory: false }))
+    }, 1500);
+  }
+
+  const tonCreditBalance = getTONRate(tonRate + 1, wallet.credit)
+
+  return (
+    <Box>
+      <Container maxWidth="xl">
+      <PageHeader title="My Wallet" />
+        <Box sx={{ pt: 2 }}>
+            <Stack direction={"row"} sx={{justifyContent: "space-between"}}>
+            <Button 
+                href="/store" 
+                LinkComponent={Link} 
+                variant="outlined" 
+                color="warning" sx={{ borderRadius: 30 }}
+            >
+              Buy Coins
+            </Button>
+            <Box>
+              {/* <TonConnectButton  /> */}
+            </Box>
+            {/* <Button variant="contained" color="info" sx={{ borderRadius: 30 }}>
+              Connect wallet
+            </Button> */}
+            </Stack>
+          </Box>
+          
+          <Box sx={{ clear: "right", pt: 4 }}>
+            <Paper
+              sx={[
+                (theme) => ({
+                  py: 2,
+                  px: 4,
+                  background: theme.vars.palette.gradient[100],
+                  color: theme.vars.palette.gradient.contrastText,
+                  ...theme.applyStyles("dark", {
+                    background: theme.vars.palette.grey[900]
+                  })
+                }),
+              ]}
+            >
+              <Typography sx={{ fontFamily: "PlayFair" }} variant="caption">
+                Balance
+              </Typography>
+              {/* credit section */}
+              <Box sx={{ py: 1 }}>
+                <Typography
+                  variant="h4"
+                  component={"h3"}
+                  sx={{ fontFamily: "PlayFair", py: 1, fontStyle: "italic" }}
+                >
+                  Credit
+                </Typography>
+                <Stack
+                  direction={"row"}
+                  sx={{ alignItems: "center", justifyContent: "space-between" }}
+                  spacing={1}
+                >
+                  <Box>
+                    <Stack
+                      direction={"row"}
+                      sx={{ alignItems: "center" }}
+                      spacing={1}
+                    >
+                      <Typography
+                        sx={{ fontWeight: "bold", fontFamily: "PlayFair" }}
+                        variant="h4"
+                      >
+                        {formatNumber(wallet.credit)}{" "}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        component={"sub"}
+                        sx={{ fontStyle: "italic" }}
+                      >
+                        TZX
+                      </Typography>
+                    </Stack>
+                  </Box>
+                  <Box>
+                    <Stack
+                      direction={"row"}
+                      sx={{ alignItems: "center" }}
+                      spacing={1}
+                    >
+                      <Typography
+                        sx={{ fontWeight: "bold", fontFamily: "PlayFair" }}
+                        variant="h4"
+                        onClick={() => setState(prev => ({...prev, formatShortCredit: !prev.formatShortCredit}))}
+                      >
+                        {state.formatShortCredit ? formatNumber(tonCreditBalance) : formatNumberWithCommas(tonCreditBalance)} 
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        component={"sub"}
+                        sx={{ fontStyle: "italic" }}
+                      >
+                        TON
+                      </Typography>
+                    </Stack>
+                  </Box>
+                </Stack>
+                <Box
+                  sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}
+                >
+                  <Button
+                    variant="outlined"
+                    color={disableWithdraw ? "error" :"info"}
+                    sx={{ borderRadius: 30 }}
+                    disabled={disableWithdraw}
+                    onClick={() => toggleWithdrawalModal()}
+                  >
+                    Withdraw
+                  </Button>
+                </Box>
+              </Box>
+              <Divider
+                variant="fullWidth"
+                sx={{
+                  border: (theme) => `1px solid ${theme.palette.tints[100]}`,
+                }}
+              />
+              {/* Coins  */}
+              <Box sx={{ py: 1 }}>
+                <Stack
+                  direction={"row"}
+                  sx={{ alignItems: "center", justifyContent: "space-between" }}
+                  spacing={1}
+                >
+                  <Typography
+                    variant="h4"
+                    component={"h3"}
+                    sx={{ fontFamily: "PlayFair", fontStyle: "italic" }}
+                  >
+                    Coins
+                  </Typography>
+                  <Stack direction={"row"} sx={{ alignItems: "center" }}>
+                    <CoinsSvgIcon style={{ fontSize: 12 }} />
+                    <Typography
+                      sx={{ fontWeight: "bold", fontFamily: "PlayFair" }}
+                      variant="h4"
+                      onClick={() => setState(prev => ({...prev, formatShortAmount: !prev.formatShortAmount}))}
+                    >
+                     {state.formatShortAmount ? formatNumber(wallet.coins) : formatNumberWithCommas(wallet.coins)} 
+                    </Typography>
+                  </Stack>
+                </Stack>
+                <Box
+                  sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}
+                >
+                  <Button
+                    variant="outlined"
+                    color={disableTransfer ? "error" : "info"}
+                    sx={{ borderRadius: 30 }}
+                    disabled={disableTransfer}
+                    onClick={() => toggleTransferModal()}
+                  >
+                    Transfer
+                  </Button>
+                </Box>
+              </Box>
+              <Divider
+                variant="fullWidth"
+                sx={{
+                  border: (theme) => `1px solid ${theme.palette.tints[100]}`,
+                }}
+              />
+                {/* Bonus section */}
+              <Box sx={{ pb: 1 }}>
+                <Stack
+                  direction={"row"}
+                  sx={{ alignItems: "center", justifyContent: "space-between" }}
+                  spacing={1}
+                >
+                  <Typography
+                    variant="h4"
+                    component={"h3"}
+                    sx={{ fontFamily: "PlayFair", fontStyle: "italic" }}
+                  >
+                    Bonus
+                  </Typography>
+                  <Stack direction={"row"} sx={{ alignItems: "center" }}>
+                    <CoinsSvgIcon style={{ fontSize: 12 }} />
+                    <Typography
+                      sx={{ fontWeight: "bold", fontFamily: "PlayFair" }}
+                      variant="h4"
+                      onClick={() => setState(prev => ({...prev, formatShortBonus: !prev.formatShortBonus}))}
+                    >
+                      {state.formatShortBonus ? formatNumber(wallet.bonus) : formatNumberWithCommas(wallet.bonus)}
+                    </Typography>
+                  </Stack>
+                </Stack>
+              </Box>
+            </Paper>
+                {/* history section */}
+            <Typography
+              sx={{
+                py: 1,
+                textAlign: "center",
+                fontWeight: "bold",
+                fontFamily: "PlayFair",
+              }}
+              variant="h4"
+            >
+              Transaction History
+            </Typography>
+            <Box>
+              <TxnHistory refreshHistory={state.refreshHistory} />
+            </Box>
+          </Box>
+      </Container>
+      <TransferModal 
+        coinBalance={wallet.coins}
+        toggle={toggleTransferModal} 
+        isOpen={state.isOpenTransfer} 
+        onCompleted={onCompleted} />
+      <WithdrawalModal 
+        creditBalance={wallet.credit}
+        tonRate={tonRate}
+        toggle={toggleWithdrawalModal} 
+        isOpen={state.isOpenWithdrawal} 
+        onCompleted={onCompleted} />
+    </Box>
+  );
+};
+
+export default WalletClient;

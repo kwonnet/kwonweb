@@ -60,7 +60,7 @@ const ForYouNewsfeed = ({ posts }: { posts: FeedPost[] }) => {
     useSWRInfinite(getKey, (args) => getNewsfeed(args, token), {
       keepPreviousData: true,
       refreshWhenOffline: false,
-      // suspense: true,
+      revalidateOnReconnect: true,
       fallbackData: [posts],
     });
 

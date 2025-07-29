@@ -1,0 +1,88 @@
+'use client'
+import { Box, Button, Grid, Typography } from "@mui/material";
+import React, { useMemo, useState } from "react";
+import { useSocketIoContext } from "@/context/SocketIoContext";
+import { GameEventEnum } from "@/types";
+import { shuffleArray } from "@/utils";
+import { toast } from "react-toastify";
+import { useNotifications } from "@toolpad/core";
+
+const HangmanBox = () => {
+
+  const { question, gameRoomInfo, countdown, energy, socketIo } = useSocketIoContext();
+
+  const [state, setState] = useState({choice: ""})
+
+  const notif = useNotifications()
+
+  const handleAnswer = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,choice: string) => {
+    ev.preventDefault()
+    if(!energy) {
+      return notif.show("You don't have have enough energy to play, please switch to energy tab & recharge!", { severity: "warning", autoHideDuration: 4000})
+    }
+    if(energy?.gauge <= 5 || energy?.turbo <= 5) {
+      return notif.show("Your game energy is low, please switch to energy tab & recharge!", { severity: "warning", autoHideDuration: 4000})
+    }
+    socketIo?.emit(GameEventEnum.GAME_ROOM_ANSWER, { answer: choice, timer: countdown, qId: question?.id, gameType: gameRoomInfo?.gameType, catType: gameRoomInfo?.catType});
+    setState({choice})
+  }
+  const options = useMemo(() => {
+    return shuffleArray(question?.options ?? [])
+  },[])
+  return (
+    <Box sx={{px: 3, py: 1, height: "100%", position: "relative", overflowY: "auto"}}>
+      <Box>
+        <Typography variant="h6" sx={{fontFamily: "PlayFair"}}>Guess the missing characters </Typography>
+        <Typography 
+          variant="h3" 
+          sx={{ 
+            fontFamily: "PlayFair",
+            fontWeight: 800, 
+            textAlign: "center",
+            userSelect: 'none', // Prevent text selection
+            WebkitUserSelect: 'none', // Safari
+            MozUserSelect: 'none', // Firefox
+            MsUserSelect: 'none', // Older IE 
+            marginTop: 1, 
+            color: "text.secondary" 
+          }}>
+          {question?.question}
+        </Typography>
+      </Box>
+      <Box sx={{ marginTop: 2 }}>
+        <Grid container spacing={2}>
+          {options.map(
+            (option, index) => (
+              <Grid key={index} size={{ lg: 3, md: 3, sm: 6, xs: 6 }}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  size="small"
+                  sx={{
+                    marginY: 1,
+                    height: "100%",
+                    boxShadow: 3,
+                    ...((state.choice === option) && { 
+                      background: "linear-gradient(45deg, #031d37, #044b7f)",
+                      color: theme => theme.vars.palette.gradient.contrastText
+                    }),
+                    "&:hover": {
+                      background: "linear-gradient(45deg, #031d37, #044b7f)",
+                      color: "white",
+                      transition: "2s ease-out",
+                    },
+                  }}
+                  onClick={(ev) => handleAnswer(ev,option)}
+                >
+                  {option}
+                </Button>
+              </Grid>
+            )
+          )}
+        </Grid>
+      </Box>
+    </Box>
+  );
+};
+
+export default HangmanBox;
