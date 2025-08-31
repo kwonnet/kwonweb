@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 // import { showConfetti } from "@/confetti";
 import JSConfetti from 'js-confetti'
+import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 
 // export const showConfetti = async () =>{
@@ -32,7 +33,7 @@ import JSConfetti from 'js-confetti'
 
 const AnswersTable = ({currentUserId}:{ currentUserId: string}) => {
 
-  const { gameScores, question } = useSocketIoContext();
+  const { gameScores, question } = useGameSocketIoContext();
 
   const jsConfetti = new JSConfetti()
 

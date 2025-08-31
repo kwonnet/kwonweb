@@ -83,7 +83,7 @@ const SearchToolbar = () => {
       <Box>
         <Box
           sx={{
-            display: { xs: state.open ? "none" : "inline", md: "none" },
+            display: {...(state.open ? { lg: "none",  md: "none", sm: "none", xs: "none" }: {lg: "none", md: "inline", sm: "inline", xs: "inline"})} ,
           }}
           onClick={() => handleClick(true)}
         >
@@ -96,7 +96,7 @@ const SearchToolbar = () => {
 
         <Box
           sx={{
-            display: { xs: state.open ? "flex" : "none", md: "flex" },
+            display: {...(state.open ? {lg: "flex", md: "flex", sm: "flex", xs: "flex"} : { lg: "flex",  md: "none", sm: "none", xs: "none" })},
             justifyContent: "center",
             alignItems: "center",
             flexGrow: 1,
@@ -135,7 +135,7 @@ const SearchToolbar = () => {
                     {state.open  ? <CloseOutlinedIcon /> :<SearchOutlinedIcon />}
                   </IconButton>
                 ),
-                sx: { pr: 0.5 },
+                sx: { pr: 0.5, borderRadius: 30 },
               },
             }}
           />

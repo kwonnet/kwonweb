@@ -6,9 +6,9 @@ import React from 'react'
 const ErrorMessage = ({message}:{ message: string}) => {
     const router = useRouter()
   return (
-    <Box>
-    <Typography sx={{display: "flex", height: "100vh", justifyContent: 'center', alignItems: "center"}}>{message}</Typography>
-    <Box>
+    <Box sx={{display: "flex", flexDirection: "column", height: "100vh", justifyContent: 'center', alignItems: "center"}}>
+    <Typography >{message}</Typography>
+    <Box sx={{display: "block", textAlign: "center"}}>
         <Button onClick={() => router.back()}>Go back</Button>
     </Box>
   </Box>

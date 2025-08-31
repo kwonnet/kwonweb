@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import {
   ClickAwayListener,
   Grow,
+  ListItemButton,
   ListItemIcon,
   MenuItem,
   MenuList,
@@ -31,15 +32,27 @@ import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import InsightsOutlinedIcon from "@mui/icons-material/InsightsOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import ReportOutlinedIcon from "@mui/icons-material/ReportOutlined";
-import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { getConnBtnText } from "@/utils/post";
 import { getPostUrl, shortenText } from "@/utils";
 import { useNotifications } from "@toolpad/core";
 import { useRouter } from "next/navigation";
-import { deletePost, hideReply, highlightPost, pinPost, updateNotInterestedPost } from "@/lib/posts";
+import {
+  deletePost,
+  hideReply,
+  highlightPost,
+  pinPost,
+  updateNotInterestedPost,
+} from "@/lib/posts";
 import { blockUser, muteUser } from "@/lib/users";
 import PostReportModal from "./PostReportModal";
+import {
+  getConnBtnInfo,
+  getFollowAction,
+  getUserConnInfo,
+} from "@/utils/connections";
+import { FollowAction } from "@/types/user";
 
 const PostOptions = ({
   item,
@@ -56,15 +69,18 @@ const PostOptions = ({
   anchorRef: React.RefObject<HTMLButtonElement | null>;
   handleListKeyDown: (event: React.KeyboardEvent) => void;
   handleBookmark: (ev: any, id: string, saved: boolean) => void;
-  handleFollowUser: (recipientId: string, isFollow: boolean) => void;
+  handleFollowUser: (recipientId: string, action: FollowAction) => void;
 }) => {
   const { user, token } = useAuthSession();
 
   const isCurrentUser = user.id === item.author?.id;
 
-  const canHideReply = item.kind === PostKind.REPLY ? item.actions.canHideReply : false 
+  const canHideReply =
+    item.kind === PostKind.REPLY ? item.actions.canHideReply : false;
 
-  const isFriends = item.author.conn.isFollowing && item.author.conn.isFollowed;
+  // const isFriends = item.author.conn.isFollowingUser && item.author.conn.isFollowedByUser;
+
+  const { isFriends } = getUserConnInfo(item?.author?.conn);
 
   const [state, setState] = useState({ open: false, isPostReport: false });
 
@@ -73,11 +89,11 @@ const PostOptions = ({
   const router = useRouter();
 
   const getConnIcon = () => {
-    return isFriends || item.author.conn.isFollowed ? (
+    return isFriends || item.author.conn.isFollowedByUser ? (
       <PersonRemoveAlt1OutlinedIcon fontSize="small" />
-    ) : item.author.conn.isFollowed ? (
+    ) : item.author.conn.isFollowedByUser ? (
       <PersonOutlinedIcon />
-    ) : item.author.conn.isFollowing ? (
+    ) : item.author.conn.isFollowingUser ? (
       <PersonAddAlt1OutlinedIcon />
     ) : (
       <PersonAddAlt1OutlinedIcon />
@@ -117,9 +133,7 @@ const PostOptions = ({
     router.push(`/${item.author.username}/feed/${item.id}/quotes`);
   };
 
-  const handleAnalytics = (
-    ev: React.MouseEvent<HTMLLIElement, MouseEvent>
-  ) => {
+  const handleAnalytics = (ev: React.MouseEvent<HTMLLIElement, MouseEvent>) => {
     ev.preventDefault();
     ev.stopPropagation();
     handleClose(ev);
@@ -140,14 +154,22 @@ const PostOptions = ({
   const handleFollow = (ev: React.MouseEvent<HTMLLIElement, MouseEvent>) => {
     ev.preventDefault();
     ev.stopPropagation();
-    const isFollowed = item.author.conn.isFollowed;
-    handleFollowUser(item.author.id, !isFollowed);
+    const success = [FollowAction.FOLLOW, FollowAction.ACCEPT];
+    const action = getFollowAction(
+      isFriends,
+      item?.author?.conn?.followedStatus
+    );
+    handleFollowUser(item.author.id, action);
     notif.show(
-      isFollowed
+      action === FollowAction.UNFOLLOW
         ? `${item.author.name} unfollowed`
-        : `${item.author.name} followed`,
+        : action === FollowAction.CANCEL
+          ? "Request canceled"
+          : action === FollowAction.FOLLOW
+            ? `${item.author.name} followed`
+            : "Request rejected",
       {
-        severity: isFollowed ? "warning" : "info",
+        severity: success.includes(action) ? "warning" : "info",
         autoHideDuration: 2000,
       }
     );
@@ -177,33 +199,33 @@ const PostOptions = ({
     handleClose(ev);
   };
 
-  const handleDeletePost = async(
+  const handleDeletePost = async (
     ev: React.MouseEvent<HTMLLIElement, MouseEvent>
-    ) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      handleClose(ev);
-      const result = await deletePost(item.id, token);
-      const isError = !result.data;
-      notif.show(result.message, {
-        severity: isError ? "error" : "success",
-        autoHideDuration: 3000,
-      });
-    };
+  ) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    handleClose(ev);
+    const result = await deletePost(item.id, token);
+    const isError = !result.data;
+    notif.show(result.message, {
+      severity: isError ? "error" : "success",
+      autoHideDuration: 3000,
+    });
+  };
 
-    const handleHideReply = async(
-      ev: React.MouseEvent<HTMLLIElement, MouseEvent>
-      ) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-        handleClose(ev);
-        const result = await hideReply(item.id, token);
-        const isError = !result.data;
-        notif.show(result.message, {
-          severity: isError ? "error" : "success",
-          autoHideDuration: 3000,
-        });
-      };
+  const handleHideReply = async (
+    ev: React.MouseEvent<HTMLLIElement, MouseEvent>
+  ) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    handleClose(ev);
+    const result = await hideReply(item.id, token);
+    const isError = !result.data;
+    notif.show(result.message, {
+      severity: isError ? "error" : "success",
+      autoHideDuration: 3000,
+    });
+  };
 
   const handlePinPost = async (
     ev: React.MouseEvent<HTMLLIElement, MouseEvent>
@@ -243,7 +265,9 @@ const PostOptions = ({
     } catch (error) {}
   };
 
-  
+  const connBtn = getConnBtnInfo(item.author.conn, false);
+
+  const actions = item.actions
 
   return (
     <Box>
@@ -276,18 +300,32 @@ const PostOptions = ({
                     <Box>
                       <MenuItem onClick={(ev) => handlePinPost(ev)}>
                         <ListItemIcon>
-                          <PushPinOutlinedIcon fontSize="small" />
+                          <PushPinOutlinedIcon
+                            color={
+                              item?.actions?.hasPinned ? "primary" : "inherit"
+                            }
+                            fontSize="small"
+                          />
                         </ListItemIcon>
-                        Pin Post
+                        {item?.actions?.hasPinned ? "Unpin post" : "Pin Post"}
                       </MenuItem>
-                      <MenuItem onClick={ev => handleHighlightPost(ev)}>
+                      <MenuItem onClick={(ev) => handleHighlightPost(ev)}>
                         <ListItemIcon>
-                          <InsightsOutlinedIcon fontSize="small" />
+                          <InsightsOutlinedIcon
+                            color={
+                              item?.actions?.hasHighlighted
+                                ? "primary"
+                                : "inherit"
+                            }
+                            fontSize="small"
+                          />
                         </ListItemIcon>
-                        Highlight Post
+                        {item?.actions?.hasHighlighted
+                          ? "Un-Highlight Post"
+                          : "Highlight Post"}
                       </MenuItem>
 
-                      <MenuItem onClick={ev => handleAnalytics(ev)}>
+                      <MenuItem onClick={(ev) => handleAnalytics(ev)}>
                         <ListItemIcon>
                           <BarChartOutlinedIcon fontSize="small" />
                         </ListItemIcon>
@@ -305,7 +343,7 @@ const PostOptions = ({
                       </MenuItem>
                       <MenuItem onClick={(ev) => handleFollow(ev)}>
                         <ListItemIcon>{getConnIcon()}</ListItemIcon>
-                        {getConnBtnText(item.author, true)} @
+                        {connBtn.btnText} @
                         {shortenText(item.author.username, 12)}
                       </MenuItem>
 
@@ -320,14 +358,14 @@ const PostOptions = ({
                         <ListItemIcon>
                           <DoNotDisturbOnTotalSilenceOutlinedIcon fontSize="small" />
                         </ListItemIcon>
-                        Mute @{shortenText(item.author.username, 12)}
+                       {actions?.isMutedByUser ? "Unmute " : "Mute "} @{shortenText(item.author.username, 12)}
                       </MenuItem>
 
                       <MenuItem onClick={(ev) => handleBlockUser(ev)}>
                         <ListItemIcon>
                           <BlockOutlinedIcon fontSize="small" />
                         </ListItemIcon>
-                        Block @{shortenText(item.author.username, 12)}
+                        {actions?.isBlockedByUser ? "Unblock " : "Block "}  @{shortenText(item.author.username, 12)}
                       </MenuItem>
                       <MenuItem
                         onClick={(ev) => {
@@ -394,18 +432,22 @@ const PostOptions = ({
                       Report post
                     </MenuItem>
                   )}
-                  {
-                    canHideReply && <MenuItem onClick={ev => handleHideReply(ev)}>
-                    <ListItemIcon>
-                      <Tooltip title="Hidden replies">
-                       {item.isHidden ? <VisibilityOutlinedIcon fontSize="small" /> : <VisibilityOffOutlinedIcon fontSize="small" />}
-                      </Tooltip>
-                    </ListItemIcon>
-                    {item.isHidden ? "Unhide Reply" : "Hide Reply"}
-                  </MenuItem>
-                  }
+                  {canHideReply && (
+                    <MenuItem onClick={(ev) => handleHideReply(ev)}>
+                      <ListItemIcon>
+                        <Tooltip title="Hidden replies">
+                          {item.isHidden ? (
+                            <VisibilityOutlinedIcon fontSize="small" />
+                          ) : (
+                            <VisibilityOffOutlinedIcon fontSize="small" />
+                          )}
+                        </Tooltip>
+                      </ListItemIcon>
+                      {item.isHidden ? "Unhide Reply" : "Hide Reply"}
+                    </MenuItem>
+                  )}
                   {isCurrentUser && (
-                    <MenuItem onClick={ev => handleDeletePost(ev)}>
+                    <MenuItem onClick={(ev) => handleDeletePost(ev)}>
                       <ListItemIcon>
                         <DeleteForeverOutlinedIcon fontSize="small" />
                       </ListItemIcon>

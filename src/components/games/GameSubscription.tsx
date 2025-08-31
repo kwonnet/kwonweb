@@ -1,5 +1,4 @@
 import React from "react";
-import PaperLayout from "./PaperLayout";
 import GameWallet from "./GameWallet";
 import { Box } from "@mui/material";
 
@@ -31,7 +30,7 @@ const GameSubscription = ({
             p: 1,
           }}
         >
-          <GameWallet wallet={wallet} />
+          <GameWallet />
           {children}
           </Box>
       </Box>

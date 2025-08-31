@@ -5,7 +5,7 @@ import React from "react";
 import DisplayClient from "./DisplayClient";
 import { UserConnection } from "@/types/user";
 import { ConnTypeEnum } from "@/types";
-import NearYouLocation from "./NearYouLocation";
+import NearYouLocation from "./near-you/NearYouLocation";
 
 const NearYouServer = async () => {
   const date = new Date();
@@ -33,7 +33,11 @@ const NearYouServer = async () => {
   return (
     <React.Fragment>
       <NearYouLocation />
-      <DisplayClient connType={ConnTypeEnum.NEAR_YOU} users={users} />
+      <DisplayClient
+      allowCarousel={true}
+      connType={ConnTypeEnum.NEAR_YOU}
+      users={users}
+    />
     </React.Fragment>
   );
 };

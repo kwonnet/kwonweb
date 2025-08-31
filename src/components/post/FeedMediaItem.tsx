@@ -81,7 +81,7 @@ const FeedMediaItem = memo(
       ev.stopPropagation();
       setState((prev) => ({ ...prev, open }));
       const sessionId = getSessionId()
-      const shouldSend = shouldSendLog(item.id, "MEDIA")
+      const shouldSend = shouldSendLog(item.id, "MEDIA_IMAGE_VIEW")
       const payload: PostMediaLog = {
         action: PostMediaAction.VIEW,
         kind: PostMediaKind.IMAGE,

@@ -1,6 +1,6 @@
 import NextAuth, { CredentialsSignin, type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { AccountSchema } from "./schema";
+import { SignInSchema, SignUpSchema } from "./schema";
 import { apiUrl } from "./config";
 import { ZodError } from "zod";
 import { UserPublic } from "./types/user";
@@ -62,7 +62,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         try {
-          const body = AccountSchema.parse(credentials);
+          const body = SignUpSchema.parse(credentials);
+          console.log("Sign up credentials - ",body)
+          // if(body) throw new NextAuthError("Ref ID not provided")
           const res = await fetch(`${apiUrl}/auth/signup`, {
             method: "POST",
             body: JSON.stringify(body),
@@ -98,13 +100,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         try {
-          const SignInSchema = AccountSchema.pick({
-            email: true,
-            password: true,
-          });
           const body = SignInSchema.parse(credentials);
-          console.log("sign in auth body ", body)
-          console.log("path ", `${apiUrl}/auth/signin`)
           const res = await fetch(`${apiUrl}/auth/signin`, {
             method: "POST",
             body: JSON.stringify(body),
@@ -172,6 +168,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!res.ok) {
           throw new NextAuthError(await res.text());
         }
+        
         const data = await res.json();
         const { user, accessToken } = data;
         token.user = {...user, image: user?.avatar, accessToken };        
@@ -182,11 +179,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async redirect({ url, baseUrl }) {
       // Allows relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`
-  
+
       // Allows callback URLs on the same origin
       if (new URL(url).origin === baseUrl) return url
-  
+
       return baseUrl
+      // console.log("redirect url", url )
+      // console.log("redirect baseUrl", baseUrl )
+      // // Allows relative callback URLs
+      // if (url.startsWith("/")) return `${baseUrl}${url}`
+      // // Allows callback URLs on the same origin
+      // const urlInfo = new URL(url)
+      // console.log("redirect url parts ", urlInfo)
+      // const isSameOrigin = urlInfo.origin === baseUrl
+      // const callbackUrl = urlInfo.searchParams.get("callbackUrl")
+      // if (isSameOrigin && callbackUrl && callbackUrl?.startsWith(urlInfo.origin)){
+      //   return url
+      // }
+  
+      // return baseUrl
     }
   },
   pages: {

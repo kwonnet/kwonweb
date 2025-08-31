@@ -59,7 +59,7 @@ function PlayerPage({
   if(isLoading && !data){
     return (<SkeletonTable rows={2} />)
   }
-  if((error && !data) || !data){
+  if((error && !data) || !data || data?.length === 0){
     return (<Typography sx={{py: 1, textAlign: "center"}}>{error.status === 404 ? "No ranking data yet" :getErrorMessage(error)}</Typography>)
   }
   

@@ -5,19 +5,20 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import ChatBubble from "./ChatBubble";
 import { useSocketIoContext } from "@/context/SocketIoContext";
 import AnswersTable from "./AnswersTable";
+import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 type ChatBoxProps = {
   currentUserId: string;
   onSendMessage: (content: string) => void;
-  hidden: boolean
+  hidden: boolean;
 };
 
 const ChatBox: React.FC<ChatBoxProps> = ({
   currentUserId,
   onSendMessage,
-  hidden
+  hidden,
 }) => {
-  const {  messages, question  } = useSocketIoContext();
+  const { messages, question } = useGameSocketIoContext();
   const [newMessage, setNewMessage] = useState("");
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -25,7 +26,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   // Check if user is near the bottom
   const isUserNearBottom = () => {
     if (chatContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      const { scrollTop, scrollHeight, clientHeight } =
+        chatContainerRef.current;
       return scrollHeight - scrollTop - clientHeight < 500;
     }
     return false;
@@ -54,14 +56,12 @@ const ChatBox: React.FC<ChatBoxProps> = ({
     setShowScrollToBottom(false);
   };
 
-  
-
   return (
     <React.Fragment>
       <Box
         ref={chatContainerRef}
         sx={{
-          position: 'relative',
+          position: "relative",
           height: "100%",
           flex: 1,
           overflowY: "auto",
@@ -116,18 +116,20 @@ const ChatBox: React.FC<ChatBoxProps> = ({
         </Fade>
       </Box>
       <Box
-        sx={[(theme) => ({
-          display: hidden ? "none" : "flex",
-          alignItems: "center",
-          width: "100%",
-          p: 2,
-          borderTop: `1px solid ${theme.vars.palette.grey[100]}`,
-          borderBottomRightRadius: 12,
-          borderBottomLeftRadius: 12,
-          ...theme.applyStyles("dark",{
-            borderTop: `1px solid ${theme.vars.palette.grey[800]}`,
-          })
-        })]}
+        sx={[
+          (theme) => ({
+            display: hidden ? "none" : "flex",
+            alignItems: "center",
+            width: "100%",
+            p: 2,
+            borderTop: `1px solid ${theme.vars.palette.grey[100]}`,
+            borderBottomRightRadius: 12,
+            borderBottomLeftRadius: 12,
+            ...theme.applyStyles("dark", {
+              borderTop: `1px solid ${theme.vars.palette.grey[800]}`,
+            }),
+          }),
+        ]}
       >
         <TextField
           value={newMessage}
@@ -157,7 +159,12 @@ const ChatBox: React.FC<ChatBoxProps> = ({
           onClick={() => handleSendMessage()}
           variant="contained"
           color="inherit"
-          sx={[theme => ({ ml: 1, background: theme.vars.palette.gradient.D900 })]}
+          sx={[
+            (theme) => ({
+              ml: 1,
+              background: theme.vars.palette.gradient.D900,
+            }),
+          ]}
         >
           Send
         </Button>

@@ -22,11 +22,11 @@ const ConnectionServer = async() => {
     headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
   });
 
-  if (!result.ok){
-    return <ErrorMessage message="Error: Fetching unable to perform request" />;
-  }
+  // if (!result.ok){
+  //   return <ErrorMessage message="Error: Fetching unable to perform request" />;
+  // }
 
-  const users: UserConnection[] = await result.json();
+  const users: UserConnection[] = !result.ok ? [] : await result.json();
 
   return <ConnectionClient connType={ConnTypeEnum.POPULAR_CREATORS} users={users} />;
   

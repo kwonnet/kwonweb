@@ -1,5 +1,6 @@
 import { FeedPost, PostAuthor } from "@/types";
 import { PostScopeEnum } from "@/types/post";
+import { UserConnection } from "@/types/user";
 
 export const getScopeMessage = (item: FeedPost) => {
   if (item.scope === PostScopeEnum.ANYONE) {
@@ -14,28 +15,33 @@ export const getScopeMessage = (item: FeedPost) => {
   if (item.scope === PostScopeEnum.MENTIONS) {
     return `Only accounts that @${item.author.username} mentioned or tagged can reply to this post `;
   }
-  return "You can't reply to this post";
+  if (item.scope === PostScopeEnum.CONTINENT || item.scope === PostScopeEnum.COUNTRY) {
+    return `Your location can't reply to this post`;
+  }
+  return "Your can't reply to this post";
 };
 
-export const getConnBtnColor = (item: PostAuthor, btnHover: boolean) => {
-  const isFriends = item.conn.isFollowing && item.conn.isFollowed;
-  return (isFriends || item.conn.isFollowed) && btnHover
+export const getConnBtnColor = (item: PostAuthor["conn"], btnHover: boolean) => {
+  const isFriends = item.isFollowingUser && item.isFollowedByUser;
+  return btnHover && (isFriends || item.isFollowedByUser) 
     ? "error"
     : isFriends
       ? "success"
-      : item.conn.isFollowed
+      : item.isFollowedByUser
         ? "warning"
-        : item.conn.isFollowing
+        : item.isFollowingUser
           ? "info"
           : "inherit";
 };
-export const getConnBtnText = (item: PostAuthor, btnHover: boolean) => {
-  const isFriends = item.conn.isFollowing && item.conn.isFollowed;
-  return btnHover && (isFriends || item.conn.isFollowed)
+
+export const getConnBtnText = (item: PostAuthor['conn'], btnHover: boolean) => {
+  
+  const isFriends = item.isFollowingUser && item.isFollowedByUser;
+  return btnHover && (isFriends || item.isFollowedByUser)
     ? "Unfollow"
-    : item.conn.isFollowed
+    : item.isFollowedByUser
       ? "Following"
-      : item.conn.isFollowing
+      : item.isFollowingUser
         ? "Follow Back"
         : "Follow";
 };

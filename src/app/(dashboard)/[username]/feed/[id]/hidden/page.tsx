@@ -1,34 +1,50 @@
-import StickySidebar from '@/app/(dashboard)/StickySidebar';
-import { Box } from '@mui/material';
-import React from 'react'
-import PageServer from './PageServer';
+import React from "react";
+import { auth } from "@/auth";
+import { ErrorMessage } from "@/components/common";
+import { apiUrl } from "@/config";
+import { FeedPost } from "@/types";
+import PageClient from "./PageClient";
 
 type URLParams = {
-    kind: string;
-    username: string
-    id: string
-  };
-  
-  type SearchParams = {
-    u: string;
-  }
-const page = async({ params }: { params: Promise<URLParams>; searchParams: Promise<SearchParams> }) => {
-    const _params = await params
-    return (<React.Fragment>
-        <Box
-          sx={{
-            flexDirection: "row",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 2,
-          }}
-        >
-          <Box sx={{ width: { lg: "65%", md: "65%", sm: "100%", xs: "100%"} }}>
-            <PageServer args={_params} />
-          </Box>
-          <StickySidebar />
-        </Box>
-      </React.Fragment>)
-}
+  kind: string;
+  username: string;
+  id: string;
+};
 
-export default page
+type SearchParams = {
+  u: string;
+};
+const page = async ({
+  params,
+}: {
+  params: Promise<URLParams>;
+  searchParams: Promise<SearchParams>;
+}) => {
+  const args = await params;
+  const date = new Date();
+
+  const session = await auth();
+
+  if (!args.id) return <ErrorMessage message="Error: post not found" />;
+
+  const result = await fetch(
+    `${apiUrl}/posts/${args.id}/replies?hidden=true&limit=${21}&d=${date.getTime()}`,
+    {
+      method: "GET",
+      next: { revalidate: 60, tags: [`posts_${args.id}_hidden_replies`] },
+      credentials: "include",
+      mode: "cors",
+      headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
+    }
+  );
+
+  const posts: FeedPost[] = result.ok ? await result.json() : [];
+
+  return (
+    <React.Fragment>
+      <PageClient postId={args.id} posts={posts} />
+    </React.Fragment>
+  );
+};
+
+export default page;

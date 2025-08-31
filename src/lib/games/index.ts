@@ -35,7 +35,8 @@ export const getGameWinners = cache(async(query: string, token?: string) => {
     }
 })
 
-export const getGameCategoriesRankings = async(params: {rankType: GameRoomRankingEnum}, token?: string) => {
+
+export const getGameCategoriesRankings = async(params: {rankType: GameRoomRankingEnum, mode: string}, token?: string) => {
     try {
         axiosAPI.accessToken = token
         const queryString = composeUrlQuery(params)

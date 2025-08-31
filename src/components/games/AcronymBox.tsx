@@ -5,12 +5,13 @@ import { useSocketIoContext } from "@/context/SocketIoContext";
 import { toast } from "react-toastify";
 import { GameEventEnum } from "@/types";
 import { useNotifications } from "@toolpad/core";
+import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 
 
 const AcronymBox = () => {
 
-  const { question, gameRoomInfo, countdown, energy, socketIo } = useSocketIoContext();
+  const { question, gameRoomInfo, countdown, energy, gameSocketIo: socketIo } = useGameSocketIoContext();
   
     const [state, setState] = useState({answer: "", prevAnswer: "", timer: 0})
 

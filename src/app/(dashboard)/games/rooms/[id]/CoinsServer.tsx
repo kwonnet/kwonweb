@@ -34,7 +34,7 @@ const CoinsServer = async () => {
     currentTonRate = rate;
   }
 
-  return <CoinsClient data={data} currentTonRate={currentTonRate} />;
+  return <CoinsClient data={data} currentTonRate={currentTonRate} isPage={false} />;
 };
 
 export default CoinsServer;

@@ -1,107 +1,33 @@
 "use client";
 import { useAuthSession } from "@/hooks";
 import { getSuggestedConnections, updateUserFollower } from "@/lib/users";
-import { UserConnection } from "@/types/user";
-import {
-  Box,
-  Button,
-  CardMedia,
-  Grid2,
-  Paper,
-  Typography,
-} from "@mui/material";
-import React, {  } from "react";
+import { FollowAction, FollowResponse, FollowStatus, UserConn, UserConnection } from "@/types/user";
+import { Box, CardMedia, Typography } from "@mui/material";
+import React, { useEffect } from "react";
 import useSWR from "swr";
 
-import Stack from "@mui/material/Stack";
-import { shortenText } from "@/utils";
+import { getErrorMessage } from "@/utils";
 import { ConnTypeEnum } from "@/types";
-
-const ConnectionCard = ({
-  conn,
-  onFollowUser,
-}: {
-  conn: UserConnection;
-  onFollowUser: (ev: any, userId: string) => void;
-}) => {
-  return (
-    <Paper sx={{ pb: 2, height: "100%" }}>
-      <CardMedia
-        image={conn.avatar ?? "/avatar.jpeg"}
-        component={"img"}
-        sx={{
-          height: 200,
-          borderTopRightRadius: 5,
-          borderTopLeftRadius: 5,
-          objectFit: "cover",
-          objectPosition: "50% 50%",
-        }}
-      />
-      <Box sx={{ px: 2, py: 1 }}>
-        <Stack>
-          <Typography variant="subtitle1">{conn.name}</Typography>
-          <Stack direction={"row"} spacing={2}>
-            <Typography variant="caption">@{conn.username}</Typography>
-            {/* <Typography color="textDisabled" variant="caption">{34}k</Typography> */}
-          </Stack>
-        </Stack>
-        <Typography color="textDisabled" component={"p"} variant="caption">
-          {shortenText(
-            "Lorem ipsum dolor sit amet consectetur adipisicing elit. Deleniti ratione alias eveniet corporis rem saepe consectetur hic ipsam ea cum! Blanditiis deserunt totam",
-            60
-          )}{" "}
-        </Typography>
-      </Box>
-      <Box sx={{ display: "block", textAlign: "center" }}>
-        <Button
-          onClick={(ev) => onFollowUser(ev, conn.id)}
-          disabled={conn.hasFollowed}
-          variant="outlined"
-          sx={{ borderRadius: 30 }}
-          size="small"
-        >
-          {conn.followBack ? "Follow Back" : "Follow"}
-        </Button>
-      </Box>
-    </Paper>
-  );
-};
-
-const DisplaySection = ({users}: { users: UserConnection[];}) => {
-    const { token, user } = useAuthSession();
-
-    const onFollowUser = (
-      ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-      userId: string
-    ) => {
-      ev.preventDefault();
-      // send to api
-      updateUserFollower({ senderId: user.id, recipientId: userId }, token);
-    };
-    
-  return (<React.Fragment>
-    <Box>
-      <Grid2 container spacing={2}>
-        {users.map((conn) => (
-          <Grid2 key={conn.id} size={{ lg: 4, md: 4, sm: 12, xs: 12 }}>
-            <ConnectionCard conn={conn} onFollowUser={onFollowUser} />
-          </Grid2>
-        ))}
-      </Grid2>
-    </Box>
-  </React.Fragment>)
-}
+import DisplayCarousel from "./DisplayCarousel";
+import DisplaySection from "./DisplaySection";
+import { ConnectionSkeleton } from "@/components/skeleton";
+import { getFollowStatus } from "@/utils/connections";
+import { useSSEContext } from "@/context/SSEContext";
 
 const DisplayClient = ({
   users,
   connType,
+  allowCarousel = false,
 }: {
   users: UserConnection[];
   connType: ConnTypeEnum;
+  allowCarousel?: boolean;
+  hasData?: boolean;
 }) => {
   const { token, user } = useAuthSession();
+  const { sseSource } = useSSEContext();
   const swrKey = `${user.id}_connections_${connType}`;
-  const { data, error } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     swrKey,
     () => getSuggestedConnections({ limit: 21, type: connType }, token),
     {
@@ -111,10 +37,109 @@ const DisplayClient = ({
     }
   );
 
+  const updateConn = (
+    recipientId: string,
+    conn: UserConn,
+    action: FollowAction
+  ) => {
+    const updateData = (_data: UserConnection[]) => {
+      const actions = [
+        FollowAction.UNFOLLOW,
+        FollowAction.ACCEPT,
+        FollowAction.CANCEL,
+        FollowAction.REJECT,
+      ];
+      if (actions.includes(action)) {
+        return _data.filter((d) => d?.id !== recipientId);
+      } else {
+        return _data.map((d) => {
+          if (d?.id === recipientId) {
+            d = {
+              ...d,
+              conn: { ...d?.conn, ...conn, followerCount: conn.followerCount + 1 },
+            };
+          }
+          return d;
+        });
+      }
+    };
+    // update reposter
+    mutate((_data) => (!_data ? _data : updateData(_data)), {
+      optimisticData: (_data) => (!_data ? [] : updateData(_data)),
+      revalidate: false,
+      populateCache: true,
+      rollbackOnError: true,
+    });
+  };
+
+  const mutateOnResponseData = (recipientId: string) => {
+    const updateData = (_data: UserConnection[]) => {
+      return _data.filter((d) => d?.id !== recipientId);
+    };
+    mutate((_data) => (!_data ? _data : updateData(_data)), {
+      optimisticData: (_data) => (!_data ? [] : updateData(_data)),
+      revalidate: false,
+      populateCache: true,
+      rollbackOnError: true,
+    });
+  };
+
+  const onFollowUser = (connUser: UserConnection, action: FollowAction) => {
+      const conn = getFollowStatus(connUser.conn, connUser.meta, action);
+      const recipientId = connUser.id
+      // mutate for current user
+      updateConn(recipientId, conn, action );
+      // send to api
+      updateUserFollower({ senderId: user.id, recipientId, action }, token);
+    };
+
+  useEffect(() => {
+    // mutate and filter out when sse event is emitted
+      const listener = (ev: MessageEvent) => {
+        const body: FollowResponse = JSON.parse(ev.data);
+        // check if user profile
+        if (body.senderId === user.id) {
+          mutateOnResponseData(body.recipientId)
+        }
+      };
+      sseSource?.addEventListener("user_follower", listener);
+      return () => {
+        sseSource?.removeEventListener("user_follower", listener);
+      };
+      // eslint-disable-next-line
+    }, [sseSource]);
+
+  const isError404 = error?.status === 404;
+
   return (
     <React.Fragment>
-      {((error && !data) || data.length === 0 )&& <Box sx={{display: "flex", alignContent: 'center', justifyContent: 'center', height: "100%", overflow: "hidden"}}><CardMedia component={"img"} image="/no-data.svg" sx={{ height: 300, width: 300}} /></Box>}
-      <DisplaySection users={data} />
+      {/* display 404 error */}
+      {(!allowCarousel &&((error && !data) || data?.length === 0)) && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+            overflow: "hidden",
+            width: "100%"
+          }}
+        >
+          <CardMedia
+            component={"img"}
+            image={!isError404 ? "/not-found.svg" : "/no-data.svg"}
+            sx={{ height: 300, width: 300 }}
+          />
+          <Typography>{!isError404 ? getErrorMessage(error) : null} </Typography>
+        </Box>
+      )}
+      {isLoading && !error && <ConnectionSkeleton />}
+      {/* display content */}
+      {allowCarousel ? (
+        <DisplayCarousel items={data} onFollowUser={onFollowUser} />
+      ) : (
+        <DisplaySection items={data} onFollowUser={onFollowUser} />
+      )}
     </React.Fragment>
   );
 };

@@ -60,6 +60,7 @@ import PostScheduleDrawer from "./PostScheduleDrawer";
 import PostLocationDrawer from "./PostLocationDrawer";
 import { ensureSignedInAnon, uploadMultipleFilesWithMetadata } from "@/firebase/utils";
 import { uploadBunnyFilesWithMetadata } from "@/utils/bunny";
+import { FollowAction } from "@/types/user";
 
 type LocalState = {
   isOpenTagUser: boolean;
@@ -108,8 +109,8 @@ export default function CreateReplyDrawer({
     args: {
       senderId: string;
       recipientId: string;
-    },
-    isFollow: boolean
+      action: FollowAction
+    }
   ) => void;
 }) {
   const open = React.useMemo(() => isOpen, [isOpen]);

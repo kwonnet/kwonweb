@@ -1,8 +1,9 @@
 import React from "react";
-import { Box } from "@mui/material";
-import PageServer from "./PageServer";
-import StickySidebar from "../../../StickySidebar";
-import { ConnectionServer } from "@/components/sections";
+import {DisplayError} from "@/components/common";
+import { auth } from "@/auth";
+import { apiUrl } from "@/config";
+import { FeedPostDetail } from "@/types";
+import PageClient from "./PageClient";
 
 type URLParams = {
   id: string;
@@ -20,21 +21,29 @@ const Page = async ({
 }) => {
   const { id } = await params;
 
+  const date = new Date();
+
+  const session = await auth();
+
+  if (!id) return <DisplayError status={500} message="Error: post not found" />;
+
+  const result = await fetch(`${apiUrl}/posts/${id}?d=${date.getTime()}`, {
+    method: "GET",
+    next: { revalidate: 0, tags: [`post-${id}`] },
+    credentials: "include",
+    mode: "cors",
+    headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
+  });
+
+  if (!result.ok){
+    return <DisplayError status={result.status} message={await result.text()}/>;
+  }
+
+  const post: FeedPostDetail = await result.json();  
+
   return (
     <React.Fragment>
-      <Box
-        sx={{
-          flexDirection: "row",
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 2,
-        }}
-      >
-        <Box sx={{ width: { lg: "65%", md: "65%", sm: "100%", xs: "100%" } }}>
-          <PageServer id={id} />
-        </Box>
-        <StickySidebar ConnectionSection={<ConnectionServer />} />
-      </Box>
+      <PageClient post={post} />
     </React.Fragment>
   );
 };

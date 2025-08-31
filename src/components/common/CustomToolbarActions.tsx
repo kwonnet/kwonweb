@@ -1,39 +1,86 @@
-import { Badge, Box, IconButton, Stack, Tooltip } from '@mui/material'
-import { Account } from '@toolpad/core'
-import React from 'react'
-import SearchToolbar from './SearchToolbar'
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
-import Link from 'next/link';
+"use client";
+import {
+  Badge,
+  Box,
+  Button,
+  IconButton,
+  Stack,
+  Tooltip,
+  useMediaQuery,
+} from "@mui/material";
+import { Account } from "@toolpad/core";
+import React from "react";
+import SearchToolbar from "./SearchToolbar";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
+import Link from "next/link";
+import AccountToolbar from "./AccountToolbar";
+// import AccountContent from "./AccountContent";
+import LocalMallOutlinedIcon from "@mui/icons-material/LocalMallOutlined";
+import { useAuthSession } from "@/hooks";
+import { useUserStats } from "@/lib/swrHooks";
+import { updateUserConversations } from "@/lib/conversations";
 
-const CustomToolbarActions = (props: { NotificationNode?: React.ReactNode}) => {
-  const msgStats = { totalUnreadCount: 20, totalUnseenCount: 30}
+const CustomToolbarActions = (props: {
+  NotificationNode?: React.ReactNode;
+  AccountNode?: React.ReactNode;
+}) => {
+
+  const isSmallDevice = useMediaQuery("(max-width:600px)", { noSsr: true });
+
+  const { user, token } = useAuthSession();
+
+  const { data: stats, mutate } = useUserStats({ userId: user?.id, token})
+
+  const updateMsgUnseen = async() => {
+    if (!user?.id || stats?.totalUnseenMsg === 0) return;
+    await updateUserConversations({ userId: user.id, isSeen: true }, token);
+    mutate();
+  }
+
   return (
     <React.Fragment>
-        <Stack suppressHydrationWarning direction="row" alignItems={"center"} spacing={2}>
-            <SearchToolbar />
-            <Box>
-            <Tooltip title="Messages" suppressHydrationWarning>
-              <IconButton
-                size="medium"
-                LinkComponent={Link}
-                href='/messages'
+      <Stack
+        suppressHydrationWarning
+        direction="row"
+        alignItems={"center"}
+        spacing={{lg: 2, md: 2, sm: 1, xs: 1}}
+      >
+        <SearchToolbar />
+        <Tooltip title="Store" suppressHydrationWarning>
+          {isSmallDevice ? (
+            <IconButton size="small" LinkComponent={Link} href="/store">
+              <LocalMallOutlinedIcon />
+            </IconButton>
+          ) : (
+            <Button
+              size="small"
+              href="/store"
+              LinkComponent={Link}
+              variant="outlined"
+              sx={{ borderRadius: 30 }}
+              startIcon={<LocalMallOutlinedIcon />}
+            >
+              Store
+            </Button>
+          )}
+        </Tooltip>
+          <Tooltip title="Messages" suppressHydrationWarning>
+            <IconButton onClick={() => updateMsgUnseen()} size="small" LinkComponent={Link} href="/messages">
+              <Badge
+                color="error"
+                badgeContent={stats.totalUnseenMsg}
+                max={99}
               >
-                <Badge
-                  color="error"
-                  badgeContent={msgStats.totalUnseenCount}
-                  max={99}
-                >
-                  <EmailOutlinedIcon />
-                </Badge>
-              </IconButton>
-            </Tooltip>
-            </Box>
-            {props.NotificationNode}
-            <Account />
-        </Stack>
+                <EmailOutlinedIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+        {props.NotificationNode}
+
+        <Account slots={{ popoverContent: AccountToolbar }} />
+      </Stack>
     </React.Fragment>
-  )
-}
+  );
+};
 
-
-export default CustomToolbarActions
+export default CustomToolbarActions;

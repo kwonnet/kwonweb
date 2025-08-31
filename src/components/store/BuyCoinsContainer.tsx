@@ -57,10 +57,12 @@ const BuyCoinsContainer = ({
   data,
   currentTonRate,
   toggleDrawer,
+  isPage,
 }: {
   data: { packages: CoinPackage[]; addresses: CryptoAddress[] };
   currentTonRate: number;
   toggleDrawer?: (ev: any, open: boolean) => void;
+  isPage?: boolean
 }) => {
   const [state, setState] = useState<{
     isLoading: boolean;
@@ -377,7 +379,7 @@ const BuyCoinsContainer = ({
           const itemBonus = itemCurrency === "₦" ? item.ngnBonus : item.bonus;
           const isUSD = user?.country?.iso3 !== "NGA";
           return (
-            <Grid size={{ lg: 4, md: 4, sm: 12, xs: 12 }} key={item.id}>
+            <Grid size={{ lg: isPage ? 4 : 6, md: isPage ? 4 : 6, sm: 12, xs: 12 }} key={item.id}>
               <Fade style={{ height: "100%" }}>
                 <Card sx={{ height: "100%", width: "100%" }}>
                   <CardContent>

@@ -53,6 +53,14 @@ const page = () => {
   ) => {
     ev.preventDefault();
     try {
+      // Allows callback URLs on the same origin
+      const urlInfo = new URL(window.location.href)
+      console.log("redirect url parts ", urlInfo)
+      const callbackUrl = urlInfo.searchParams.get("callbackUrl")
+      const refId = urlInfo.searchParams.get("refId")
+      console.log("redirect callbackUrl ", callbackUrl)
+      console.log("redirect refId ", refId)
+      const redirectUrl = (callbackUrl && !callbackUrl.includes("refId=")) ? callbackUrl :  urlInfo.origin
       setState((prev) => ({ ...prev, message: "", loading: true }));
       const res = await signIn(state.isSignIn ? "credentials-in" : "credentials-up", state.isSignIn ? {
         email: state.email,
@@ -62,13 +70,14 @@ const page = () => {
         name: state.name,
         email: state.email,
         password: state.password,
+        refId,
         redirect: false,
       });
       if (res?.error) {
         setState((prev) => ({ ...prev, message: res.code as string }));
         return;
       }
-      window.location.href = "/"
+      window.location.href = redirectUrl
     } catch (error: any) {
       setState((prev) => ({ ...prev, message: error?.message }));
     } finally {

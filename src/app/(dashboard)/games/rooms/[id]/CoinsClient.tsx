@@ -7,12 +7,14 @@ import React, { useState } from "react";
 const CoinsClient = ({
   data,
   currentTonRate,
+  isPage = true
 }: {
   data: {
     packages: CoinPackage[];
     addresses: CryptoAddress[];
   };
   currentTonRate: number;
+  isPage?: boolean
 }) => {
   const [state, setState] = useState<{
     isOpen: boolean;
@@ -83,6 +85,7 @@ const CoinsClient = ({
         toggleDrawer={toggleDrawer}
         data={data}
         currentTonRate={currentTonRate}
+        isPage={isPage}
       />
     </Box>
   );

@@ -153,7 +153,8 @@ body {
 /* post details app bar */
 @media screen and (max-width: 600px) {
   .post_appbar {
-    z-index: 99999 !important
+    z-index: 99999 !important;
+    position: fixed !important;
   }
 }
 /* video player aspect ratio */
@@ -270,4 +271,10 @@ body {
   --media-tooltip-border: 1px solid rgb(255 255 255 / 0.1);
   --media-tooltip-enter-animation: vds-tooltip-enter 0.2s ease-in;
   --media-tooltip-exit-animation: vds-tooltip-exit 0.2s ease-out;
+}
+
+/* mui snackbar */
+
+.MuiSnackbar-root {
+  z-index: 99999999999 !important
 }

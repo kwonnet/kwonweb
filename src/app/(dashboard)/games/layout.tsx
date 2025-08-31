@@ -1,18 +1,21 @@
 import React from 'react'
 import { Metadata } from 'next';
 import { constant } from '@/config';
+import GameSocketIoProvider from '@/context/GameSocketIoContext';
 
 export const metadata: Metadata = {
   title: constant.siteName,
   description: constant.siteDescription,
 };
 
-const layout = async(props: any) => {
+const Layout = async(props: any) => {
   return (
     <React.Fragment>  
+      <GameSocketIoProvider>
           {props.children}
+      </GameSocketIoProvider>
       </React.Fragment>
   )
 }
 
-export default layout
+export default Layout

@@ -15,6 +15,7 @@ import { useSocketIoContext } from "@/context/SocketIoContext";
 import _debounce from "lodash/debounce"
 import { GameEventEnum } from "@/types";
 import PaperLayout from "./PaperLayout";
+import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 
 const RechargeButton = ({
@@ -177,7 +178,7 @@ const RechargeButton = ({
 };
 
 const GameEnergy = () => {
-  const { energy, socketIo } = useSocketIoContext()
+  const { energy, gameSocketIo: socketIo } = useGameSocketIoContext()
 
   const [state, setState] = useState({
     gameEnergy: energy ? energy : { gauge: 0, turbo: 0, amount: 0, playerId: "", catId: "", id: "" },

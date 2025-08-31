@@ -28,7 +28,11 @@ const MutualFollowsServer = async() => {
 
   const users: UserConnection[] = result.status === 404 ? [] : await result.json();
 
-  return <DisplayClient connType={ConnTypeEnum.MUTUAL_FOLLOWS} users={users} />;
+  return <DisplayClient
+      allowCarousel={true}
+      connType={ConnTypeEnum.MUTUAL_FOLLOWS}
+      users={users}
+    />
   
 }
 

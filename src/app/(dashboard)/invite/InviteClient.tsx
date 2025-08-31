@@ -22,6 +22,11 @@ import IosShareOutlinedIcon from '@mui/icons-material/IosShareOutlined';
 import { useUserStats } from "@/lib/swrHooks";
 import { useAuthSession } from "@/hooks";
 
+const getText = (total: number, amount: number) => {
+
+   return `You've invited ${formatNumber(total)} ${total === 1 ? " friend " : " friends "} & earned 🎁 ${formatNumber(amount)} coins`
+}
+
 const InviteClient = () => {
 
   const [isLoading, setIsLoading] = useState(false);
@@ -83,15 +88,15 @@ const InviteClient = () => {
     <Container maxWidth="xl">
       <PageHeader title="Invite Friends & Earn" />
       <Box sx={{ p: 2, position: "relative" }}>
-        <Stack direction={"row"} sx={{alignItems: "center"}} spacing={0.5}>
+        {/* <Stack direction={"row"} sx={{alignItems: "center"}} spacing={0.5}>
         <ShareIcon sx={{ fontSize: 20, color: "#fff" }} />
         <Typography variant="h6" sx={{ fontWeight: 600, textAlign: "center" }}>
           Invite Friends & Earn Coins!
         </Typography>
-        </Stack>
+        </Stack> */}
         <Typography variant="h5" sx={{ pt: 1, fontFamily: "PlayFair" }}>
           Share your invite link with friends and earn rewards to boost your
-          game!
+          account!
         </Typography>
 
         {/* Invite Stats */}
@@ -105,7 +110,7 @@ const InviteClient = () => {
           }}
         >
           {(stats && stats?.totalInvites > 0)  && (<Typography variant="h6" sx={{ fontWeight: 600 }}>
-            You've invited {formatNumber(stats?.totalInvites)} friends & earned
+            {getText(stats?.totalInvites, stats?.totalEarned ?? 0)}
           </Typography>) }
         </Box>
 
@@ -138,7 +143,7 @@ const InviteClient = () => {
 
             })]}
           >
-            <Typography>💰{formatNumber(stats?.totalEarned ?? 0)}</Typography>
+            <Typography>🎁{formatNumber(stats?.totalEarned ?? 0)}</Typography>
           </Box>
         </Box>
 

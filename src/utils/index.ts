@@ -9,6 +9,7 @@ import { ZodError, ZodIssue, ZodSchema } from "zod";
 
 import { customAlphabet, nanoid } from "nanoid";
 import { appUrl } from "@/config";
+import { MutualFollower, UserConnection } from "@/types/user";
 
 const numbersOnly = "0123456789";
 
@@ -91,10 +92,7 @@ export function formatNumberWithCommas(num: number): string {
   });
 }
 
-export function getTONRate(
-  curr_ton_rate: number,
-  usd_amount: number
-): number {
+export function getTONRate(curr_ton_rate: number, usd_amount: number): number {
   const rate = curr_ton_rate - 0.9;
   // const stars_usd = stars_amount * 0.013;
   const tonRate = usd_amount / rate;
@@ -118,10 +116,10 @@ export const get_usd_tzx_rate = (usdAmount: number): number => {
 };
 
 export const get_coins_rate = (amount: number, isUSD: boolean): number => {
-  if(isUSD){
+  if (isUSD) {
     return parseFloat((amount / 0.013).toFixed(2));
   }
-  return parseFloat((amount / 18).toFixed(2))
+  return parseFloat((amount / 18).toFixed(2));
 };
 
 export const get_usd_stars_rate = (usdAmount: number): number => {
@@ -268,10 +266,14 @@ export const monthNames: { [key: number]: string } = {
   12: "Dec",
 };
 
-export const formatDateTime = (date: Date | string) => {
+export const formatDateTime = (
+  date: Date | string,
+  dateStyle?: "full" | "long" | "medium" | "short" | undefined,
+  timeStyle?: "full" | "long" | "medium" | "short" | undefined
+) => {
   const intl = new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium", // e.g., "Jan 1, 2024"
-    timeStyle: "short", // e.g., "3:30 PM"
+    dateStyle: dateStyle, // e.g., "Jan 1, 2024"
+    timeStyle: timeStyle, // e.g., "3:30 PM"
   });
   return intl.format(new Date(date));
 };
@@ -289,6 +291,17 @@ function getISOWeek(date: Date): { year: number; week: number } {
     ((tempDate.getTime() - startOfYear.getTime()) / 86400000 + 1) / 7
   );
   return { year: tempDate.getUTCFullYear(), week };
+}
+
+export function getDateInfo(date: Date | string) {
+  const d = new Date(date);
+  const year = d.getUTCFullYear();
+  const month = d.getUTCMonth() + 1; // Month is 1-indexed for the key
+  const day = d.getUTCDate();
+  const { week } = getISOWeek(d);
+  const monthStr = monthNames[month]; // Get month name or number if not found
+
+  return { year, month, week, day, monthStr };
 }
 
 export function getCurrentDataInfo() {
@@ -530,19 +543,19 @@ export const shouldSendLog = (
         ? "m_i_s"
         : kind === "MEDIA_IMAGE_IMPRESSION"
           ? "m_i_i"
-        : kind === "MEDIA_VIDEO_WATCH"
-          ? "m_v_w"
-          : kind === "MEDIA_VIDEO_SAVE"
-            ? "m_v_s"
-            : kind === "MEDIA_VIDEO_IMPRESSION"
-              ? "m_v_i"
-              : kind === "POST_CLICK" 
-              ? "l_c"
-              : kind === "POST_LAST_SEEN"
-                ? "l_s"
-                : kind === "POST_LAST_VIEWED" 
-                ? "l_v"
-                : "r_v";
+          : kind === "MEDIA_VIDEO_WATCH"
+            ? "m_v_w"
+            : kind === "MEDIA_VIDEO_SAVE"
+              ? "m_v_s"
+              : kind === "MEDIA_VIDEO_IMPRESSION"
+                ? "m_v_i"
+                : kind === "POST_CLICK"
+                  ? "l_c"
+                  : kind === "POST_LAST_SEEN"
+                    ? "l_s"
+                    : kind === "POST_LAST_VIEWED"
+                      ? "l_v"
+                      : "r_v";
   const key = `tz_p_${kId}:${id}`;
   const lastSeen = sessionStorage.getItem(key);
   const now = Date.now();
@@ -566,3 +579,57 @@ export function convertJsonToFormBody(obj: Record<string, any>): string {
   }
   return formBody.join("&");
 }
+
+export const composeMutualText = ({
+  followers,
+  total,
+}: {
+  followers?: MutualFollower[];
+  total: number;
+}) => {
+  if (followers?.length === 0) return "";
+  const msg = followers?.map((conn) => conn?.name).join(", ");
+  const count = followers?.length || 0;
+  if (total > count) {
+    return `Followed by ${msg} and ${total - count} that you also follow`;
+  }
+  return `Followed by ${msg} that you also follow`;
+};
+
+export const composeTagText = (users: UserConnection[] = []) => {
+  const total = users.length;
+  if (total === 0) return "";
+  const msg = users?.map((conn) => conn?.name).join(" & ");
+  if (total === 2 || total === 1) {
+    return msg;
+  }
+  const _users = users.slice(0, 2);
+  const msg2 = _users?.map((conn) => conn?.name).join(", ");
+  const remainder = total - 2;
+  return `${msg2} & ${remainder} ${remainder == 1 ? "other" : "others"}`;
+};
+
+export const updateUrl = (url: string) => {
+  // const url = new URL(window.location.href);
+  // url.searchParams.set("t", Math.floor(time).toString());
+  window.history.pushState(null, "", url);
+};
+
+export const getCurrentSegment = (pathname: string, capitalize?: boolean) => {
+  const strArr = pathname.split("/");
+
+  const segment = strArr[strArr.length - 1];
+
+  if (capitalize) {
+    return `${segment.charAt(0).toUpperCase()}${segment.slice(1)}`;
+  }
+  return segment;
+};
+
+export const removeProperty = <T extends object, K extends keyof T>(
+  obj: T,
+  key: K
+): Omit<T, K> => {
+  const { [key]: _, ...rest } = obj;
+  return rest as Omit<T, K>;
+};

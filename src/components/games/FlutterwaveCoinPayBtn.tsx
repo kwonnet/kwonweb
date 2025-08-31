@@ -45,7 +45,7 @@ const FlutterwaveCoinPayBtn = ({ item, title }: IProps) => {
 
   const { user, token } = useAuthSession();
 
-  const config = getFlutterWaveCoinConfig(user, item);
+  const config = getFlutterWaveCoinConfig(user, item, false);
 
   const getPaymentLink = async() => {
     try {

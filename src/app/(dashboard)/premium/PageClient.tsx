@@ -34,7 +34,7 @@ const DisplayPage = ({ subscription }: { subscription?: Subscription }) => {
         <Typography variant="h6">
           {is404 ? "You don't have any active plan" : getErrorMessage(error)}
         </Typography>
-        <Typography>{is404 && "Purchase a new plan"}</Typography>
+        {/* <Typography>{is404 && "Purchase a new plan"}</Typography> */}
         <Box sx={{ textAlign: "center", display: "block", py: 2 }}>
           <Button
             variant="outlined"
@@ -43,7 +43,7 @@ const DisplayPage = ({ subscription }: { subscription?: Subscription }) => {
             color="info"
             sx={{borderRadius: 30}}
           >
-            See Plans
+            Purchase a new plan
           </Button>
         </Box>
       </Box>

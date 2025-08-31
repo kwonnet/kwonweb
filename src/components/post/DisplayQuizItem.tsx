@@ -93,7 +93,7 @@ const DisplayQuizItem = ({
   return (
     <React.Fragment>
       <Box sx={{ mb: 1.5 }}>
-        <Typography variant="caption" color={quiz.isPaid ? "info" : "warning"}>
+        <Typography variant="caption" color={"textDisabled"}>
           {quiz.isPaid
             ? `This is a rewarded quiz. Reward of ${formatNumber(quiz.rewardAmount)} coins will be randomly shared to ${formatNumber(quiz.maxWinners)} winners. Good luck`
             : "This quiz is free. No reward for participants. Good luck."}

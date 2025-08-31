@@ -5,11 +5,12 @@ import { useSocketIoContext } from "@/context/SocketIoContext";
 import { GameEventEnum } from "@/types";
 import { shuffleArray } from "@/utils";
 import { useNotifications } from "@toolpad/core";
+import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 // import { toast } from "react-toastify";
 
 const QuizBox = () => {
 
-  const { question, gameRoomInfo, countdown, energy, socketIo } = useSocketIoContext();
+  const { question, gameRoomInfo, countdown, energy, gameSocketIo: socketIo } = useGameSocketIoContext();
 
   const [state, setState] = useState({choice: ""})
 

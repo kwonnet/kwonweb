@@ -64,6 +64,7 @@ import {
   uploadMultipleFilesWithMetadata,
 } from "@/firebase/utils";
 import { uploadBunnyFilesWithMetadata } from "@/utils/bunny";
+import { FollowAction } from "@/types/user";
 
 function CircularProgressWithLabel(
   props: CircularProgressProps & { value: number; max: number }
@@ -224,10 +225,10 @@ export default function CreateQuoteDrawer({
   onQuoteCallback: (id: string, quoted: boolean) => void;
   onFollowUserCallback: (
     args: {
-      senderId: string;
-      recipientId: string;
-    },
-    isFollow: boolean
+    senderId: string;
+    recipientId: string;
+    action: FollowAction;
+    }
   ) => void;
 }) {
   const open = React.useMemo(() => isOpen, [isOpen]);
@@ -640,7 +641,7 @@ export default function CreateQuoteDrawer({
         <Dialog
           maxWidth="xl"
           sx={{
-            zIndex: 9999,
+            zIndex: 999999,
           }}
           open={open}
           onClose={(ev) => {

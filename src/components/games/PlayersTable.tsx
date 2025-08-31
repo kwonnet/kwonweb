@@ -64,7 +64,10 @@ const PlayersTable = ({
                     ...(currentUserId === player.id && { bgcolor: "grey.300"}),
                     ...(currentUserId !== player.id && { "&:nth-of-type(odd)": { bgcolor: "#f9f9f9" },}),
                     ...theme.applyStyles("dark", {
-                      ...(currentUserId === player.id && { bgcolor: theme.vars.palette.grey[800]}),
+                      ...(currentUserId === player.id && { 
+                        // bgcolor: theme.vars.palette.grey[800],
+                        bgcolor: theme.vars.palette.AppBar.defaultBg
+                      }),
                       ...(currentUserId !== player.id && { "&:nth-of-type(odd)": { bgcolor: theme.vars.palette.grey[600] },}),
                     }),
                   }),

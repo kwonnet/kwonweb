@@ -27,7 +27,7 @@ export default function CustomThemeSwitcher() {
   );
   return (
     <React.Fragment>
-      <Box ml={-1}>
+      <Box ml={-1} sx={{position: "sticky", bottom: 0, left: 0, zIndex: 9999}}>
         <Tooltip title="Theme" enterDelay={1000}>
           <Stack direction={"row"}>
             <IconButton

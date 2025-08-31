@@ -1,5 +1,5 @@
 export const constant = {
-  siteName: "Kuonnet", //"Torazon",
+  siteName: "Kwonnet", //"Torazon" | "Kuonnet" | "Kounnet",
   siteDescription:
     "A revolutionary social networking platform that connects people from all walks of life, fostering meaningful connections and empowering individuals to achieve their dreams.",
 };

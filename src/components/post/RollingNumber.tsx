@@ -18,7 +18,7 @@ const RollingNumber = ({ number }: { number: number }) => {
             style={{
               display: "inline-block",
               position: "absolute",
-              top: 6,
+              top: 8,
             }}
           >
             {formatFeedNumber(number)}

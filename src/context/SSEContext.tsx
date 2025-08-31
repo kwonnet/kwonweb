@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useAuthSession } from "@/hooks";
 import { apiUrl } from "@/config";
 import { useSWRConfig } from "swr";
-import { UserConnection } from "@/types/user";
+import { FollowResponse, FollowStatus, UserConnection } from "@/types/user";
 import { useNotifications } from "@toolpad/core";
 
 interface SSEContextType {
@@ -30,11 +30,12 @@ const SSEContextProvider = (props: any) => {
     setEventSource(sseSource);
 
     sseSource?.addEventListener("message", (event: MessageEvent<any>) => {
-      console.log(`Client is connected to server stream: ${event.data}`);
+      console.log(`SSE Client is connected to server stream: ${event.data}`);
+      console.log(event)
     });
 
     sseSource.onerror = (ev) => {
-      console.log("Sse error: ", +ev);
+      console.log("Sse error: ", ev);
     };
 
     return () => {
@@ -51,7 +52,8 @@ const SSEContextProvider = (props: any) => {
   ) => {
     mutate(
       (key) =>
-        typeof key === "string" && key.startsWith(`${user.id}_connections`),
+        // typeof key === "string" && (key.startsWith(`${user.id}_connections`) || key.startsWith('tag_mention')),
+       typeof key === "string" && key.startsWith(`${user.id}_connections`),
       (data?: UserConnection[]) => (data ? updateConnData(data) : undefined),
       {
         optimisticData: (data?: any) =>
@@ -63,14 +65,18 @@ const SSEContextProvider = (props: any) => {
     );
   };
 
-  const updateConnection = (userId: string, isFollow: boolean) => {
+  const updateConnection = (args: FollowResponse) => {
     // update connection list for a followed user
     const getFeedData = (cacheData: UserConnection[]) => {
       return cacheData?.map((d) => {
-        if (d.id === userId) {
+        if (d.id === args.recipientId) {
           d = {
             ...d,
-            hasFollowed: isFollow,
+            conn: {
+              ...d.conn,
+              followedStatus: args.status as FollowStatus,
+              isFollowedByUser: args.status !== FollowStatus.REJECTED
+            }
           };
         }
         return d;
@@ -82,13 +88,14 @@ const SSEContextProvider = (props: any) => {
   useEffect(() => {
     // SSE stream to update user follower
     const followerListener = (ev: MessageEvent) => {
+      console.log("user_follower in SSEContext ", ev.data)
       notif.show("New user_follower event received ", {
         autoHideDuration: 3000,
       });
-      const arg: any = JSON.parse(ev.data);
+      const arg: FollowResponse = JSON.parse(ev.data);
       if (arg.senderId === user.id) {
         // handle stream update
-        updateConnection(arg.recipientId,arg.isFollow);
+        updateConnection(arg);
       }
     };
     eventSource?.addEventListener("user_follower", followerListener);
@@ -97,7 +104,7 @@ const SSEContextProvider = (props: any) => {
         eventSource?.removeEventListener("user_follower", followerListener);
     };
     // eslint-disable-next-line
-  }, []);
+  }, [eventSource]);
 
   return (
     <SSEContext.Provider value={{ sseSource: eventSource }}>

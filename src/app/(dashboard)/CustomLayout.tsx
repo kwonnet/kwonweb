@@ -12,7 +12,13 @@ const SidebarFooter = ({ mini }: SidebarFooterProps) => {
   return (
     <Typography
       variant="caption"
-      sx={{ overflow: "hidden", textWrap: "nowrap", display: "inline-block", textAlign: "center"}}
+      sx={{
+        pb: 5,
+        overflow: "hidden",
+        textWrap: "nowrap",
+        display: "inline-block",
+        textAlign: "center",
+      }}
     >
       {mini
         ? `© ${constant.siteName}`
@@ -27,6 +33,7 @@ const CustomLayout = (props: {
 }) => {
   return (
     <DashboardLayout
+      // sx={{zIndex: 999999}}
       sidebarExpandedWidth={240}
       slots={{
         sidebarFooter: SidebarFooter,
@@ -34,7 +41,15 @@ const CustomLayout = (props: {
         toolbarActions: () => props.CustomToolbar,
       }}
     >
-      <PageContainer sx={{mt: -3, paddingLeft: {lg: 2, md: 2, sm: 0, xs: 0}, paddingRight: {lg: 2, md: 2, sm: 0, xs: 0}}} title="" breadcrumbs={[]}>
+      <PageContainer
+        sx={{
+          mt: -4,
+          paddingLeft: { lg: 2, md: 2, sm: 0, xs: 0 },
+          paddingRight: { lg: 2, md: 2, sm: 0, xs: 0 },
+        }}
+        title=""
+        breadcrumbs={[]}
+      >
         {props.children}
       </PageContainer>
     </DashboardLayout>

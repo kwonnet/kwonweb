@@ -38,16 +38,19 @@ const HashtagComponent = (props: HashTagItemProps) => {
   const text = props?.decoratedText?.replace(/^#/, "");
   const href = props?.tag?.link || `/hashtags?tag=${text}`;
   return (
-    <Link
+    <Typography
+      component={Link}
+      onClick={ev => ev.stopPropagation()}
       href={href}
-      style={{
-        color: "#007bff",
+      color="info"
+      sx={{
+        // color: "#007bff",
         textDecoration: "none",
         fontWeight: "bold",
       }}
     >
       {props.children}
-    </Link>
+    </Typography>
   );
 };
 
@@ -55,16 +58,19 @@ const HashtagComponent = (props: HashTagItemProps) => {
 const MentionComponent = (mentionProps: MentionItemProps) => {
   const href = mentionProps?.mention?.link || `/${mentionProps?.decoratedText}`;
   return (
-    <Link
+    <Typography
+      component={Link}
+      onClick={ev => ev.stopPropagation()}
       href={href}
-      style={{
-        color: "#007bff",
+      color="info"
+      sx={{
+        // color: "#007bff",
         textDecoration: "none",
         fontWeight: "bold",
       }}
     >
       {mentionProps.children}
-    </Link>
+    </Typography>
   );
 };
 

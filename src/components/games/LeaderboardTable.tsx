@@ -9,6 +9,7 @@ import { getSwrPlayers } from "@/lib/swrHooks";
 import SkeletonTable from "./SkeletonTable";
 import PaperLayout from "./PaperLayout";
 import { useAuthSession } from "@/hooks";
+import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const ITEM_PER_PAGE = 12;
 
@@ -52,7 +53,7 @@ const LeaderboardTable = ({
   mode: string;
 }) => {
   const { gameScores, monthTotalPlayers, weekTotalPlayers, todayTotalPlayers } =
-    useSocketIoContext();
+    useGameSocketIoContext();
 
   const [state, setState] = useState({
     page: 1,

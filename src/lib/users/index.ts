@@ -1,6 +1,7 @@
 import { axiosAPI } from "@/config/axios";
-import { GameAchievement, ReportReasonCode, Subscription } from "@/types"
-import { UserConnection, UserMiniProfile } from "@/types/user";
+import { AppNotification, FeedPost, GameAchievement, ReportReasonCode, Subscription } from "@/types"
+import { EncryptedConversation } from "@/types/conversation";
+import { FollowAction, UserAccountStatus, UserConnection, UserMiniProfile, UserStats } from "@/types/user";
 import { composeUrlQuery, getErrorMessage } from "@/utils"
 import { cache } from "react";
 
@@ -62,7 +63,7 @@ export const getUserActiveSubscription = async(userId: string,accessToken?: stri
     }
 }
 
-export const updateUserFollower = async(args: { senderId: string, recipientId: string}, accessToken?: string)=> {
+export const updateUserFollower = async(args: { senderId: string, recipientId: string, action: FollowAction}, accessToken?: string)=> {
     try {
         axiosAPI.accessToken = accessToken
         const result = await axiosAPI.post("/v1/users/follows", args)
@@ -145,3 +146,72 @@ export const getUserOverview = cache(async(identifier: string, accessToken?: str
         throw error
     }
 })
+
+
+export const getUserConnections = cache(async (args:{userId: string, slug: string; limit: number, page?: number}, accessToken?: string) => {
+  try {
+    const queryString = composeUrlQuery(args)
+    axiosAPI.accessToken = accessToken;
+    const result = await axiosAPI.get(`/v1/users/${args.userId}/${args.slug}?${queryString}`);
+    return result.data as UserConnection[];
+  } catch (error: any) {
+    throw error
+  }
+})
+
+
+export const getUserPostsFeed = cache(async (args:{kind: string, userId: string, limit: number, page?: number}, accessToken?: string) => {
+    try {
+      const queryString = composeUrlQuery(args)
+      axiosAPI.accessToken = accessToken;
+      const result = await axiosAPI.get(`/v1/users/${args.userId}/${args.kind}?${queryString}`);
+      return result.data as FeedPost[];
+    } catch (error: any) {
+      throw error
+    }
+  })
+
+
+export const updateAccountState = async (body: {userId: string; status: UserAccountStatus}, accessToken?: string) => {
+  try {
+    axiosAPI.accessToken = accessToken;
+    const result = await axiosAPI.post(`/v1/users/${body.userId}/update-account-status`, body );
+    return result.data as { userId: string, isActive: boolean};
+  } catch (error: any) {
+    throw error
+  }
+}
+
+// export const getUserNotificationStats = cache(async(userId: string, accessToken?: string) => {
+//   try {
+//     axiosAPI.accessToken = accessToken;
+//     const result = await axiosAPI.get(`/v1/users/${userId}/stats` );
+//     return result.data as UserStats
+//   } catch (error: any) {
+//     throw error
+//   }
+// })
+
+export const getUserNotifications = cache(async(args: {userId: string, page: number, limit: number}, accessToken?: string) => {
+  try {
+    axiosAPI.accessToken = accessToken;
+    const queryString = composeUrlQuery(args)
+    const result = await axiosAPI.get(`/v1/users/${args.userId}/notifications?${queryString}` );
+    return result.data as AppNotification[]
+  } catch (error: any) {
+    throw error
+  }
+})
+
+export const updateUserNotification = cache(async(body: {userId: string, isRead?: boolean; isSeen?: boolean}, accessToken?: string) => {
+  try {
+    axiosAPI.accessToken = accessToken;
+    const result = await axiosAPI.patch(`/v1/users/${body.userId}/notifications`, body );
+    return result.data as UserStats
+  } catch (error: any) {
+    throw error
+  }
+})
+
+
+

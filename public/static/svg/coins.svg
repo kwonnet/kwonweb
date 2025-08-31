@@ -1,0 +1,97 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="200"
+  height="200"
+  viewBox="0 0 200 200"
+>
+  <!-- Bottom Coin -->
+  <ellipse
+    cx="100"
+    cy="140"
+    rx="60"
+    ry="20"
+    fill="url(#coinGradient1)"
+  />
+  <path
+    d="M40,140a60,20 0 0,0 120,0v10a60,20 0 0,1-120,0z"
+    fill="#031d37"
+    opacity="0.5"
+  />
+  <text
+    x="100"
+    y="145"
+    text-anchor="middle"
+    fill="white"
+    font-size="20"
+    font-weight="bold"
+    dy=".3em"
+  >
+    $
+  </text>
+
+  <!-- Middle Coin -->
+  <ellipse
+    cx="100"
+    cy="110"
+    rx="55"
+    ry="18"
+    fill="url(#coinGradient2)"
+  />
+  <path
+    d="M45,110a55,18 0 0,0 110,0v10a55,18 0 0,1-110,0z"
+    fill="#031d37"
+    opacity="0.5"
+  />
+  <text
+    x="100"
+    y="115"
+    text-anchor="middle"
+    fill="white"
+    font-size="18"
+    font-weight="bold"
+    dy=".3em"
+  >
+    $
+  </text>
+
+  <!-- Top Coin -->
+  <ellipse
+    cx="100"
+    cy="80"
+    rx="50"
+    ry="16"
+    fill="url(#coinGradient3)"
+  />
+  <path
+    d="M50,80a50,16 0 0,0 100,0v10a50,16 0 0,1-100,0z"
+    fill="#031d37"
+    opacity="0.5"
+  />
+  <text
+    x="100"
+    y="85"
+    text-anchor="middle"
+    fill="white"
+    font-size="16"
+    font-weight="bold"
+    dy=".3em"
+  >
+    $
+  </text>
+
+  <!-- Gradient Definitions -->
+  <defs>
+    <linearGradient id="coinGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color: #FFD700; stop-opacity: 1" />
+      <stop offset="100%" style="stop-color: #FFC107; stop-opacity: 1" />
+    </linearGradient>
+    <linearGradient id="coinGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color: #FFC107; stop-opacity: 1" />
+      <stop offset="100%" style="stop-color: #FFA000; stop-opacity: 1" />
+    </linearGradient>
+    <linearGradient id="coinGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color: #FFA000; stop-opacity: 1" />
+      <stop offset="100%" style="stop-color: #FF8F00; stop-opacity: 1" />
+    </linearGradient>
+  </defs>
+</svg>

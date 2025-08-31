@@ -30,7 +30,7 @@ const PageClient = ({
           }
         />
         <Box sx={{ pt: 2 }}>
-          <BuyCoinsContainer data={data} currentTonRate={currentTonRate} />
+          <BuyCoinsContainer isPage={true} data={data} currentTonRate={currentTonRate} />
         </Box>
       </Container>
     </Box>

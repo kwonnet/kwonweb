@@ -54,6 +54,7 @@ import {
   PollThread,
   PostCreate,
   PostScopeEnum,
+  PostScopeSetting,
   PostThread,
   QuizDuration,
   QuizOption,
@@ -170,6 +171,8 @@ type LocalState = {
   threadId: number;
   threadIndex: number;
   scope: PostScopeEnum;
+  countries: string[],
+  continents: string[],
   location?: string;
   isOpenPostSettings: boolean;
   isOpenSchedule: boolean;
@@ -185,6 +188,8 @@ const initialState: LocalState = {
   threadId: threadId,
   threadIndex: 0,
   scope: PostScopeEnum.ANYONE,
+  countries: [],
+  continents: [],
   threads: [
     {
       id: new Date().getTime(),
@@ -675,8 +680,8 @@ export default function CreatePostDrawer({
     setState((prev) => ({ ...prev, location }));
   };
 
-  const onPostSettingsCallback = (scope: PostScopeEnum) => {
-    setState((prev) => ({ ...prev, scope }));
+  const onPostSettingsCallback = (settings: PostScopeSetting) => {
+    setState((prev) => ({ ...prev, ...settings }));
   };
 
 
@@ -706,7 +711,7 @@ export default function CreatePostDrawer({
         }
       }
       // sign in to firebase anonymously to upload files
-      await ensureSignedInAnon()
+      // await ensureSignedInAnon()
       const posts = await Promise.all(
         state.threads.map(async (thread) => {
           const media = await Promise.all(
@@ -732,6 +737,8 @@ export default function CreatePostDrawer({
             mentions: thread.mentions,
             tags: thread.tags,
             scope: state.scope,
+            countries: state.countries,
+            continents: state.continents,
             tagUsers: thread.tagUsers.map((u) => u.id),
           };
         })
@@ -1304,7 +1311,7 @@ export default function CreatePostDrawer({
 
         {/* post settings drawer */}
         <PostSettingsDrawer
-          postScope={state.scope}
+          settings={{scope: state.scope, continents: state.continents, countries: state.countries}}
           onPostSettingsCallback={onPostSettingsCallback}
           isOpen={state.isOpenPostSettings}
           toggleDrawer={togglePostSettingsDrawer}
@@ -1327,3 +1334,4 @@ export default function CreatePostDrawer({
     </div>
   );
 }
+

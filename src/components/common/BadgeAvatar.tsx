@@ -4,9 +4,10 @@ import { keyframes, styled } from "@mui/material/styles";
 import Badge from "@mui/material/Badge";
 import Avatar from "@mui/material/Avatar";
 import VerifiedIcon from "@mui/icons-material/Verified";
-import { Box, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { Slide } from "react-awesome-reveal";
-import { useAuthSession } from "@/hooks";
+import { useAuthSession, useBadgeColor } from "@/hooks";
+import Link from "next/link";
 
 const PulseBadge = styled(Badge)(({ theme }) => ({
   "& .MuiBadge-badge": {
@@ -54,15 +55,16 @@ export default function BadgeAvatar({
 
   const { user } = useAuthSession();
 
-  const metaColor = user.meta.color
+  const metaColor = useBadgeColor(user?.meta?.color)
   
   return (
     <React.Fragment>
       <Box display="flex" alignItems="center" gap={2}>
-        <PulseBadge
+        <Box component={Link} href={`/@${user.username}`}>
+          <PulseBadge
           overlap="circular"
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          badgeContent={user.meta.isActive ? <VerifiedIcon sx={{ fontSize: 14, color: theme => metaColor === "gold" ? 'gold' : metaColor === "grey" ? theme.vars.palette.grey[500] : theme.vars.palette.info.light }} /> : null}
+          badgeContent={user.meta.isPro ? <VerifiedIcon sx={{ fontSize: 14, color: theme => metaColor === "gold" ? 'gold' : metaColor === "grey" ? theme.vars.palette.grey[500] : theme.vars.palette.info.light }} /> : null}
         >
           <Avatar
             sx={{
@@ -71,13 +73,15 @@ export default function BadgeAvatar({
               boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
               border: (theme) => `4px solid ${theme.palette.background.paper}`,
             }}
-            alt={alt}
-            src={src}
-          />
+            alt={user.name}
+            src={user?.avatar!}
+          >{user?.name[0]}</Avatar>
         </PulseBadge>
+        </Box>
         <Box sx={{pl: -2, position: "relative"}}>
           <Slide direction="up">
-            <Typography
+            <Stack spacing={-1}>
+              <Typography
               sx={{ fontFamily: "PlayFair", fontStyle: "italic" }}
               fontWeight="bold"
               fontSize="1rem"
@@ -89,11 +93,13 @@ export default function BadgeAvatar({
                 fontFamily: "PlayFair", 
                 fontStyle: "italic", 
                 position: "relative", 
-                mt: -1, pt: -2 }}
+              }}
+              color="textDisabled"
               variant="caption"
             >
               @{user.username}
             </Typography>
+            </Stack>
           </Slide>
         </Box>
       </Box>

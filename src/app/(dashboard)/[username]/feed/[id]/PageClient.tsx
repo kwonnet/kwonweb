@@ -32,9 +32,7 @@ import {
 import FeedCardItem from "./FeedCardItem";
 import ThreadCardItem from "./ThreadCardItem";
 import { siteUrl } from "@/config";
-import { useSSEContext } from "@/context/SSEContext";
 import { updateUserFollower } from "@/lib/users";
-import FeedAppBar from "./FeedAppBar";
 import { getScopeMessage } from "@/utils/post";
 import AlternateEmailOutlinedIcon from "@mui/icons-material/AlternateEmailOutlined";
 import useSWRInfinite from "swr/infinite";
@@ -42,6 +40,9 @@ import { debounce } from "lodash";
 // import DisabledVisibleOutlinedIcon from '@mui/icons-material/DisabledVisibleOutlined';
 import SpeakerNotesOffOutlinedIcon from "@mui/icons-material/SpeakerNotesOffOutlined";
 import Link from "next/link";
+import { FollowAction } from "@/types/user";
+import { StickyWrapper } from "@/components/common";
+import { getSessionId } from "@/utils";
 const ReplyBox = ({
   handleReply,
   canReply,
@@ -77,6 +78,7 @@ const ReplyBox = ({
         </Typography>
       </Box>
     );
+    
   return (
     <Box sx={{ my: 1 }}>
       <Stack
@@ -162,8 +164,7 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
 
   const lastIndex = ancestoryChain.length - 1;
 
-  const activePost =
-    parentChain.length > 0 ? ancestoryChain[ancestoryChain.length - 1] : post;
+  const activePost = parentChain.length > 0 ? ancestoryChain[lastIndex] : post;
 
   const scopeMessage = getScopeMessage(
     parentChain.length > 0 ? parentChain[0] : post
@@ -268,16 +269,17 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
     });
   };
 
+
   const onQuoteCallback = (id: string, quoted: boolean) => {
     mutations.mutatePostQuotes({ id, quoted });
   };
 
-  const handleRepost = async (ev: any, id: string, reposted: boolean) => {
+  const handleRepost = async (ev: any, postId: string, reposted: boolean) => {
     ev.preventDefault();
     ev.stopPropagation();
     // handle local update
-    mutations.mutatePostReposts({ postId: id, reposted });
-    await updateRePost(id, token);
+    mutations.mutatePostReposts({ postId, reposted }, true);
+    await updateRePost(postId, token);
   };
 
   const handleReply = (ev: any, item: FeedPost) => {
@@ -291,9 +293,11 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
     toggleReplyDrawer(ev, true);
   };
 
-  const onSocialCallback = async (id: string) => {
+  const onSocialCallback = async (id: string, kind?: string) => {
     mutations.mutatePostShares(id);
-    await shareFeedPost(id, token);
+    const sessionId = getSessionId();
+    const payload = {id, kind, sessionId, timestamp: new Date().toISOString()}
+    await shareFeedPost(payload, token);
   };
 
   const onReplyCallback = (id: string, replied: boolean, reply?: FeedPost) => {
@@ -305,10 +309,10 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
     args: {
       senderId: string;
       recipientId: string;
-    },
-    isFollow: boolean
+      action: FollowAction
+    }
   ) => {
-    mutations.mutatePostAuthor(args.recipientId, isFollow);
+    mutations.mutatePostAuthor(args.recipientId, args.action);
     // send to api
     updateUserFollower(args, token);
   };
@@ -331,25 +335,7 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
   }, [activePost?.id]);
 
   return (
-    <Box
-      sx={{
-        "& .post_appbar": {
-          position: {
-            lg: "sticky !important",
-            md: "sticky !important",
-            sm: "absolute !important",
-            xs: "absolute !important",
-          },
-          width: {
-            lg: "auto",
-            md: "auto",
-            sm: "100%",
-            xs: "100%",
-          },
-        },
-      }}
-    >
-      <FeedAppBar />
+    <StickyWrapper title="Post">
       {parentChain.length > 0 ? (
         <Box>
           {ancestoryChain.map((postItem, idx) =>
@@ -401,7 +387,7 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
       )}
 
       {/* comment form */}
-      <Box>
+      <Box sx={{px: 2}}>
         <ReplyBox
           handleReply={(ev) => handleReply(ev, activePost)}
           scopeMessage={scopeMessage}
@@ -424,10 +410,11 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
           onFollowUserCallback={onFollowUserCallback}
           isDivider={true}
           scopeMessage={scopeMessage}
+          // lastIndex={idx === post.thread.length - 1}
         />
       ))}
       {post.thread.length > 0 && (
-        <Box>
+        <Box sx={{px: 2}}>
           <ReplyBox
             handleReply={(ev) => handleReply(ev, activePost)}
             scopeMessage={scopeMessage}
@@ -454,7 +441,7 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
       ))}
 
       {postReplies.length > 0 && (
-        <Box>
+        <Box sx={{px: 2}}>
           {postReplies.length < activePost.totalReplies && (
             <Box sx={{ my: 1, textAlign: "center" }}>
               <Button
@@ -508,7 +495,7 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
         onQuoteCallback={onQuoteCallback}
         onFollowUserCallback={onFollowUserCallback}
       />
-    </Box>
+    </StickyWrapper>
   );
 };
 

@@ -5,13 +5,14 @@ import Box from "@mui/material/Box";
 import {
   Button,
   Container,
+  Grid,
   NativeSelect,
   Pagination,
   Paper,
   Skeleton,
   Stack,
 } from "@mui/material";
-import { GameCategoryRanking, GameRoomRankingEnum } from "@/types";
+import { GameCategoryRanking, GameMode, GameRoomRankingEnum } from "@/types";
 import InputLabel from "@mui/material/InputLabel";
 import FormControl from "@mui/material/FormControl";
 import { PageHeader, SkeletonTable } from "@/components/common";
@@ -29,6 +30,11 @@ const rankingBtns = [
   { title: "Month", value: GameRoomRankingEnum.MONTH },
 ];
 
+const modeBtns = [
+  { title: "Single", value: GameMode.SINGLE },
+  { title: "Multi", value: GameMode.MULTI },
+];
+
 const SkeletonStats = () => {
   return (
     <Stack
@@ -36,7 +42,7 @@ const SkeletonStats = () => {
       spacing={2}
       sx={{ justifyContent: "space-around" }}
     >
-      {[1,2,3].map((_, index) => (
+      {[1, 2, 3].map((_, index) => (
         <Box key={index}>
           {/* Skeleton for the title */}
           <Skeleton
@@ -67,8 +73,12 @@ function PlayerPage({
   query: string;
   currentUserId: string;
 }) {
-  const { data, isLoading } = useSWR(query, getSwrPlayers);
+  const { token } = useAuthSession();
+
+  const { data, isLoading } = useSWR({ query, token }, getSwrPlayers);
+
   if (!data || isLoading) return <SkeletonTable rows={2} />;
+
   return (
     <PlayersTable
       title="Leaderboard"
@@ -85,11 +95,12 @@ const getPaginationCount = (total: number) => {
 const DisplayRankings = ({
   rankType,
   category,
+  mode,
 }: {
   rankType: GameRoomRankingEnum;
   category: GameCategoryRanking;
+  mode: string;
 }) => {
-
   const { user } = useAuthSession();
 
   const [state, setState] = React.useState({ page: 1 });
@@ -99,14 +110,14 @@ const DisplayRankings = ({
     setState((prev) => ({ ...prev, page }));
   };
 
-  const totalPages = getPaginationCount(category.totalParticipants);
+  const totalPages = getPaginationCount(category?.totalParticipants ?? 1);
 
   return (
     <React.Fragment>
       <div style={{ display: "none" }}>
         <PlayerPage
           currentUserId={user.id}
-          query={`/v1/games/leaderboard?type=board-archive&ranking=${rankType}&catId=${
+          query={`/v1/games/leaderboard?type=board-archive&ranking=${rankType}&mode=${mode}&catId=${
             category.id
           }&limit=${ITEM_PER_PAGE}&page=${
             state.page + 1 > totalPages ? state.page : state.page + 1
@@ -124,7 +135,7 @@ const DisplayRankings = ({
       >
         <PlayerPage
           currentUserId={user.id}
-          query={`/v1/games/leaderboard?type=board-archive&ranking=${rankType}&catId=${category.id}&limit=${ITEM_PER_PAGE}&page=${state.page}`}
+          query={`/v1/games/leaderboard?type=board-archive&ranking=${rankType}&mode=${mode}&catId=${category.id}&limit=${ITEM_PER_PAGE}&page=${state.page}`}
         />
       </Box>
       {/* PAGINATION */}
@@ -146,90 +157,13 @@ const DisplayRankings = ({
   );
 };
 
-const DisplayComponent = ({ rankType }: { rankType: GameRoomRankingEnum }) => {
-
-  const [state, setState] = React.useState({ activeCat: 0, page: 1 });
-
-  const { token, user } = useAuthSession();
-
-  const dateInfo = getCurrentDataInfo()
-
-  const { data: rankingData, isLoading } = useSWR(
-    { type: "categories-ranking", params: { rankType }, token },
-    (arg) => getGameCategoriesRankings(arg.params, arg.token)
-  );
-
-  const isEmptyData = !rankingData || rankingData.length === 0;
-
-  if (isLoading && !rankingData) {
-    return <SkeletonStats />;
-  }
-  if (isEmptyData) {
-    return (
-      <Box>
-        <Typography variant="caption">
-          Participate in a game to see ranking appear here.
-        </Typography>
-        <Box sx={{ py: 1, textAlign: "center" }}>
-          <Button
-            variant="outlined"
-            size="small"
-            color="inherit"
-            LinkComponent={Link}
-            href="/games"
-          >
-            Play Game
-          </Button>
-        </Box>
-      </Box>
-    );
-  }
-  return (
-    <Box sx={{ py: 1 }}>
-      <Box sx={{ py: 0, display: "block", textAlign: "center" }}>
-        <Typography variant="caption" sx={{fontWeight: 900}}>
-        Ranking - { rankType === GameRoomRankingEnum.TODAY ? `${dateInfo.day} ${monthNames[dateInfo.month]} - ${dateInfo.year}`: rankType === GameRoomRankingEnum.WEEK ? `Week ${dateInfo.week} - ${monthNames[dateInfo.month]} - ${dateInfo.year}`: `${monthNames[dateInfo.month]} - ${dateInfo.year}`  } 
-        </Typography>
-      </Box>
-      <FormControl fullWidth>
-        <InputLabel
-          sx={{ textAlign: "center", display: "block" }}
-          size="small"
-          variant="standard"
-          htmlFor="uncontrolled-native"
-        >
-          Game Category
-        </InputLabel>
-        <NativeSelect
-          inputProps={{
-            name: "activeCat",
-            id: "uncontrolled-native",
-          }}
-          variant="outlined"
-          value={state.activeCat}
-          onChange={(ev) =>
-            setState((prev) => ({
-              ...prev,
-              activeCat: parseInt(ev.target.value),
-            }))
-          }
-        >
-          {rankingData.map((item, index) => (
-            <option key={item.id} value={index}>
-              {item.name}
-            </option>
-          ))}
-        </NativeSelect>
-      </FormControl>
-      {/* Display ranking */}
-      <DisplayRankings rankType={rankType} category={rankingData[state.activeCat]} />
-    </Box>
-  );
-};
 
 const PageClient = () => {
   const [state, setState] = React.useState({
     rankType: GameRoomRankingEnum.TODAY,
+    mode: GameMode.SINGLE,
+    activeCat: 0,
+    page: 1,
   });
 
   const handleRanking = (
@@ -240,56 +174,211 @@ const PageClient = () => {
     setState((prev) => ({ ...prev, rankType: val, page: 1 }));
   };
 
+  const handleMode = (
+    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    val: GameMode
+  ) => {
+    ev.preventDefault();
+    setState((prev) => ({ ...prev, mode: val, page: 1 }));
+  };
+
+  const { token, user } = useAuthSession();
+
+  const dateInfo = getCurrentDataInfo();
+
+  const { data, isLoading } = useSWR(
+    {
+      type: "categories-ranking",
+      params: { rankType: state.rankType, mode: state.mode?.toLowerCase() },
+      token,
+    },
+    (arg) => getGameCategoriesRankings(arg.params, arg.token)
+  );
+
+  const isEmptyData = !data || data?.length === 0;
+
+  if (isLoading && !data) {
+    return <SkeletonStats />;
+  }
+
+  const rankingData = data ? data : []
+
+  const category = rankingData[state.activeCat]
+
   return (
     <Box>
       <Container>
         <PageHeader title="Games Leaderboard" />
         <Box sx={{ position: "relative", mt: 1 }}>
-          <Box sx={{display: "flex", justifyContent: "flex-end", my: 1}}>
-            <Button color="warning" variant="outlined" LinkComponent={Link} href="leaderboard-archive">View Archive</Button>
-          </Box>
-          <Paper sx={{ p: 2 }}>
-            <Stack
-              direction="row"
-              sx={{
-                justifyContent: "center",
-                mb: 1,
-                width: "100%",
-                zIndex: 9,
-              }}
-              spacing={2}
+          <Box sx={{ display: "flex", justifyContent: "flex-end", my: 1 }}>
+            <Button
+              color="warning"
+              variant="outlined"
+              LinkComponent={Link}
+              href="leaderboard-archive"
             >
-              {rankingBtns.map((item) => (
-                <Button
-                  key={item.title}
-                  variant="outlined"
-                  size="small"
-                  color="inherit"
-                  sx={{
-                    // marginY: 1,
-                    height: "100%",
-                    boxShadow: 5,
-                    borderRadius: 30,
-                    ...(state.rankType === item.value && {
-                      background: (theme) => theme.vars.palette.gradient[200],
-                      color: (theme) =>
-                        theme.vars.palette.gradient.contrastText,
-                    }),
-                    "&:hover": {
-                      background: (theme) => theme.vars.palette.gradient[200],
-                      color: (theme) =>
-                        theme.vars.palette.gradient.contrastText,
-                      transition: "2s ease-out",
-                    },
-                  }}
-                  onClick={(ev) => handleRanking(ev, item.value)}
-                >
-                  {item.title}
-                </Button>
-              ))}
-            </Stack>
+              View Archive
+            </Button>
+          </Box>
 
-            <DisplayComponent rankType={state.rankType} />
+          <Paper sx={{ p: 2 }}>
+            <Grid container>
+              <Grid size={{ lg: 4, md: 4, sm: 12, xs: 12 }}>
+                <Stack
+                  direction="row"
+                  sx={{
+                    // justifyContent: "center",
+                    mb: 1,
+                    width: "100%",
+                    zIndex: 9,
+                  }}
+                  spacing={2}
+                >
+                  {rankingBtns.map((item) => (
+                    <Button
+                      key={item.title}
+                      variant="outlined"
+                      size="small"
+                      color="inherit"
+                      sx={{
+                        // marginY: 1,
+                        height: "100%",
+                        boxShadow: 5,
+                        // borderRadius: 30,
+                        ...(state.rankType === item.value && {
+                          background: (theme) =>
+                            theme.vars.palette.gradient[200],
+                          color: (theme) =>
+                            theme.vars.palette.gradient.contrastText,
+                        }),
+                        "&:hover": {
+                          background: (theme) =>
+                            theme.vars.palette.gradient[200],
+                          color: (theme) =>
+                            theme.vars.palette.gradient.contrastText,
+                          transition: "2s ease-out",
+                        },
+                      }}
+                      onClick={(ev) => handleRanking(ev, item.value)}
+                    >
+                      {item.title}
+                    </Button>
+                  ))}
+                </Stack>
+              </Grid>
+              <Grid size={{ lg: 4, md: 4, sm: 12, xs: 12 }}>
+                <Stack
+                  direction="row"
+                  sx={{
+                    // justifyContent: "center",
+                    mb: 1,
+                    width: "100%",
+                    zIndex: 9,
+                  }}
+                  spacing={2}
+                >
+                  {modeBtns.map((item) => (
+                    <Button
+                      key={item.title}
+                      variant="outlined"
+                      size="small"
+                      color="inherit"
+                      sx={{
+                        // marginY: 1,
+                        height: "100%",
+                        boxShadow: 5,
+                        // borderRadius: 30,
+                        ...(state.mode === item.value && {
+                          background: (theme) =>
+                            theme.vars.palette.gradient[200],
+                          color: (theme) =>
+                            theme.vars.palette.gradient.contrastText,
+                        }),
+                        "&:hover": {
+                          background: (theme) =>
+                            theme.vars.palette.gradient[200],
+                          color: (theme) =>
+                            theme.vars.palette.gradient.contrastText,
+                          transition: "2s ease-out",
+                        },
+                      }}
+                      onClick={(ev) => handleMode(ev, item.value)}
+                    >
+                      {item.title}
+                    </Button>
+                  ))}
+                </Stack>
+              </Grid>
+              <Grid size={{ lg: 4, md: 4, sm: 12, xs: 12 }}>
+                <FormControl fullWidth>
+                  <InputLabel
+                    sx={{ textAlign: "center", display: "block" }}
+                    size="small"
+                    variant="standard"
+                    htmlFor="uncontrolled-native"
+                  >
+                    Game Category
+                  </InputLabel>
+                  <NativeSelect
+                    inputProps={{
+                      name: "activeCat",
+                      id: "uncontrolled-native",
+                    }}
+                    variant="outlined"
+                    value={state.activeCat}
+                    onChange={(ev) =>
+                      setState((prev) => ({
+                        ...prev,
+                        activeCat: parseInt(ev.target.value),
+                      }))
+                    }
+                  >
+                    {rankingData.map((item, index) => (
+                      <option key={item.id} value={index}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            <Box sx={{ py: 0, display: "block", textAlign: "center" }}>
+              <Typography variant="caption" sx={{ fontWeight: 900 }}>
+                Ranking -{" "}
+                {state.rankType === GameRoomRankingEnum.TODAY
+                  ? `${dateInfo.day} ${monthNames[dateInfo.month]} - ${dateInfo.year}`
+                  : state.rankType === GameRoomRankingEnum.WEEK
+                    ? `Week ${dateInfo.week} - ${monthNames[dateInfo.month]} - ${dateInfo.year}`
+                    : `${monthNames[dateInfo.month]} - ${dateInfo.year}`}
+              </Typography>
+            </Box>
+
+            {/* Display ranking */}
+            {isEmptyData ? (
+              <Box>
+                <Typography sx={{textAlign: 'center', py: 1}}>
+                  Participate in a game to see ranking appear here.
+                </Typography>
+                <Box sx={{ py: 1, textAlign: "center" }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    color="inherit"
+                    LinkComponent={Link}
+                    href="/games"
+                  >
+                    Play Game
+                  </Button>
+                </Box>
+              </Box>
+            ) : category ? (
+              <DisplayRankings
+                rankType={state.rankType}
+                category={category}
+                mode={state.mode}
+              />
+            ): <Typography sx={{textAlign: 'center', py: 1}}>No data available for this category - {state?.mode?.toLowerCase()} - {state.rankType} </Typography>}
           </Paper>
         </Box>
       </Container>

@@ -1,6 +1,8 @@
 "use client";
 
 import { FeedPost, FeedPostDetail, SwrGenericMutateFunction } from "@/types";
+import { FollowAction, FollowStatus } from "@/types/user";
+import { getFollowStatus } from "@/utils/connections";
 import { User } from "next-auth";
 import { useCallback } from "react";
 
@@ -11,10 +13,15 @@ const useFeedMutations = (
   setState?: (value: React.SetStateAction<any>) => void
 ) => {
   const mutateData = useCallback(
-    (updateFeedData: UpdateFeedData, optimisticUpdate?: (_data?: FeedPost[][]) => FeedPost[][]) => {
+    (
+      updateFeedData: UpdateFeedData,
+      optimisticUpdate?: (_data?: FeedPost[][]) => FeedPost[][]
+    ) => {
       mutate(
-        optimisticUpdate ? optimisticUpdate :(_data: FeedPost[][] | undefined) =>
-          _data?.map((_d) => updateFeedData(_d)),
+        optimisticUpdate
+          ? optimisticUpdate
+          : (_data: FeedPost[][] | undefined) =>
+              _data?.map((_d) => updateFeedData(_d)),
         {
           revalidate: false,
           populateCache: true,
@@ -172,6 +179,71 @@ const useFeedMutations = (
   );
 
   /**
+   * Update post pins and highlight and posts
+   * @param feed FeedPost[]
+   * @param args object
+   * @returns FeedPost[]
+   */
+  const updatePostPinAndHighlight = (
+    feed: FeedPost[],
+    args: { id: string; hasPinned?: boolean; hasHighlighted?: boolean }
+  ): FeedPost[] => {
+    return feed.map((d) => {
+      if (d.id === args.id) {
+        return {
+          ...d,
+          actions: { ...d.actions, ...args },
+        };
+      }
+      if (d.parent && d.parentId === args.id) {
+        return {
+          ...d,
+          parent: {
+            ...d.parent,
+            actions: { ...d.actions, ...args },
+          },
+        };
+      }
+      return d;
+    });
+  };
+
+  /**
+   * SWR mutate post pins and highlight
+   */
+  const mutatePostPinAndHighlight = useCallback(
+    (args: { id: string; hasPinned?: boolean; hasHighlighted?: boolean }) => {
+      const update = (feed: FeedPost[]) =>
+        updatePostPinAndHighlight(feed, args);
+      mutateData(update);
+      if (!setState) return;
+      setState((prev: any) => {
+        let feedPost = prev.feedPost;
+        if (args?.id === feedPost?.id) {
+          const _feedPost = updatePostPinAndHighlight([feedPost], args);
+          feedPost = { ...feedPost, ..._feedPost[0] };
+        }
+        const thread = updatePostPinAndHighlight(feedPost?.thread, args);
+        const replies = updatePostPinAndHighlight(feedPost?.replies, args);
+        const parentChain = updatePostPinAndHighlight(
+          feedPost?.parentChain,
+          args
+        );
+        return {
+          ...prev,
+          feedPost: {
+            ...feedPost,
+            thread,
+            replies,
+            parentChain,
+          },
+        };
+      });
+    },
+    [mutateData]
+  );
+
+  /**
    * Update post reposts and return posts
    * @param feed FeedPost[]
    * @param args object
@@ -180,7 +252,7 @@ const useFeedMutations = (
    */
   const updatePostReposts = (
     feed: FeedPost[],
-    args: { id?: string; postId: string; reposted: boolean },
+    args: { childId?: string; postId: string; reposted: boolean },
     local: boolean = true
   ): FeedPost[] => {
     const calc = (val: number) => (val < 1 ? 0 : val);
@@ -212,8 +284,8 @@ const useFeedMutations = (
       }
       return d;
     });
-    if (args.id && !args.reposted) {
-      updated = updated.filter((p) => p.id !== args.id);
+    if (args.childId && !args.reposted) {
+      updated = updated.filter((p) => p.id !== args.childId);
     }
     return updated;
   };
@@ -223,36 +295,38 @@ const useFeedMutations = (
    */
   const mutatePostReposts = useCallback(
     (
-      args: { id?: string; postId: string; reposted: boolean },
+      args: { childId?: string; postId: string; reposted: boolean },
       local: boolean = true
     ) => {
+      if (setState) {
+        setState((prev: any) => {
+          let feedPost = prev.feedPost;
+          if (args?.postId === feedPost?.id) {
+            const _feedPost = updatePostReposts([feedPost], args, local);
+            feedPost = { ...feedPost, ..._feedPost[0] };
+          }
+          const thread = updatePostReposts(feedPost?.thread, args, local);
+          const replies = updatePostReposts(feedPost?.replies, args, local);
+          const parentChain = updatePostReposts(
+            feedPost?.parentChain,
+            args,
+            local
+          );
+
+          return {
+            ...prev,
+            feedPost: {
+              ...feedPost,
+              thread,
+              replies,
+              parentChain,
+            },
+          };
+        });
+      }
+      // mutate swr if any
       const update = (feed: FeedPost[]) => updatePostReposts(feed, args, local);
       mutateData(update);
-      if (!setState) return;
-      setState((prev: any) => {
-        let feedPost = prev.feedPost;
-        if (args?.id === feedPost?.id) {
-          const _feedPost = updatePostReposts([feedPost], args, local);
-          feedPost = { ...feedPost, ..._feedPost[0] };
-        }
-        const thread = updatePostReposts(feedPost?.thread, args, local);
-        const replies = updatePostReposts(feedPost?.replies, args, local);
-        const parentChain = updatePostReposts(
-          feedPost?.parentChain,
-          args,
-          local
-        );
-
-        return {
-          ...prev,
-          feedPost: {
-            ...feedPost,
-            thread,
-            replies,
-            parentChain,
-          },
-        };
-      });
     },
     [mutateData]
   );
@@ -381,14 +455,15 @@ const useFeedMutations = (
       user?: User
     ) => {
       const update = (feed: FeedPost[]) => updatePostReplies(feed, args);
-        
-      const optimisticUpdate = (_data?: FeedPost[][]) => 
-      {
+
+      const optimisticUpdate = (_data?: FeedPost[][]) => {
         if (_data) {
           const updated = _data?.map((_d) => update(_d));
           // insert if it's the current active post
-          const item = updated[0][0]
-          if ( args.reply && item?.parentId === args.id &&
+          const item = updated[0][0];
+          if (
+            args.reply &&
+            item?.parentId === args.id &&
             args.userId === user?.id
           ) {
             updated[0].unshift(args.reply);
@@ -531,46 +606,117 @@ const useFeedMutations = (
   );
 
   /**
-   * Update block or mute user and return posts
+   * Update block and return posts
    * @param feed FeedPost[]
-   * @param userId string
+   * @param args object
    * @returns FeedPost[]
    */
-  const updateBlockOrMuteUser = (
+  const updateBlockUser = (
     feed: FeedPost[],
-    userId: string
+    args: { blockedId: string; isBlocked: boolean; isFilter: boolean }
   ): FeedPost[] => {
-    return feed.filter(
-      (d) => d.author.id !== userId && d?.parent?.author.id !== userId
-    );
+    if(args.isFilter){
+      return feed.filter(
+        (d) => d.author.id !== args.blockedId && d?.parent?.author.id !== args.blockedId
+      );
+    }else{
+      return feed.map(d => d?.author?.id === args.blockedId ? {...d, actions: {...d?.actions, isBlockedByUser: args.isBlocked}}: d)
+    }
   };
 
   /**
-   * SWR mutate block or mute user
+   * SWR mutate mute user
    */
-  const mutateBlockOrMuteUser = useCallback(
-    (userId: string) => {
-      const update = (feed: FeedPost[]) => updateBlockOrMuteUser(feed, userId);
+  const mutateBlockUser = useCallback(
+    (args: { blockedId: string; isBlocked: boolean; isFilter: boolean }) => {
+      console.log("muted args ", args )
+      const update = (feed: FeedPost[]) => updateBlockUser(feed, args);
       mutateData(update);
       if (!setState) return;
       setState((prev: any) => {
-        const feedPost = prev.feedPost;
-        const thread = updateBlockOrMuteUser(feedPost.thread, userId);
-        const replies = updateBlockOrMuteUser(feedPost.replies, userId);
-        const parentChain = updateBlockOrMuteUser(feedPost.parentChain, userId);
+        const feedPost: FeedPostDetail = prev.feedPost;
+        const thread = updateBlockUser(feedPost.thread, args);
+        const replies = updateBlockUser(feedPost.replies, args);
+        const parentChain = updateBlockUser(feedPost.parentChain, args);
 
         return {
           ...prev,
           feedPost: {
             ...feedPost,
-            ...(userId === feedPost.userId && { deletedAt: new Date() }),
+            ...(args.blockedId === feedPost.userId && { 
+              actions: {...feedPost?.actions, isBlockedByUser: args.isBlocked},
+              deletedAt: args.isFilter ? new Date() : null
+            }),
             ...(feedPost?.parent &&
-              userId === feedPost?.parent?.userId && {
+              args.blockedId === feedPost?.parent?.userId && {
                 parent: {
                   ...feedPost.parent,
-                  deletedAt: new Date(),
+                  actions: {...feedPost?.parent?.actions, isBlockedByUser: args.isBlocked},
+                  deletedAt: args.isFilter ? new Date() : null,
                 },
               }),
+            
+            thread,
+            replies,
+            parentChain,
+          },
+        };
+      });
+    },
+    [mutateData]
+  );
+
+  /**
+   * Update mute user and return posts
+   * @param feed FeedPost[]
+   * @param args object
+   * @returns FeedPost[]
+   */
+  const updateMuteUser = (
+    feed: FeedPost[],
+    args: { mutedId: string; isMuted: boolean; isFilter: boolean }
+  ): FeedPost[] => {
+    if(args.isFilter){
+      return feed.filter(
+        (d) => d.author.id !== args.mutedId && d?.parent?.author.id !== args.mutedId
+      );
+    }else{
+      return feed.map(d => d?.author?.id === args.mutedId ? {...d, actions: {...d?.actions, isMutedByUser: args.isMuted}}: d)
+    }
+  };
+
+  /**
+   * SWR mutate mute user
+   */
+  const mutateMuteUser = useCallback(
+    (args: { mutedId: string; isMuted: boolean; isFilter: boolean }) => {
+      console.log("muted args ", args )
+      const update = (feed: FeedPost[]) => updateMuteUser(feed, args);
+      mutateData(update);
+      if (!setState) return;
+      setState((prev: any) => {
+        const feedPost: FeedPostDetail = prev.feedPost;
+        const thread = updateMuteUser(feedPost.thread, args);
+        const replies = updateMuteUser(feedPost.replies, args);
+        const parentChain = updateMuteUser(feedPost.parentChain, args);
+
+        return {
+          ...prev,
+          feedPost: {
+            ...feedPost,
+            ...(args.mutedId === feedPost.userId && { 
+              actions: {...feedPost?.actions, isMutedByUser: args.isMuted},
+              deletedAt: args.isFilter ? new Date() : null
+            }),
+            ...(feedPost?.parent &&
+              args.mutedId === feedPost?.parent?.userId && {
+                parent: {
+                  ...feedPost.parent,
+                  actions: {...feedPost?.parent?.actions, isMutedByUser: args.isMuted},
+                  deletedAt: args.isFilter ? new Date() : null,
+                },
+              }),
+            
             thread,
             replies,
             parentChain,
@@ -799,7 +945,6 @@ const useFeedMutations = (
     },
     [mutateData]
   );
-  
 
   /**
    * Update post author and return posts
@@ -811,27 +956,48 @@ const useFeedMutations = (
   const updatePostAuthor = (
     feed: FeedPost[],
     userId: string,
-    isFollow: boolean
+    action: FollowAction
   ): FeedPost[] => {
     return feed.map((d) => {
+      const conn = getFollowStatus(d.author.conn, d.author.meta, action);
       if (d.userId === userId) {
         return {
           ...d,
           author: {
             ...d.author,
-            conn: { ...d.author.conn, isFollowed: isFollow },
+            conn: {
+              ...d.author.conn,
+              ...conn,
+            },
           },
+          tagUsers: d.tagUsers.map((u) =>
+            u.id === userId ? { ...u, conn: { ...u.conn, ...conn } } : u
+          ),
+          mentions: d.mentions.map((u) =>
+            u.id === userId ? { ...u, conn: { ...u.conn, ...conn } } : u
+          ),
         };
       }
       if (d?.parent && d?.parent?.author?.id === userId) {
+        const conn = getFollowStatus(
+          d?.parent?.author?.conn,
+          d?.parent?.author?.meta,
+          action
+        );
         return {
           ...d,
           parent: {
             ...d.parent,
             author: {
               ...d.parent.author,
-              conn: { ...d.parent.author.conn, isFollowed: isFollow },
+              conn: { ...d.parent.author.conn, ...conn },
             },
+            tagUsers: d?.parent?.tagUsers.map((u) =>
+              u.id === userId ? { ...u, conn: { ...u.conn, ...conn } } : u
+            ),
+            mentions: d?.parent?.mentions.map((u) =>
+              u.id === userId ? { ...u, conn: { ...u.conn, ...conn } } : u
+            ),
           },
         };
       }
@@ -843,23 +1009,23 @@ const useFeedMutations = (
    * SWR mutate post author
    */
   const mutatePostAuthor = useCallback(
-    (userId: string, isFollow: boolean) => {
+    (userId: string, action: FollowAction) => {
       const update = (feed: FeedPost[]) =>
-        updatePostAuthor(feed, userId, isFollow);
+        updatePostAuthor(feed, userId, action);
       mutateData(update);
       if (!setState) return;
       setState((prev: any) => {
         let feedPost = prev.feedPost;
         if (userId === feedPost?.userId) {
-          const _feedPost = updatePostAuthor([feedPost], userId, isFollow);
+          const _feedPost = updatePostAuthor([feedPost], userId, action);
           feedPost = { ...feedPost, ..._feedPost[0] };
         }
-        const thread = updatePostAuthor(feedPost?.thread, userId, isFollow);
-        const replies = updatePostAuthor(feedPost?.replies, userId, isFollow);
+        const thread = updatePostAuthor(feedPost?.thread, userId, action);
+        const replies = updatePostAuthor(feedPost?.replies, userId, action);
         const parentChain = updatePostAuthor(
           feedPost?.parentChain,
           userId,
-          isFollow
+          action
         );
 
         return {
@@ -879,30 +1045,48 @@ const useFeedMutations = (
   return {
     updatePostLikes,
     mutatePostLikes,
+
     updatePostBookmarks,
     mutatePostBookmarks,
+
     updatePostReposts,
     mutatePostReposts,
+
     updatePostQuotes,
     mutatePostQuotes,
+
     updatePostReplies,
     mutatePostReplies,
+
     updateDeletedPost,
     mutateDeletedPost,
+
     updatePostFilter,
     mutatePostFilter,
-    updateBlockOrMuteUser,
-    mutateBlockOrMuteUser,
+
+    updateBlockUser,
+    mutateBlockUser,
+
+    updateMuteUser,
+    mutateMuteUser,
+
     updatePostShares,
     mutatePostShares,
+
     updatePostImpressions,
     mutatePostImpressions,
+
     updatePostViews,
     mutatePostViews,
+
     updatePostAuthor,
     mutatePostAuthor,
+
     updatePostTips,
-    mutatePostTips
+    mutatePostTips,
+
+    updatePostPinAndHighlight,
+    mutatePostPinAndHighlight,
   };
 };
 

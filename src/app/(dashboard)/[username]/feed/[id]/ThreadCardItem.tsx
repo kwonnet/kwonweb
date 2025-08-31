@@ -13,8 +13,18 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useAuthSession, useTrackImpression, useTrackPostReplyView } from "@/hooks";
-import { formatDateTime, formatFeedNumber, formatRelativeTime } from "@/utils";
+import {
+  useAuthSession,
+  useTrackImpression,
+  useTrackPostReplyView,
+} from "@/hooks";
+import {
+  composeTagText,
+  formatDateTime,
+  formatFeedNumber,
+  formatRelativeTime,
+  getSessionId,
+} from "@/utils";
 import QuickreplyOutlinedIcon from "@mui/icons-material/QuickreplyOutlined";
 import RepeatOutlinedIcon from "@mui/icons-material/RepeatOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
@@ -27,7 +37,9 @@ import {
   AnimateLikeButton,
   AuthorHoverPreview,
   DisplayFeedMedia,
+  DisplayMessage,
   DisplayQuizItem,
+  DisplayTagMentionDrawer,
   FeedQuoteItem,
   PostOptions,
   PostTipDrawer,
@@ -40,6 +52,27 @@ import ContentEditor from "@/components/post/ContentEditor";
 import DisplayPollItem from "@/components/post/DisplayPollItem";
 import { useNotifications } from "@toolpad/core";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
+import {
+  PostMetricAction,
+  PostMetricSource,
+  PostTagMention,
+} from "@/types/post";
+import { sendPostClick } from "@/lib/posts";
+import { trackUserProfileVisit } from "@/lib/users";
+import Link from "next/link";
+import { FollowAction, UserConnection } from "@/types/user";
+import { getFollowAction, getUserConnInfo } from "@/utils/connections";
+import LoyaltyOutlinedIcon from "@mui/icons-material/LoyaltyOutlined";
+import AlternateEmailOutlinedIcon from "@mui/icons-material/AlternateEmailOutlined";
+
+type LocalState = {
+  isOpen: boolean;
+  openTagUserDrawer: boolean;
+  slug: PostTagMention;
+  users: UserConnection[];
+  title?: string;
+  muted: boolean;
+};
 
 const ThreadCardItem = ({
   post,
@@ -71,19 +104,23 @@ const ThreadCardItem = ({
   handleReply: (ev: any, item: FeedPost) => void;
   onQuote: (id: string) => Promise<void>;
   isDivider?: boolean;
-  onFollowUserCallback: (
-    args: {
-      senderId: string;
-      recipientId: string;
-    },
-    isFollow: boolean
-  ) => void;
+  onFollowUserCallback: (args: {
+    senderId: string;
+    recipientId: string;
+    action: FollowAction;
+  }) => void;
 }) => {
   const router = useRouter();
 
-  const [state, setState] = useState({isOpen: false})
+  const [state, setState] = useState<LocalState>({
+    isOpen: false,
+    openTagUserDrawer: false,
+    slug: PostTagMention.TAG_USERS,
+    users: [],
+    muted: true,
+  });
 
-  const { user } = useAuthSession();
+  const { user, token } = useAuthSession();
 
   const notif = useNotifications();
 
@@ -97,10 +134,24 @@ const ThreadCardItem = ({
     setAnchorEl(null);
   };
 
-  const toggleTipDrawer = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent>, open: boolean) => {
-    ev.stopPropagation()
-    ev.preventDefault()
+  const toggleTipDrawer = (
+    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    open: boolean
+  ) => {
+    ev.stopPropagation();
+    ev.preventDefault();
     setState((prev) => ({ ...prev, isOpen: open }));
+  };
+
+  const toggleTagUserDrawer = (
+    ev:
+      | React.MouseEvent<HTMLButtonElement, MouseEvent>
+      | React.MouseEvent<HTMLDivElement, MouseEvent>,
+    open: boolean
+  ) => {
+    ev.stopPropagation();
+    ev.preventDefault();
+    setState((prev) => ({ ...prev, openTagUserDrawer: open }));
   };
 
   // menu options
@@ -140,6 +191,39 @@ const ThreadCardItem = ({
     prevOpen.current = openMenu;
   }, [openMenu]);
 
+  const sendPostClickLog = (action: PostMetricAction) => {
+    if (user.id !== item?.userId) {
+      const sessionId = getSessionId();
+      sendPostClick(
+        {
+          id: item.id,
+          action,
+          source: PostMetricSource.PAGEVIEW,
+          timestamp: new Date().toISOString(),
+          sessionId,
+        },
+        token
+      );
+    }
+  };
+
+  const trackProfileVisit = (
+    ev: React.MouseEvent<HTMLDivElement | HTMLButtonElement, MouseEvent>,
+    author: PostAuthor
+  ) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (user.id !== author.id) {
+      const sessionId = getSessionId();
+      trackUserProfileVisit(
+        { postId: item.id, userId: author.id, sessionId },
+        token
+      );
+      sendPostClickLog(PostMetricAction.PROFILE);
+      // sessionStorage.setItem('tz_p_v', JSON.stringify({postId: item.id, userId: author.id}));
+    }
+  };
+
   const handlePost = (
     ev: React.MouseEvent<HTMLDivElement, MouseEvent>,
     item: FeedPost
@@ -151,25 +235,25 @@ const ThreadCardItem = ({
   };
 
   const redirectToProfile = (
-    ev: React.MouseEvent<HTMLDivElement, MouseEvent>,
     user: PostAuthor
   ) => {
-    ev.preventDefault();
+    router.push(`/@${user.username}`);
+  };
+
+  const handleFollowUser = (recipientId: string, action: FollowAction) => {
+    onFollowUserCallback({ senderId: user.id, recipientId, action });
+  };
+
+  const handleToggleTip = (
+    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
     ev.stopPropagation();
-    router.push(
-      user.id === user?.id ? `/profile` : `/@${user.username}`
-    );
+    toggleTipDrawer(ev, true);
   };
 
-
-  const handleFollowUser = (recipientId: string, isFollow: boolean) => {
-    onFollowUserCallback({ senderId: user.id, recipientId }, isFollow);
+  const onToggleMuteAction = () => {
+    setState((prev) => ({ ...prev, muted: false }));
   };
-
-  const handleToggleTip = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> ) => {
-      ev.stopPropagation();
-      toggleTipDrawer(ev, true)
-    }
 
   const item = post.kind === PostKind.REPOST ? post.parent : post;
 
@@ -177,7 +261,8 @@ const ThreadCardItem = ({
 
   // check if the current author is followed by the current reader
   const isFollowed =
-    user.id === item.author.id || item?.author?.conn?.isFollowed;
+    user.id === item.author.id || item?.author?.conn?.isFollowedByUser;
+  const { isFriends } = getUserConnInfo(item?.author?.conn);
 
   const quotedPost =
     post.kind === PostKind.QUOTE
@@ -186,10 +271,38 @@ const ThreadCardItem = ({
         ? post?.parent?.parent
         : undefined;
   // track post thread or reply impression
-  const  ref = useTrackImpression(item.id, 5)
+  const ref = useTrackImpression(item.id, 5);
   // track post thread or reply view
-  const viewRef = useTrackPostReplyView(item.id)
-  
+  const viewRef = useTrackPostReplyView(item.id);
+
+  if (item.actions.isRootBlockedByUser || item.actions.isBlockedByUser) {
+      return (
+        <DisplayMessage
+          actionHandler={() => redirectToProfile(item.author)}
+          showActionBtn={true}
+          btnText="Unblock"
+          message="You can't view this at the moment. You have blocked the author"
+        />
+      );
+    }
+
+  if (item.actions.hasBlockedByRootUser || item.actions.hasBlockedUser) {
+    return (
+      <DisplayMessage message="You can't view this at the moment. You have been blocked by the author" />
+    );
+  }
+
+  if (state.muted && item.actions.isMutedByUser) {
+    return (
+      <DisplayMessage
+        message="You have muted this user"
+        actionHandler={onToggleMuteAction}
+        btnText="View"
+        showActionBtn={true}
+      />
+    );
+  }
+
   return (
     <Card
       ref={ref}
@@ -205,12 +318,13 @@ const ThreadCardItem = ({
           mb: 0,
           pt: 0,
           pb: 0,
-          px: 0.5,
+          p: 0,
+          px: 2,
           borderBottom: `0.1px solid #eaeaec`,
-          borderTop: `0.1px solid #eaeaec`,
+          // borderTop: `0.1px solid #eaeaec`,
           ...theme.applyStyles("dark", {
-            borderBottom: `0.1px solid #46454d`,
-            borderTop: `0.1px solid #46454d`,
+            borderBottom: `0.1px solid #1c1c20ff`,
+            // borderTop: `0.1px solid #1c1c20ff`,
           }),
           // px: 1,
           cursor: "pointer",
@@ -261,7 +375,7 @@ const ThreadCardItem = ({
             <Box>
               <Badge
                 overlap="circular"
-                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                 badgeContent={
                   !isFollowed && (
                     <IconButton
@@ -270,27 +384,38 @@ const ThreadCardItem = ({
                         ev.stopPropagation();
                         handleFollowUser(
                           item.userId,
-                          !item.author.conn.isFollowed
+                          getFollowAction(
+                            isFriends,
+                            item?.author?.conn?.followedStatus
+                          )
                         );
+                        // handleFollowUser(
+                        //   item.userId,
+                        //   !item.author.conn.isFollowedByUser
+                        // );
                       }}
                       size="small"
                     >
-                      <AddCircleOutlinedIcon sx={{ width: 24, height: 24 }} />
+                      <AddCircleOutlinedIcon sx={{ width: 16, height: 16 }} />
                     </IconButton>
                   )
                 }
               >
-                <Avatar
-                  sx={{
-                    height: 50,
-                    width: 50,
-                    border: (theme) =>
-                      `4px solid ${theme.vars.palette.background.paper}`,
-                  }}
-                  alt={item?.author?.name}
-                  src={item?.author?.avatar}
-                  onClick={(ev) => redirectToProfile(ev, item.author)}
-                />
+                <Box onClick={(ev) => trackProfileVisit(ev, item.author)}>
+                  <Link href={`/@${item?.author?.username}`}>
+                    <Avatar
+                      sx={{
+                        height: 50,
+                        width: 50,
+                        border: (theme) =>
+                          `4px solid ${theme.vars.palette.background.paper}`,
+                      }}
+                      alt={item?.author?.name}
+                      src={item?.author?.avatar}
+                      // onClick={(ev) => redirectToProfile(ev, item.author)}
+                    />
+                  </Link>
+                </Box>
               </Badge>
             </Box>
             <Stack
@@ -301,7 +426,7 @@ const ThreadCardItem = ({
                 width: "100%",
               }}
             >
-              <Stack onClick={(ev) => redirectToProfile(ev, item.author)}>
+              <Stack onClick={(ev) => trackProfileVisit(ev, item?.author)}>
                 <AuthorHoverPreview
                   author={item?.author}
                   isName={true}
@@ -380,6 +505,7 @@ const ThreadCardItem = ({
             sx={{
               width: "100%",
               position: "relative",
+              // px: 1
             }}
           >
             {isDeleted && item.totalReplies > 0 && (
@@ -392,7 +518,12 @@ const ThreadCardItem = ({
                   This content is not available.
                 </Typography>
                 <Box sx={{ textAlign: "center", display: "block" }}>
-                  <Button size="small" disableFocusRipple disableRipple disableTouchRipple>
+                  <Button
+                    size="small"
+                    disableFocusRipple
+                    disableRipple
+                    disableTouchRipple
+                  >
                     Show replies
                   </Button>
                 </Box>
@@ -400,11 +531,114 @@ const ThreadCardItem = ({
             )}
             {!isDeleted && (
               <React.Fragment>
+                {item?.parent && item?.kind === PostKind.REPLY && (
+                  <Stack
+                    onClick={(ev) => ev.stopPropagation()}
+                    direction={"row"}
+                    alignItems={"center"}
+                    spacing={1}
+                    sx={{ mt: -0.5 }}
+                  >
+                    <Typography color="textDisabled" variant="caption">
+                      replying to{" "}
+                    </Typography>
+                    <Typography
+                      sx={{ textDecoration: "none" }}
+                      component={Link}
+                      href={`/@${item?.parent?.author?.username}`}
+                      color="info"
+                      variant="caption"
+                    >
+                      @{item?.parent?.author?.username}
+                    </Typography>
+                  </Stack>
+                )}
                 <ContentEditor
                   disablePadding={true}
                   readOnly={true}
                   content={item?.content?.trim()}
                 />
+
+                {/* tagged users */}
+                <Stack
+                  direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
+                  justifyContent={"space-between"}
+                  spacing={1}
+                >
+                  {item?.tagUsers?.length > 0 && (
+                    <Stack
+                      direction={"row"}
+                      alignItems={"center"}
+                      spacing={0.5}
+                      sx={{ pt: 0.5, cursor: "pointer" }}
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        ev.preventDefault();
+                        setState((prev) => ({
+                          ...prev,
+                          users: item.tagUsers,
+                          openTagUserDrawer: true,
+                          slug: PostTagMention.TAG_USERS,
+                          title: "Tagged Users",
+                        }));
+                      }}
+                    >
+                      <LoyaltyOutlinedIcon
+                        sx={{ color: "text.disabled", width: 12, height: 12 }}
+                      />
+                      <Typography
+                        color="textDisabled"
+                        sx={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 1, // Number of lines before truncating
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          maxWidth: "100%", // Ensures it adapts to container width
+                        }}
+                        variant="caption"
+                      >
+                        {composeTagText(item?.tagUsers)}
+                      </Typography>
+                    </Stack>
+                  )}
+
+                  {item?.mentions?.length > 0 && (
+                    <Stack
+                      direction={"row"}
+                      alignItems={"center"}
+                      spacing={0.5}
+                      sx={{ pt: 0.5, cursor: "pointer" }}
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        ev.preventDefault();
+                        setState((prev) => ({
+                          ...prev,
+                          users: item.mentions,
+                          openTagUserDrawer: true,
+                          slug: PostTagMention.MENTIONS,
+                          title: "Mentions",
+                        }));
+                      }}
+                    >
+                      <AlternateEmailOutlinedIcon
+                        sx={{ color: "text.disabled", width: 12, height: 12 }}
+                      />
+                      <Typography
+                        color="textDisabled"
+                        sx={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 1, // Number of lines before truncating
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          maxWidth: "100%", // Ensures it adapts to container width
+                        }}
+                        variant="caption"
+                      >
+                        {composeTagText(item?.mentions)}
+                      </Typography>
+                    </Stack>
+                  )}
+                </Stack>
 
                 {item.type === PostType.POLL && item?.poll?.isMultiVote && (
                   <Typography
@@ -448,6 +682,7 @@ const ThreadCardItem = ({
               <FeedQuoteItem
                 post={quotedPost}
                 onFollowUserCallback={onFollowUserCallback}
+                showViewMuteBtn={true}
               />
             )}
             {/* show post stats */}
@@ -652,7 +887,6 @@ const ThreadCardItem = ({
                   justifyContent: "space-between",
                   px: 0,
                   mx: 0,
-                  left: -9,
                   maxWidth: "100%",
                 }}
               >
@@ -801,28 +1035,27 @@ const ThreadCardItem = ({
                   </Stack>
                 </Tooltip>
                 <Tooltip title="Thanks" placement="top">
-                      <Stack
-                        direction={"row"}
+                  <Stack
+                    direction={"row"}
+                    sx={{
+                      alignItems: "center",
+                      // justifyContent: "center",
+                      color: (theme) => theme.vars.palette.text.disabled,
+                    }}
+                    spacing={-0.7}
+                  >
+                    <IconButton onClick={(ev) => handleToggleTip(ev)}>
+                      <MonetizationOnOutlinedIcon
                         sx={{
-                          alignItems: "center",
-                          // justifyContent: "center",
+                          height: 16,
+                          width: 16,
                           color: (theme) => theme.vars.palette.text.disabled,
                         }}
-                        spacing={-0.7}
-                      >
-                        <IconButton onClick={(ev) => handleToggleTip(ev)}>
-                          <MonetizationOnOutlinedIcon
-                            sx={{
-                              height: 16,
-                              width: 16,
-                              color: (theme) =>
-                                theme.vars.palette.text.disabled,
-                            }}
-                          />
-                        </IconButton>
-                        <RollingNumber number={item?.totalTips} />
-                      </Stack>
-                    </Tooltip>
+                      />
+                    </IconButton>
+                    <RollingNumber number={item?.totalTips} />
+                  </Stack>
+                </Tooltip>
                 <Tooltip title="Share" placement="top">
                   <Stack
                     direction={"row"}
@@ -869,7 +1102,23 @@ const ThreadCardItem = ({
         }}
       />
       {/* post tip drawer */}
-      <PostTipDrawer post={item} isOpen={state.isOpen} toggleDrawer={toggleTipDrawer} />
+      <PostTipDrawer
+        post={item}
+        isOpen={state.isOpen}
+        toggleDrawer={toggleTipDrawer}
+      />
+
+      {/* tag users drawer */}
+      {state.openTagUserDrawer && (
+        <DisplayTagMentionDrawer
+          users={state.users}
+          title={state.title}
+          postId={item.id}
+          slug={state.slug}
+          isOpen={state.openTagUserDrawer}
+          toggleDrawer={toggleTagUserDrawer}
+        />
+      )}
     </Card>
   );
 };

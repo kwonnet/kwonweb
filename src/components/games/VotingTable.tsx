@@ -17,12 +17,13 @@ import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlin
 import DoneAllOutlinedIcon from '@mui/icons-material/DoneAllOutlined';
 import { GameEventEnum } from "@/types";
 import { useAuthSession } from "@/hooks";
+import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const VotingTable = () => {
 
   const { user } = useAuthSession()
 
-  const { question, countdown, roomAnswers, socketIo } = useSocketIoContext();
+  const { question, countdown, roomAnswers, gameSocketIo: socketIo } = useGameSocketIoContext();
 
   const [state, setState] = useState<{votedId?: string}>({votedId: undefined})
 

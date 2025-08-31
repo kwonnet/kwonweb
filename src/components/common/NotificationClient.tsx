@@ -13,48 +13,46 @@ import useSWRInfinite from "swr/infinite";
 import NotificationCard from "./NotificationCard";
 // import { getUserNotifications } from "@/lib/actions/notifications";
 import { useSession } from "next-auth/react";
+import DisplayError from "./DisplayError";
+import { getErrorMessage } from "@/utils";
+import { getUserNotifications } from "@/lib/users";
+import { useAuthSession } from "@/hooks";
 
+const PAGE_SIZE = 21;
 
-const PAGE_SIZE = 10;
-
-type IFethArgs = {
+type IFetchArgs = {
   limit: number;
   skip: number;
   userId: string;
 };
 
-const fetcher = cache(async (args: IFethArgs): Promise<AppNotification[]> => {
-  // const response = await getUserNotifications(args)
-  // if (!response.data) {
-  //   throw new Error(response.message);
-  // }
-  // return response.data;
-  return []
-})
 
 const NotificationClient = ({items,
   close
 }: {
-    items: AppNotification[];
+    items?: AppNotification[];
     close: () => void
 }) => {
-  const session = useSession()
+
+  const {user, token} = useAuthSession()
+
   const getKey = (pageIndex: number, previousPageData?: AppNotification[]) => {
     if (pageIndex !== 0 && previousPageData && !previousPageData.length)
       return null; // Stop when no more data
-    return { type: "notifications", userId: session?.data?.user?.id, limit: PAGE_SIZE, skip: pageIndex * PAGE_SIZE }
+    return { type: "notifications", userId: user?.id, limit: PAGE_SIZE, page: pageIndex + 1 }
   };
 
   const { data, error, isLoading, isValidating, mutate, size, setSize } =
-    useSWRInfinite(getKey, fetcher, {
+    useSWRInfinite(getKey, (args) => getUserNotifications(args, token), {
       keepPreviousData: true,
-      fallbackData: [items],
+      fallbackData: items ? [items] : items,
+      errorRetryCount: 2
     });
 
   const flatData = data ? data?.flat() : [];
 
   const isReachingEnd =
-    (data && data[data.length - 1]?.length === 0) || !!error;
+    (data && data[data.length - 1]?.length < PAGE_SIZE) || !!error;
 
   return (
     <React.Fragment>
@@ -70,21 +68,7 @@ const NotificationClient = ({items,
           <CircularProgress />
         </Box>
       )}
-      {!isLoading && flatData.length === 0 && (
-        <Box sx={{}}>
-          <Typography
-            variant="h5"
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%,-50%)",
-            }}
-          >
-            <CardMedia image="/no-data.svg" component={"img"} />
-          </Typography>
-        </Box>
-      )}
+      {(error && !data) && <DisplayError status={error?.status} message={getErrorMessage(error)} />}
       <Grid container spacing={2} mt={2}>
         {flatData.map((item) => (
           <Grid key={item.id} size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>

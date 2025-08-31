@@ -5,7 +5,6 @@ import {
   IconButton,
   SwipeableDrawer,
   Stack,
-  Grid2,
   Typography,
   List,
   ListItem,

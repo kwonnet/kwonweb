@@ -28,7 +28,11 @@ const PopularCreatorsServer = async() => {
   
     const users: UserConnection[] = result.status === 404 ? [] : await result.json();
 
-  return <DisplayClient connType={ConnTypeEnum.POPULAR_CREATORS} users={users} />;
+  return <DisplayClient
+      allowCarousel={true}
+      connType={ConnTypeEnum.POPULAR_CREATORS}
+      users={users}
+    />
   
 }
 

@@ -2,11 +2,15 @@ export { default as FeedMediaItem } from "./FeedMediaItem"
 
 export { default as FeedCardItem } from "./FeedCardItem"
 
+export { default as FeedCardReplyItem } from "./FeedCardReplyItem"
+
+export { default as FeedCardPostItem } from "./FeedCardPostItem"
+
 export { default as FeedSkeleton } from "./FeedSkeleton"
 
 export { default as DisplayFeedMedia } from "./DisplayFeedMedia"
 
-export { default as ForYouNewsfeed } from "./ForYouNewsfeed"
+export { default as ForYouNewsfeed } from "./FeedsDisplay"
 
 export { default as FeedQuoteItem } from "./FeedQuoteItem"
 
@@ -51,3 +55,19 @@ export { default as PostReportModal } from "./PostReportModal"
 export { default as PostOptions } from "./PostOptions"
 
 export { default as PostTipDrawer } from "./PostTipDrawer"
+
+export { default as UserPostsFeed } from "./UserPostsFeed"
+
+export { default as UserRepliesFeed } from "./UserRepliesFeed"
+
+export { default as UserHighlightsFeed } from "./UserHighlightsFeed"
+
+export { default as UserLikesFeed } from "./UserLikesFeed"
+
+export { default as UserMediaFeed } from "./UserMediaFeed"
+
+export { default as UserBookmarksFeed } from "./UserBookmarksFeed"
+
+export { default as DisplayTagMentionDrawer } from "./DisplayTagMentionDrawer"
+
+export { default as DisplayMessage } from "./DisplayMessage"

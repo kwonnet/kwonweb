@@ -7,7 +7,7 @@ import type {} from "@mui/material/themeCssVarsAugmentation";
 import { CardMedia } from "@mui/material";
 import { Session } from "next-auth";
 import theme from "./theme";
-import { NAVIGATION } from "./navigation";
+import { getNavigationItems } from "./navigation";
 
 const AUTHENTICATION = {
   signIn,
@@ -18,6 +18,7 @@ const NextjsAppProvider = (props: {
   children: React.ReactNode;
   session?: Session | null;
 }) => {
+  const NAVIGATION = getNavigationItems(props.session?.user);
   return (
     <NextAppProvider
       theme={theme}

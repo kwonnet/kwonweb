@@ -2,10 +2,16 @@ import { PostType } from "@/types";
 
 
 export enum FeedTypeEnum {
-  FORYOU = "forYou",
+  FORYOU = "foryou",
   FOLLOWING = "following",
   LATEST = "latest",
-  FRIENDS = "friends"
+  FRIENDS = "friends",
+  TRENDING = "trending",
+}
+
+export enum PostTagMention {
+  TAG_USERS = "tag-users",
+  MENTIONS = "mentions"
 }
 
 export enum PostMediaAction {
@@ -39,12 +45,17 @@ export enum PostMetricSource {
   LATEST = "LATEST",
   SEARCH = "SEARCH",
   TRENDING = "TRENDING",
-  PROFILE = "PROFILE"
+  PROFILE = "PROFILE",
+  PAGEVIEW = "PAGEVIEW"
 }
 
 export enum PostMetricAction {
   CONTENT = "CONTENT",
   FOLLOW = "FOLLOW",
+  UNFOLLOW = "UNFOLLOW",
+  ACCEPT = "ACCEPT", 
+  REJECT = "REJECT",
+  CANCEL = "CANCEL",
   PROFILE = "PROFILE",
   OPTION = "OPTION",
   REPOST = "REPOST",
@@ -142,7 +153,11 @@ export enum PostScopeEnum {
   VERIFIED = "VERIFIED",
   FOLLOWED = "FOLLOWED",
   MENTIONS = "MENTIONS",
+  COUNTRY = "COUNTRY",
+  CONTINENT = "CONTINENT"
 }
+
+export interface PostScopeSetting  { scope: PostScopeEnum, countries: string[], continents: string[]}
 
 type PostMedia = {
     fileId: string;

@@ -143,10 +143,10 @@ const theme = createTheme({
     colorSchemes: {
       light: {
         palette: {
-          background: {
-            default: '#F9F9FE',
-            paper: '#EEEEF9',
-          },
+          // background: {
+          //   default: '#F9F9FE',
+          //   paper: '#EEEEF9',
+          // },
           // primary: {
           //   main: "#031d37",
           //   contrastText: "#fff",

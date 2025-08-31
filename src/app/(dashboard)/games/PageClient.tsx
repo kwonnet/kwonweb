@@ -23,7 +23,7 @@ import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import RedeemOutlinedIcon from "@mui/icons-material/RedeemOutlined";
 import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
 import PlayersOutlinedIcon from "@mui/icons-material/GroupsOutlined";
-import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import TaskAltOutlinedIcon from "@mui/icons-material/TaskAltOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 
 import { useRouter } from "next/navigation";
@@ -31,6 +31,7 @@ import { BadgeAvatar, GetVerified, JoinRoom } from "@/components/common";
 import Link from "next/link";
 import { WalletOutlined } from "@mui/icons-material";
 import { useAuthSession } from "@/hooks";
+import StickyBox from "react-sticky-box";
 
 // Card data with icons
 const cardItems = [
@@ -78,7 +79,7 @@ const cardItems = [
     id: 6,
     title: "Tasks",
     url: "/games/tasks",
-    icon:  <TaskAltOutlinedIcon />,
+    icon: <TaskAltOutlinedIcon />,
     delay: 200,
     bg: "200",
   },
@@ -97,11 +98,8 @@ const cardItems = [
     icon: <GroupAddOutlinedIcon />,
     delay: 200,
     bg: "200",
-  }
+  },
 ];
-
-
-
 
 const PageClient = () => {
   const { mode, systemMode, setMode } = useColorScheme();
@@ -126,237 +124,230 @@ const PageClient = () => {
   };
 
   return (
-    <Box sx={{ pb: 0, overflow: "auto" }}>
+    <React.Fragment>
       {/* Home Top */}
-      <Container maxWidth="xl">
-        <Box sx={{ pt: 2 }}>
-          <Stack
-            direction={"row"}
-            sx={{ justifyContent: "space-between", alignItems: "center" }}
-          >
-            <Box>
-              <BadgeAvatar
-                src={user.image}
-                alt={user.name}
-                height={"50px"}
-                width={"50px"}
-                title={user.username}
-              />
-            </Box>
-            <Stack direction={"row"} spacing={1}>
-              <Box>
-                <Fade triggerOnce={true} delay={100} direction="left">
-                  <Tooltip title="My Wallet">
-                    <IconButton
-                      size="small"
-                      disableRipple
-                      sx={{
-                        // backgroundColor: "rgba(255, 255, 255, 0.1)",
-                        // color: (theme) =>
-                        //   theme.vars.palette.gradient.contrastText,
-                        padding: 1,
-                        marginBottom: 0,
-                        "&:hover": {
-                          // backgroundColor: "rgba(255, 255, 255, 0.2)",
-                        },
-                      }}
-                      LinkComponent={Link}
-                      href="/wallet"
-                    >
-                      <WalletOutlined />
-                    </IconButton>
-                  </Tooltip>
-                </Fade>
-              </Box>
-              <Box>
-                <Fade triggerOnce={true} delay={120} direction="right">
-                  <Tooltip title="Buy Coins">
-                    <IconButton
-                      size="small"
-                      disableRipple
-                      sx={{
-                        // backgroundColor: "rgba(255, 255, 255, 0.1)",
-                        // color: (theme) =>
-                        //   theme.vars.palette.gradient.contrastText,
-                        padding: 1,
-                        marginBottom: 0,
-                        "&:hover": {
-                          // backgroundColor: "rgba(255, 255, 255, 0.2)",
-                        },
-                      }}
-                      LinkComponent={Link}
-                      href="/store"
-                    >
-                      <StoreIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Fade>
-              </Box>
-              <Box sx={{}}>
-                <Slide triggerOnce={true} delay={500}>
-                  <Tooltip title="Toggle theme">
-                    <IconButton
-                      size="large"
-                      aria-label="toggle theme"
-                      aria-controls="menu-appbar"
-                      aria-haspopup="true"
-                      onClick={() => toggleDarkTheme()}
-                      color="inherit"
-                      disableRipple
-                      sx={{
-                        // backgroundColor: "rgba(255, 255, 255, 0.1)",
-                        // color: (theme) =>
-                        //   theme.vars.palette.gradient.contrastText,
-                        padding: 1,
-                        marginBottom: 0,
-                        "&:hover": {
-                          // backgroundColor: "rgba(255, 255, 255, 0.2)",
-                        },
-                      }}
-                    >
-                      {!mode ? null : mode === "dark" ? (
-                        <DarkModeOutlinedIcon />
-                      ) : (
-                        <LightModeOutlinedIcon
-                          sx={{
-                            // color: (theme) => theme.vars.palette.common.white,
-                          }}
-                        />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                </Slide>
-              </Box>
-            </Stack>
-          </Stack>
-        </Box>
-      </Container>
-      {/* End Home Top */}
-      {/* paper bg */}
-      <Paper
-        sx={[
-          (theme) => ({
-            pb: 2,
-            minHeight: "calc(100vh - 170px)",
-            // overflow: "auto",
-            mt: 5,
-            borderTopLeftRadius: 30,
-            borderTopRightRadius: 30,
-            position: "relative",
-            width: "100%",
-            backgroundColor: theme.vars.palette.tints[900],
-            ...theme.applyStyles("dark", {
-              backgroundColor: theme.vars.palette.shades[800],
-            }),
-          }),
-        ]}
-      >
+      <StickyBox style={{ zIndex: 999 }}>
         <Container
           maxWidth="xl"
-          sx={{
-            position: "absolute",
-            width: "100%",
-            mt: -2,
-          }}
+          sx={[
+            (theme) => ({
+              background: theme.vars.palette.AppBar.defaultBg,
+              ...theme.applyStyles("dark", {
+                background: theme.vars.palette.AppBar.darkBg,
+              })
+            }),
+          ]}
         >
-          <Box>
-            <Grid container spacing={1}>
-              
-              {cardItems.map((item, index) => (
-                <React.Fragment key={index}>
-                  {/* Join room section */}
-                  {/* {index === 2 && (
+          <Box sx={{ py: 2 }}>
+            <Stack
+              direction={"row"}
+              sx={{ justifyContent: "space-between", alignItems: "center" }}
+            >
+              <Box>
+                <BadgeAvatar
+                  src={user.image}
+                  alt={user.name}
+                  height={"50px"}
+                  width={"50px"}
+                  title={user.username}
+                />
+              </Box>
+              <Stack direction={"row"} spacing={1}>
+                <Box>
+                  <Fade triggerOnce={true} delay={100} direction="left">
+                    <Tooltip title="My Wallet">
+                      <IconButton
+                        size="small"
+                        disableRipple
+                        sx={{
+                          // backgroundColor: "rgba(255, 255, 255, 0.1)",
+                          // color: (theme) =>
+                          //   theme.vars.palette.gradient.contrastText,
+                          padding: 1,
+                          marginBottom: 0,
+                          "&:hover": {
+                            // backgroundColor: "rgba(255, 255, 255, 0.2)",
+                          },
+                        }}
+                        LinkComponent={Link}
+                        href="/wallet"
+                      >
+                        <WalletOutlined />
+                      </IconButton>
+                    </Tooltip>
+                  </Fade>
+                </Box>
+                <Box>
+                  <Fade triggerOnce={true} delay={120} direction="right">
+                    <Tooltip title="Buy Coins">
+                      <IconButton
+                        size="small"
+                        disableRipple
+                        sx={{
+                          // backgroundColor: "rgba(255, 255, 255, 0.1)",
+                          // color: (theme) =>
+                          //   theme.vars.palette.gradient.contrastText,
+                          padding: 1,
+                          marginBottom: 0,
+                          "&:hover": {
+                            // backgroundColor: "rgba(255, 255, 255, 0.2)",
+                          },
+                        }}
+                        LinkComponent={Link}
+                        href="/store"
+                      >
+                        <StoreIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Fade>
+                </Box>
+                <Box sx={{}}>
+                  <Slide triggerOnce={true} delay={500}>
+                    <Tooltip title="Toggle theme">
+                      <IconButton
+                        size="large"
+                        aria-label="toggle theme"
+                        aria-controls="menu-appbar"
+                        aria-haspopup="true"
+                        onClick={() => toggleDarkTheme()}
+                        color="inherit"
+                        disableRipple
+                        sx={{
+                          // backgroundColor: "rgba(255, 255, 255, 0.1)",
+                          // color: (theme) =>
+                          //   theme.vars.palette.gradient.contrastText,
+                          padding: 1,
+                          marginBottom: 0,
+                          "&:hover": {
+                            // backgroundColor: "rgba(255, 255, 255, 0.2)",
+                          },
+                        }}
+                      >
+                        {!mode ? null : mode === "dark" ? (
+                          <DarkModeOutlinedIcon />
+                        ) : (
+                          <LightModeOutlinedIcon
+                            sx={
+                              {
+                                // color: (theme) => theme.vars.palette.common.white,
+                              }
+                            }
+                          />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                  </Slide>
+                </Box>
+              </Stack>
+            </Stack>
+          </Box>
+        </Container>
+      </StickyBox>
+      <Box sx={{ pb: 0, overflow: "auto", marginTop: 2, mb: 8 }}>
+        {/* End Home Top */}
+          <Container
+            maxWidth="xl"
+            sx={{
+              width: "100%",
+            }}
+          >
+            <Box>
+              <Grid container spacing={1}>
+                {cardItems.map((item, index) => (
+                  <React.Fragment key={index}>
+                    {/* Join room section */}
+                    {/* {index === 2 && (
                     <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
                       <Fade triggerOnce={true} direction="right">
                         <JoinRoom />
                       </Fade>
                     </Grid>
                   )} */}
-                  {/*Get verified section */}
-                  {/* {index === 4 && (
+                    {/*Get verified section */}
+                    {/* {index === 4 && (
                     <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
                       <Fade triggerOnce={true} direction="left">
                         <GetVerified />
                       </Fade>
                     </Grid>
                   )} */}
-                  <Grid size={{ lg: 3, md: 3, sm: 6, xs: 6 }} key={item.id}>
-                    <Slide direction="down" delay={item.delay}>
-                      <Card
-                        raised
-                        onClick={(ev) => handleClick(ev, item.url)}
-                        sx={[
-                          (theme) => ({
-                            // background:
-                            //   theme.vars.palette.gradient[
-                            //     item.bg as keyof typeof theme.vars.palette.gradient
-                            //   ],
-                            // color: theme.vars.palette.gradient.contrastText,
-                            boxShadow:
-                              "4px 4px 10px rgba(0, 0, 0, 0.2), -4px -4px 10px rgba(3, 29, 55, 0.1)",
-                            borderRadius: 2,
-                            overflow: "hidden",
-                            position: "relative",
-                            height: "150px",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            textDecoration: "none",
-                            ...theme.applyStyles("dark", {
-                              background: theme.vars.palette.grey[900],
-                            }),
-                          }),
-                        ]}
-                      >
-                        <Box
+                    <Grid size={{ lg: 3, md: 3, sm: 6, xs: 6 }} key={item.id}>
+                      <Slide direction="down" delay={item.delay}>
+                        <Card
+                          raised
+                          onClick={(ev) => handleClick(ev, item.url)}
                           sx={[
                             (theme) => ({
-                              position: "absolute",
-                              top: -20,
-                              right: -20,
-                              width: 100,
-                              height: 100,
-                              borderRadius: "50%",
+                              // background:
+                              //   theme.vars.palette.gradient[
+                              //     item.bg as keyof typeof theme.vars.palette.gradient
+                              //   ],
+                              // color: theme.vars.palette.gradient.contrastText,
+                              boxShadow:
+                                "4px 4px 10px rgba(0, 0, 0, 0.2), -4px -4px 10px rgba(3, 29, 55, 0.1)",
+                              borderRadius: 2,
+                              overflow: "hidden",
+                              position: "relative",
+                              height: "150px",
                               display: "flex",
+                              flexDirection: "column",
                               alignItems: "center",
                               justifyContent: "center",
-                              background: "rgba(0, 0, 0, 0.05)",
-                              color: "rgba(0, 0, 0, 0.1)",
+                              cursor: "pointer",
+                              textDecoration: "none",
                               ...theme.applyStyles("dark", {
-                                background: "rgba(0, 0, 0, 0.15)",
-                                color: theme.vars.palette.grey[800],
+                                background: theme.vars.palette.grey[900],
                               }),
                             }),
                           ]}
                         >
-                          {item.icon}
-                        </Box>
-                        <CardContent>
-                          <Typography
-                            sx={{ fontFamily: "PlayFair" }}
-                            variant="h6"
-                            align="center"
+                          <Box
+                            sx={[
+                              (theme) => ({
+                                position: "absolute",
+                                top: -20,
+                                right: -20,
+                                width: 100,
+                                height: 100,
+                                borderRadius: "50%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                background: "rgba(0, 0, 0, 0.05)",
+                                color: "rgba(0, 0, 0, 0.1)",
+                                ...theme.applyStyles("dark", {
+                                  background: "rgba(0, 0, 0, 0.15)",
+                                  color: theme.vars.palette.grey[800],
+                                }),
+                              }),
+                            ]}
                           >
-                            {item.title}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Slide>
-                  </Grid>
-                </React.Fragment>
-              ))}
-              <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-                <Fade triggerOnce={true} direction="left">
-                  <GetVerified />
-                </Fade>
+                            {item.icon}
+                          </Box>
+                          <CardContent>
+                            <Typography
+                              sx={{ fontFamily: "PlayFair" }}
+                              variant="h6"
+                              align="center"
+                            >
+                              {item.title}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Slide>
+                    </Grid>
+                  </React.Fragment>
+                ))}
+                {/* <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
+                  <Fade triggerOnce={true} direction="left">
+                    <GetVerified />
+                  </Fade>
+                </Grid> */}
               </Grid>
-            </Grid>
-          </Box>
-        </Container>
-      </Paper>
-    </Box>
+            </Box>
+          </Container>
+      </Box>
+    </React.Fragment>
   );
 };
 

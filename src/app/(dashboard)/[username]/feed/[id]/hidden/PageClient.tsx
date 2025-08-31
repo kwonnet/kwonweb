@@ -22,7 +22,8 @@ import {
   FeedSkeleton,
   FeedSocialShare,
 } from "@/components/post";
-import FeedAppBar from "../FeedAppBar";
+import { DisplayError, StickyWrapper } from "@/components/common";
+import { FollowAction } from "@/types/user";
 
 type LocalState = {
   open: boolean;
@@ -58,7 +59,7 @@ const PageClient = ({
     if (pageIndex !== 0 && previousPageData && !previousPageData.length)
       return null; // Stop when no more data
     return {
-      type: "post_hidden_replies",
+      type: "post-hidden-replies",
       id: postId,
       userId: user.id,
       limit: PAGE_SIZE,
@@ -151,55 +152,28 @@ const PageClient = ({
   };
 
   const onSocialClick = async (id: string) => {
-    console.log("share post ID ", id);
     mutations.mutatePostShares(id);
     await shareFeedPost(id, token);
   };
   // follow user
   const onFollowUserCallback = (
-    args: { senderId: string; recipientId: string },
-    isFollow: boolean
-  ) => {
-    mutations.mutatePostAuthor(args.recipientId, isFollow);
+    args: { senderId: string; recipientId: string, action: FollowAction }  ) => {
+    mutations.mutatePostAuthor(args.recipientId, args.action);
     // send to api
     updateUserFollower(args, token);
   };
 
   return (
-    <Box sx={{
-      "& .post_appbar": {
-        position: {
-          lg: "sticky !important",
-          md: "sticky !important",
-          sm: "absolute !important",
-          xs: "absolute !important",
-        },
-        width: {
-          lg: "auto",
-          md: "auto",
-          sm: "100%",
-          xs: "100%",
-        },
-      },
-    }}>
-      <FeedAppBar />
-      <Typography
-        variant="subtitle1"
-        color="textDisabled"
-        sx={{ textAlign: "center", py: 1 }}
-      >
-        Hidden Replies
-      </Typography>
+    <StickyWrapper title="Hidden Replies">
+      <Box sx={{px: 1}}>
       <Box>
-        {(isLoading || isValidating) && !data && (
+        {(isLoading && !data) && (
           <FeedSkeleton rows={3} height={120} items={3} />
         )}
       </Box>
-      <Box>
-        <Typography textAlign={"center"}>
-          {error?.status === 404 ? "No quotes yet" : getErrorMessage(error)}{" "}
-        </Typography>
-      </Box>
+      
+      {(error && !data) && <DisplayError status={error?.status} message={getErrorMessage(error)} />}
+      
       {flatData?.map((item) => {
         return (
           <FeedCardItem
@@ -247,7 +221,8 @@ const PageClient = ({
         onQuoteCallback={onQuoteCallback}
         onFollowUserCallback={onFollowUserCallback}
       />
-    </Box>
+      </Box>
+    </StickyWrapper>
   );
 };
 

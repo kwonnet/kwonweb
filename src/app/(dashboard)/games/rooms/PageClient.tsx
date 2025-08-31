@@ -5,9 +5,9 @@ import React, { useEffect, useState } from "react";
 import { PageHeader } from "@/components/common";
 import { Fade } from "react-awesome-reveal";
 import { GameEventEnum, GameRoom } from "@/types";
-import { useSocketIoContext } from "@/context/SocketIoContext";
 import { toast } from "react-toastify";
 import { useNotifications } from "@toolpad/core";
+import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const PageClient = ({
   rooms,
@@ -20,7 +20,7 @@ const PageClient = ({
 
   const notif = useNotifications()
 
-  const { socketIo, updateSocketState } = useSocketIoContext();
+  const { gameSocketIo: socketIo, updateSocketState } = useGameSocketIoContext();
 
   const [state, setState] = useState<{rooms: GameRoom[], clickedRooms: string[], isLoading: boolean  }>({ rooms, clickedRooms: [], isLoading: false });
 

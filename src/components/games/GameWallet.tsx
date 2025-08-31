@@ -1,10 +1,10 @@
 import React from "react";
 import { Card, CardContent, Typography, Box } from "@mui/material";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import { useSocketIoContext } from "@/context/SocketIoContext";
-const GameWallet = ({  }: { wallet: { bonus: number; credit: number; amount: number}}) => {
+import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
+const GameWallet = () => {
   
-  const {wallet} = useSocketIoContext()
+  const {wallet} = useGameSocketIoContext()
 
   return (
     <Card

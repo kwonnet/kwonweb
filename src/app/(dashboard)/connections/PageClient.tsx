@@ -1,32 +1,6 @@
 "use client";
-import React, { useState } from "react";
-import { Box, Stack, Typography } from "@mui/material";
-
-import { useAuthSession } from "@/hooks";
-import { ConnTypeEnum } from "@/types";
-
-const connTypes = [
-  {
-    id: ConnTypeEnum.SUGGESTED,
-    name: "Suggested Accounts",
-  },
-  {
-    id: ConnTypeEnum.MUTUAL_FOLLOWS,
-    name: "You may know",
-  },
-  {
-    id: ConnTypeEnum.NEAR_YOU,
-    name: "Near you",
-  },
-  {
-    id: ConnTypeEnum.POPULAR_CREATORS,
-    name: "Popular creators",
-  },
-  {
-    id: ConnTypeEnum.INTEREST,
-    name: "Your interests",
-  },
-];
+import React, { Suspense, useEffect, useState } from "react";
+import { Box, CardMedia, Typography } from "@mui/material";
 
 export default function PageClient({
   SuggestedServer,
@@ -41,46 +15,53 @@ export default function PageClient({
   InterestsServer?: React.ReactNode;
   NearYouServer?: React.ReactNode;
 }) {
-  const { user } = useAuthSession();
+  const [show, setShow] = useState(true)
 
-  const [state, setState] = useState({
-    active: ConnTypeEnum.SUGGESTED,
-  });
+  useEffect(() => {
+    
+    const connCarousel = document.querySelector(".conn-carousel")
+    if(!connCarousel){
+      setShow(false)
+    }
+    return () => {
+      
+    }
+  }, [])
+  
 
-  const toggleFeedType = (active: ConnTypeEnum) => {
-    setState((prev) => ({ ...prev, active }));
-  };
   return (
-    <Box sx={{ px: 1 }}>
-      {/* Content for the left section */}
-      <Box sx={{ width: "100wv", mb: 1 }}>
-        <Stack
-          direction="row"
-          alignItems={"center"}
-          justifyContent={"space-between"}
-          spacing={0.5}
-          sx={{ px: 1, py: 2, overflowX: "auto" }}
+    <Box sx={{ px: 1, mb: 1 }}>
+      {!show ? (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+            overflow: "hidden",
+            flexDirection: "column",
+            width: "100%"
+          }}
         >
-          {connTypes.map((item) => (
-            <Typography
-              key={item.id}
-              color={state.active === item.id ? "textPrimary" : "textDisabled"}
-              sx={{
-                //   fontWeight: state.active === item.id ? 600 : undefined,
-                cursor: "pointer",
-              }}
-              onClick={(ev) => toggleFeedType(item.id)}
-            >
-              {item.name}
-            </Typography>
-          ))}
-        </Stack>
-      </Box>
-      {state.active === ConnTypeEnum.SUGGESTED && SuggestedServer}
-      {state.active === ConnTypeEnum.MUTUAL_FOLLOWS && MutualFollowsServer}
-      {state.active === ConnTypeEnum.POPULAR_CREATORS && PopularCreatorsServer}
-      {state.active === ConnTypeEnum.INTEREST && InterestsServer}
-      {state.active === ConnTypeEnum.NEAR_YOU && NearYouServer}
+          <CardMedia
+            component={"img"}
+            image={"/no-data.svg"}
+            sx={{ height: 300, width: 300 }}
+          />
+          <Typography variant="body2" sx={{ mb: 2 }} color="text.secondary">
+          No user suggestions available at the moment.
+        </Typography>
+        </Box>
+        
+      ) : (
+        <Box sx={{ px: 1, mb: 1 }}>
+            <Box sx={{ mb: 2 }}>{SuggestedServer}</Box>
+            <Box sx={{ mb: 2 }}>{MutualFollowsServer}</Box>
+            <Box sx={{ mb: 2 }}>{NearYouServer}</Box>
+            <Box sx={{ mb: 2 }}>{PopularCreatorsServer}</Box>
+            <Box sx={{ mb: 2 }}>{InterestsServer}</Box>
+        </Box>
+      )}
     </Box>
   );
 }

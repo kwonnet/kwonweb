@@ -1,21 +1,27 @@
-import React from 'react'
-import CustomLayout from './CustomLayout';
-import { CustomToolbarActions, NotificationServer } from '@/components/common';
-import { Metadata } from 'next';
-import { constant } from '@/config';
+import React from "react";
+import CustomLayout from "./CustomLayout";
+import { AppBottomNav, CustomToolbarActions, NotificationServer } from "@/components/common";
+import { Metadata } from "next";
+import { constant } from "@/config";
 
 export const metadata: Metadata = {
   title: constant.siteName,
   description: constant.siteDescription,
 };
 
-const layout = async(props: any) => {
+const layout = async (props: any) => {
   return (
-    <CustomLayout  
-      CustomToolbar={<CustomToolbarActions NotificationNode={<NotificationServer />} />} >
-          {props.children}
-      </CustomLayout>
-  )
-}
+    <CustomLayout
+      CustomToolbar={
+        // <CustomToolbarActions />
+        <CustomToolbarActions NotificationNode={<NotificationServer />} />
 
-export default layout
+      }
+    >
+      {props.children}
+      <AppBottomNav />
+    </CustomLayout>
+  );
+};
+
+export default layout;

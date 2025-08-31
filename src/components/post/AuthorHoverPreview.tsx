@@ -11,16 +11,16 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { formatNumber, getSessionId, shortenText } from "@/utils";
+import { composeMutualText, formatNumber, getSessionId, shortenText } from "@/utils";
 import { PostAuthor } from "@/types";
 import { useAuthSession, useBadgeColor } from "@/hooks";
 import { useRef } from "react";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import useSWR, { useSWRConfig } from "swr";
 import { getUserOverview } from "@/lib/users";
-import { UserFollower, UserMiniProfile } from "@/types/user";
-import { getConnBtnColor, getConnBtnText } from "@/utils/post";
+import { FollowAction, FollowStatus, UserMiniProfile } from "@/types/user";
 import Link from "next/link";
+import { getConnBtnInfo, getFollowAction, getUserConnInfo } from "@/utils/connections";
 
 const AuthorHoverPreview = ({
   author,
@@ -33,8 +33,8 @@ const AuthorHoverPreview = ({
     args: {
       senderId: string;
       recipientId: string;
-    },
-    isFollow: boolean
+      action: FollowAction
+    }
   ) => void;
 }) => {
   const { user, token } = useAuthSession();
@@ -66,15 +66,19 @@ const AuthorHoverPreview = ({
     timerRef.current = setTimeout(() => setShowInfo(false), 200);
   };
 
-  const handleFollow = (recipientId: string) => {
-    const isFollow = !author.conn.isFollowed
+  const handleFollow = (recipientId: string, action: FollowAction) => {
+    const postiveStatus = [FollowAction.ACCEPT, FollowAction.FOLLOW]
+    const isFollow = postiveStatus.includes(action) 
     // setFollowed(true);
     // Call follow API or logic here
     const updateConnData = (d?: UserMiniProfile) => {
       if (!d) return d;
       return {
         ...d,
-        followerCount: isFollow ? d.followerCount + 1 : d.followerCount - 1,
+        conn: {
+          ...d.conn,
+          followerCount: isFollow ? d.conn.followerCount + 1 : d.conn.followerCount - 1,
+        }
       };
     };
     mutate(
@@ -88,28 +92,57 @@ const AuthorHoverPreview = ({
         revalidate: false,
       }
     );
-    onFollowUserCallback({ senderId: user.id, recipientId }, isFollow);
+    onFollowUserCallback({ senderId: user.id, recipientId, action });
   };
 
-  const composeText = ({ followers, total}: {followers?: UserFollower[], total: number}) => {
-    if(followers?.length === 0) return ""
-    const msg = followers?.map((conn) => conn?.name).join(", ")
-    const count = followers?.length || 0
-    if (total > count) {
-      return `Followed by ${msg} and ${total - count} that you also follow`;
-    }
-    return `Followed by ${msg} that you also follow`;
-  };
+  // const composeText = ({ followers, total}: {followers?: MutualFollower[], total: number}) => {
+  //   if(followers?.length === 0) return ""
+  //   const msg = followers?.map((conn) => conn?.name).join(", ")
+  //   const count = followers?.length || 0
+  //   if (total > count) {
+  //     return `Followed by ${msg} and ${total - count} that you also follow`;
+  //   }
+  //   return `Followed by ${msg} that you also follow`;
+  // };
 
   // check if it's the current reader
   const isCurrentUser = user.id === author?.id;
-  //   check if both follow each other
-
-  // const currUserBadgeColor = useBadgeColor(user?.meta?.color)
 
   const badgeColor = useBadgeColor(author?.meta?.color)
 
   const isProUser = author?.meta?.isPro
+  
+    // handle connection requests for private accounts - accept or reject
+  
+    const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(
+      null
+    );
+  
+    const open = Boolean(anchorEl);
+  
+    const onClosePopover = () => {
+      setAnchorEl(null);
+    };
+  
+    const onToggleRequest = (
+      ev: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    ) => {
+      ev.stopPropagation();
+      setAnchorEl(ev.currentTarget);
+    };
+
+    const handleAction = (action: FollowAction) => {
+        // onFollowUser(item, action);
+        handleFollow(author.id, action)
+      };
+
+    if(!data) return null
+
+    const { isFriends } = getUserConnInfo(author?.conn);
+  
+    const connBtn = getConnBtnInfo(author?.conn, btnHover);
+  
+    const showPopoverBtn = author?.conn?.followingStatus === FollowStatus.PENDING;
 
 
   return (
@@ -216,15 +249,19 @@ const AuthorHoverPreview = ({
                   size="small"
                   onMouseEnter={() => setBtnHover(true)}
                   onMouseLeave={() => setBtnHover(false)}
-                  color={
-                    getConnBtnColor(author, btnHover)
-                  }
+                  color={connBtn.btnColor}
                   onClick={(ev) => {
                     ev.stopPropagation();
-                    handleFollow(author.id);
+                    if (showPopoverBtn) {
+                      onToggleRequest(ev);
+                    } else {
+                      handleAction(
+                        getFollowAction(isFriends, data?.conn?.followedStatus)
+                      );
+                    }
                   }}
                 >
-                  {getConnBtnText(author, btnHover)}
+                  {connBtn.btnText}
                 </Button>
               )}
             </Stack>
@@ -259,10 +296,10 @@ const AuthorHoverPreview = ({
                     spacing={1}
                   >
                     <Typography variant="caption">
-                      {formatNumber(data.followingCount)}
+                      {formatNumber(data.conn.followerCount)}
                     </Typography>
                     <Typography variant="caption" color="textDisabled">
-                      Following
+                      Followers
                     </Typography>
                   </Stack>
                   <Stack
@@ -271,17 +308,18 @@ const AuthorHoverPreview = ({
                     spacing={1}
                   >
                     <Typography variant="caption">
-                      {formatNumber(data.followerCount)}
+                      {formatNumber(data.conn.followingCount)}
                     </Typography>
                     <Typography variant="caption" color="textDisabled">
-                      Followers
+                      Following
                     </Typography>
                   </Stack>
+                  
                 </Stack>
                 {data && data.id !== user.id && (
                   <Stack direction={"row"} spacing={1} sx={{ py: 1 }}>
                     <AvatarGroup spacing="medium">
-                      {data?.followers?.map((conn) => (
+                      {data?.mutualFollowers?.map((conn) => (
                         <Avatar
                           sx={{ height: 24, width: 24 }}
                           alt={conn?.name}
@@ -300,9 +338,9 @@ const AuthorHoverPreview = ({
                         color="textDisabled"
                         variant="caption"
                       >
-                        {composeText(
-                          {followers: data?.followers,
-                            total: data.mutualCount}
+                        {composeMutualText(
+                          {followers: data?.mutualFollowers,
+                            total: data.conn.mutualCount}
                         )}
                       </Typography>
                     </Box>
@@ -313,6 +351,7 @@ const AuthorHoverPreview = ({
           </Paper>
         </Box>
       )}
+
     </Box>
   );
 };

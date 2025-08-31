@@ -4,6 +4,7 @@ import { composeUrlQuery, getErrorMessage } from "@/utils";
 import { cache } from "react";
 import { FeedTypeEnum, PostClickLog, PostCreate, PostMediaLog, PostTipBody } from "@/types/post";
 import debounce from "lodash/debounce";
+import { UserConnection } from "@/types/user";
 
 export const createPost = async (body: PostCreate, accessToken?: string) => {
   try {
@@ -26,6 +27,7 @@ export const getNewsfeed = cache(async (args:{feed: FeedTypeEnum, limit: number,
     }
   })
 
+
 export const postReaction = async (id: string, accessToken?: string) => {
   try {
     axiosAPI.accessToken = accessToken;
@@ -46,10 +48,15 @@ export const bookmarkPost = async (id: string, accessToken?: string) => {
   }
 }
 
-export const shareFeedPost = async (id: string, accessToken?: string) => {
+export const shareFeedPost = async (body: {
+    id: string;
+    kind?: string;
+    sessionId: string;
+    timestamp: string;
+}, accessToken?: string) => {
   try {
     axiosAPI.accessToken = accessToken;
-    const result = await axiosAPI.post(`/v1/posts/${id}/shares`, { id });
+    const result = await axiosAPI.post(`/v1/posts/${body.id}/shares`, body);
     return result.data as FeedPost;
   } catch (error: any) {
     console.log("share error ",error)
@@ -242,7 +249,18 @@ export const getPostReposts = cache(async (args:{id: string, limit: number, page
     const queryString = composeUrlQuery(args)
     axiosAPI.accessToken = accessToken;
     const result = await axiosAPI.get(`/v1/posts/${args.id}/reposts?${queryString}`);
-    return result.data as PostAuthor[];
+    return result.data as UserConnection[];
+  } catch (error: any) {
+    throw error
+  }
+})
+
+export const getPostTagUsersOrMentions = cache(async (args:{id: string, query: string; limit: number, page?: number}, accessToken?: string) => {
+  try {
+    const queryString = composeUrlQuery(args)
+    axiosAPI.accessToken = accessToken;
+    const result = await axiosAPI.get(`/v1/posts/${args.id}/mentions?${queryString}`);
+    return result.data as UserConnection[];
   } catch (error: any) {
     throw error
   }

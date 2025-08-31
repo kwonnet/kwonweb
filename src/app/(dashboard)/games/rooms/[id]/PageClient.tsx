@@ -57,6 +57,7 @@ import { IIdleTimer, useIdleTimer } from "react-idle-timer/legacy";
 import { useAuthSession } from "@/hooks";
 import PaperLayout from "@/components/games/PaperLayout";
 import { useNotifications } from "@toolpad/core";
+import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const buttons = [
   {
@@ -184,7 +185,7 @@ const PageClient = ({
 }) => {
   const router = useRouter();
   const {
-    socketIo,
+    gameSocketIo: socketIo,
     status,
     notifMessage,
     countdown,
@@ -194,7 +195,7 @@ const PageClient = ({
     gameRoomInfo,
     isJoined,
     updateSocketState,
-  } = useSocketIoContext();
+  } = useGameSocketIoContext();
 
   const notif = useNotifications()
 
@@ -205,6 +206,7 @@ const PageClient = ({
   const [state, setState] = useState({
     activeTab: isSmallScreen ? 1 : 2,
     openIdleTimer: false,
+    elaspseTimer: 1
   });
 
   const { user } = useAuthSession();
@@ -259,9 +261,7 @@ const PageClient = ({
     };
   }, [socketIo]);
 
-  const handleTabSelect = (num: number) => {
-    setState((prev) => ({ ...prev, activeTab: num }));
-  };
+  
 
   const onAction = (event?: Event, idleTimer?: IIdleTimer) => {
     if (!idleTimer?.isPrompted()) {
@@ -287,7 +287,7 @@ const PageClient = ({
   };
 
   const { activate: activateIdleTimer } = useIdleTimer({
-    timeout: 1000 * 60 * 1,
+    timeout: 1000 * 60 * state.elaspseTimer,
     promptBeforeIdle: 1000 * 10,
     onAction,
     onActive,
@@ -298,6 +298,15 @@ const PageClient = ({
     debounce: 1000,
     name: "gm-activity-timer",
   });
+
+  const handleTabSelect = (num: number) => {
+    const isWalletTab = num === 6
+    setState((prev) => ({ ...prev, elaspseTimer: isWalletTab ? 10 : 1, activeTab: num }));
+    // check if user is under wallet tab and increase idle timer and activate
+    if(isWalletTab){
+      activateIdleTimer();
+    }
+  };
 
   const boxHeight = !isSmallScreen
     ? `calc(100vh - 160px)`

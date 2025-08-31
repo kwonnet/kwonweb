@@ -28,7 +28,11 @@ const InterestsServer = async() => {
   
     const users: UserConnection[] = result.status === 404 ? [] : await result.json();
 
-  return <DisplayClient connType={ConnTypeEnum.INTEREST} users={users} />;
+  return <DisplayClient
+      allowCarousel={true}
+      connType={ConnTypeEnum.INTEREST}
+      users={users}
+    />
   
 }
 

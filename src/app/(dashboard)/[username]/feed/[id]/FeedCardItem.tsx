@@ -13,7 +13,13 @@ import {
   Typography,
 } from "@mui/material";
 import { useAuthSession, useTrackImpression } from "@/hooks";
-import { formatDateTime, formatFeedNumber, formatRelativeTime } from "@/utils";
+import {
+  composeTagText,
+  formatDateTime,
+  formatFeedNumber,
+  formatRelativeTime,
+  getSessionId,
+} from "@/utils";
 import QuickreplyOutlinedIcon from "@mui/icons-material/QuickreplyOutlined";
 import RepeatOutlinedIcon from "@mui/icons-material/RepeatOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
@@ -26,7 +32,9 @@ import {
   AnimateLikeButton,
   AuthorHoverPreview,
   DisplayFeedMedia,
+  DisplayMessage,
   DisplayQuizItem,
+  DisplayTagMentionDrawer,
   FeedQuoteItem,
   PostOptions,
   PostTipDrawer,
@@ -41,11 +49,32 @@ import { useNotifications } from "@toolpad/core";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { trackUserProfileVisit } from "@/lib/users";
+import {
+  PostMetricAction,
+  PostMetricSource,
+  PostTagMention,
+} from "@/types/post";
+import { sendPostClick } from "@/lib/posts";
+import { FollowAction, UserConnection } from "@/types/user";
+import { getFollowAction, getUserConnInfo } from "@/utils/connections";
+import LoyaltyOutlinedIcon from "@mui/icons-material/LoyaltyOutlined";
+import AlternateEmailOutlinedIcon from "@mui/icons-material/AlternateEmailOutlined";
 
 const ContentEditor = dynamic(
   () => import("@/components/post/ContentEditor"), // Your ContentEditor component path
   { ssr: false }
 );
+
+type LocalState = {
+  isOpen: boolean;
+  openTagUserDrawer: boolean;
+  slug: PostTagMention;
+  users: UserConnection[];
+  title?: string;
+  muted: boolean;
+};
 
 const FeedCardItem = ({
   post,
@@ -75,19 +104,23 @@ const FeedCardItem = ({
     saved: boolean
   ) => Promise<void>;
   onQuote: (id: string) => Promise<void>;
-  onFollowUserCallback: (
-    args: {
-      senderId: string;
-      recipientId: string;
-    },
-    isFollow: boolean
-  ) => void;
+  onFollowUserCallback: (args: {
+    senderId: string;
+    recipientId: string;
+    action: FollowAction;
+  }) => void;
 }) => {
   const router = useRouter();
 
-  const [state, setState] = useState({isOpen: false})
+  const [state, setState] = useState<LocalState>({
+    isOpen: false,
+    openTagUserDrawer: false,
+    slug: PostTagMention.TAG_USERS,
+    users: [],
+    muted: true,
+  });
 
-  const { user } = useAuthSession();
+  const { user, token } = useAuthSession();
 
   const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(
     null
@@ -99,11 +132,25 @@ const FeedCardItem = ({
     setAnchorEl(null);
   };
 
-  const toggleTipDrawer = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent>, open: boolean) => {
-      ev.stopPropagation()
-      ev.preventDefault()
-      setState((prev) => ({ ...prev, isOpen: open }));
-    };
+  const toggleTipDrawer = (
+    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    open: boolean
+  ) => {
+    ev.stopPropagation();
+    ev.preventDefault();
+    setState((prev) => ({ ...prev, isOpen: open }));
+  };
+
+  const toggleTagUserDrawer = (
+    ev:
+      | React.MouseEvent<HTMLButtonElement, MouseEvent>
+      | React.MouseEvent<HTMLDivElement, MouseEvent>,
+    open: boolean
+  ) => {
+    ev.stopPropagation();
+    ev.preventDefault();
+    setState((prev) => ({ ...prev, openTagUserDrawer: open }));
+  };
 
   // menu options
   const [openMenu, setOpenMenu] = React.useState(false);
@@ -142,6 +189,22 @@ const FeedCardItem = ({
     prevOpen.current = openMenu;
   }, [openMenu]);
 
+  const sendPostClickLog = (action: PostMetricAction) => {
+    if (user.id !== item?.userId) {
+      const sessionId = getSessionId();
+      sendPostClick(
+        {
+          id: item.id,
+          action,
+          source: PostMetricSource.PAGEVIEW,
+          timestamp: new Date().toISOString(),
+          sessionId,
+        },
+        token
+      );
+    }
+  };
+
   const handlePost = (
     ev: React.MouseEvent<HTMLDivElement, MouseEvent>,
     item: FeedPost
@@ -151,23 +214,41 @@ const FeedCardItem = ({
     router.push(`/${item?.author?.username}/feed/${item.id}`);
   };
 
-  const redirectToProfile = (
-    ev: React.MouseEvent<HTMLDivElement, MouseEvent>,
-    user: PostAuthor
+  const redirectToProfile = (user: PostAuthor) => {
+    router.push(`/@${user.username}`);
+  };
+
+  const handleFollowUser = (recipientId: string, action: FollowAction) => {
+    onFollowUserCallback({ senderId: user.id, recipientId, action });
+  };
+
+  const handleToggleTip = (
+    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    ev.stopPropagation();
+    toggleTipDrawer(ev, true);
+  };
+
+  const trackProfileVisit = (
+    ev: React.MouseEvent<HTMLDivElement | HTMLButtonElement, MouseEvent>,
+    author: PostAuthor
   ) => {
     ev.preventDefault();
     ev.stopPropagation();
-    router.push(user.id === user?.id ? `/profile` : `/@${user.username}`);
+    if (user.id !== author.id) {
+      const sessionId = getSessionId();
+      trackUserProfileVisit(
+        { postId: item.id, userId: author.id, sessionId },
+        token
+      );
+      sendPostClickLog(PostMetricAction.PROFILE);
+      // sessionStorage.setItem('tz_p_v', JSON.stringify({postId: item.id, userId: author.id}));
+    }
   };
 
-  const handleFollowUser = (recipientId: string, isFollow: boolean) => {
-    onFollowUserCallback({ senderId: user.id, recipientId }, isFollow);
+  const onToggleMuteAction = () => {
+    setState((prev) => ({ ...prev, muted: false }));
   };
-
-  const handleToggleTip = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> ) => {
-    ev.stopPropagation();
-    toggleTipDrawer(ev, true)
-  }
 
   const notif = useNotifications();
 
@@ -177,7 +258,8 @@ const FeedCardItem = ({
 
   // check if the current author is followed by the current reader
   const isFollowed =
-    user.id === item.author.id || item?.author?.conn?.isFollowed;
+    user.id === item.author.id || item?.author?.conn?.isFollowedByUser;
+  const { isFriends } = getUserConnInfo(item?.author?.conn);
 
   const quotedPost =
     post.kind === PostKind.QUOTE
@@ -187,6 +269,35 @@ const FeedCardItem = ({
         : undefined;
   // track post thread or reply impression
   const ref = useTrackImpression(item.id, 5);
+
+  if (item.actions.isRootBlockedByUser || item.actions.isBlockedByUser) {
+    return (
+      <DisplayMessage
+        actionHandler={() => redirectToProfile(item.author)}
+        showActionBtn={true}
+        btnText="Unblock"
+        message="You can't view this at the moment. You have blocked the author"
+      />
+    );
+  }
+
+  if (item.actions.hasBlockedByRootUser || item.actions.hasBlockedUser) {
+    return (
+      <DisplayMessage message="You can't view this at the moment. You have been blocked by the author" />
+    );
+  }
+
+  if (state.muted && item.actions.isMutedByUser) {
+    return (
+      <DisplayMessage
+        message="You have muted this user"
+        actionHandler={onToggleMuteAction}
+        btnText="View"
+        showActionBtn={true}
+      />
+    );
+  }
+
   return (
     <React.Fragment>
       <Card
@@ -202,11 +313,14 @@ const FeedCardItem = ({
             mt: 0,
             mb: 0,
             pt: 0,
-            pb: 0.5,
-            px: 0.5,
+            // pb: 0.5,
+            // px: 0.5,
+            p: 1,
             borderBottom: `0.1px solid #eaeaec`,
+            // borderTop: `0.1px solid #eaeaec`,
             ...theme.applyStyles("dark", {
-              borderBottom: `0.1px solid #46454d`,
+              borderBottom: `0.1px solid #1c1c20ff`,
+              // borderTop: `0.1px solid #1c1c20ff`,
             }),
             //   cursor: "pointer",
           }),
@@ -215,13 +329,12 @@ const FeedCardItem = ({
       >
         <CardContent
           sx={{
-            pt: 0.3,
+            maxWidth: "100%",
+            "&:last-child": { pb: 0 },
             mt: 0,
             ml: 0,
             mr: 0,
-            p: 0,
-            maxWidth: "100%",
-            "&:last-child": { pb: 0 },
+            p: 1,
           }}
         >
           {post.kind === PostKind.REPOST && (
@@ -255,7 +368,7 @@ const FeedCardItem = ({
               <Box>
                 <Badge
                   overlap="circular"
-                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                   badgeContent={
                     !isFollowed && (
                       <IconButton
@@ -263,27 +376,38 @@ const FeedCardItem = ({
                           ev.stopPropagation();
                           handleFollowUser(
                             item.userId,
-                            !item.author.conn.isFollowed
+                            getFollowAction(
+                              isFriends,
+                              item?.author?.conn?.followedStatus
+                            )
                           );
+                          // handleFollowUser(
+                          //   item.userId,
+                          //   !item.author.conn.isFollowedByUser
+                          // );
                         }}
                         size="small"
                       >
-                        <AddCircleOutlinedIcon sx={{ width: 24, height: 24 }} />
+                        <AddCircleOutlinedIcon sx={{ width: 16, height: 16 }} />
                       </IconButton>
                     )
                   }
                 >
-                  <Avatar
-                    sx={{
-                      height: 50,
-                      width: 50,
-                      border: (theme) =>
-                        `4px solid ${theme.vars.palette.background.paper}`,
-                    }}
-                    alt={item?.author?.name}
-                    src={item?.author?.avatar}
-                    onClick={(ev) => redirectToProfile(ev, item.author)}
-                  />
+                  <Box onClick={(ev) => trackProfileVisit(ev, item.author)}>
+                    <Link href={`/@${item?.author?.username}`}>
+                      <Avatar
+                        sx={{
+                          height: 50,
+                          width: 50,
+                          border: (theme) =>
+                            `4px solid ${theme.vars.palette.background.paper}`,
+                        }}
+                        alt={item?.author?.name}
+                        src={item?.author?.avatar}
+                        // onClick={(ev) => redirectToProfile(ev, item.author)}
+                      />
+                    </Link>
+                  </Box>
                 </Badge>
               </Box>
               <Stack
@@ -294,7 +418,7 @@ const FeedCardItem = ({
                   width: "100%",
                 }}
               >
-                <Stack onClick={(ev) => redirectToProfile(ev, item.author)}>
+                <Stack onClick={(ev) => trackProfileVisit(ev, item?.author)}>
                   <AuthorHoverPreview
                     author={item?.author}
                     isName={true}
@@ -394,6 +518,94 @@ const FeedCardItem = ({
                       readOnly={true}
                       content={item?.content?.trim()}
                     />
+                    {/* tagged users */}
+                    <Stack
+                      direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
+                      justifyContent={"space-between"}
+                      spacing={1}
+                    >
+                      {item?.tagUsers?.length > 0 && (
+                        <Stack
+                          direction={"row"}
+                          alignItems={"center"}
+                          spacing={0.5}
+                          sx={{ pt: 0.5, cursor: "pointer" }}
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            ev.preventDefault();
+                            setState((prev) => ({
+                              ...prev,
+                              users: item.tagUsers,
+                              openTagUserDrawer: true,
+                              slug: PostTagMention.TAG_USERS,
+                              title: "Tagged Users",
+                            }));
+                          }}
+                        >
+                          <LoyaltyOutlinedIcon
+                            sx={{
+                              color: "text.disabled",
+                              width: 12,
+                              height: 12,
+                            }}
+                          />
+                          <Typography
+                            color="textDisabled"
+                            sx={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 1, // Number of lines before truncating
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              maxWidth: "100%", // Ensures it adapts to container width
+                            }}
+                            variant="caption"
+                          >
+                            {composeTagText(item?.tagUsers)}
+                          </Typography>
+                        </Stack>
+                      )}
+                      {/* {(item?.tagUsers?.length > 0 && item?.mentions?.length > 0) && <Divider orientation="horizontal" variant="inset"  />} */}
+                      {item?.mentions?.length > 0 && (
+                        <Stack
+                          direction={"row"}
+                          alignItems={"center"}
+                          spacing={0.5}
+                          sx={{ pt: 0.5, cursor: "pointer" }}
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            ev.preventDefault();
+                            setState((prev) => ({
+                              ...prev,
+                              users: item.mentions,
+                              openTagUserDrawer: true,
+                              slug: PostTagMention.MENTIONS,
+                              title: "Mentions",
+                            }));
+                          }}
+                        >
+                          <AlternateEmailOutlinedIcon
+                            sx={{
+                              color: "text.disabled",
+                              width: 12,
+                              height: 12,
+                            }}
+                          />
+                          <Typography
+                            color="textDisabled"
+                            sx={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 1, // Number of lines before truncating
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              maxWidth: "100%", // Ensures it adapts to container width
+                            }}
+                            variant="caption"
+                          >
+                            {composeTagText(item?.mentions)}
+                          </Typography>
+                        </Stack>
+                      )}
+                    </Stack>
                     {item.type === PostType.POLL && item?.poll?.isMultiVote && (
                       <Typography
                         color="textDisabled"
@@ -440,6 +652,7 @@ const FeedCardItem = ({
                   <FeedQuoteItem
                     post={quotedPost}
                     onFollowUserCallback={onFollowUserCallback}
+                    showViewMuteBtn={true}
                   />
                 )}
                 {/* post analytics */}
@@ -452,7 +665,7 @@ const FeedCardItem = ({
                         sm: "column",
                         xs: "column",
                       }}
-                      sx={{py: 0.5}}
+                      sx={{ py: 0.5 }}
                     >
                       <Stack
                         direction={"row"}
@@ -558,21 +771,21 @@ const FeedCardItem = ({
                         sx={{ alignItems: "center" }}
                         spacing={0.3}
                       >
-                          <Typography
-                            sx={{
-                              display: "block",
-                            }}
-                            variant="caption"
-                          >
-                            {formatFeedNumber(post?.totalReposts)}
-                          </Typography>
-                          <Typography
-                            sx={{ display: "block", position: "relative" }}
-                            variant="caption"
-                            color="textDisabled"
-                          >
-                            Reposts
-                          </Typography>
+                        <Typography
+                          sx={{
+                            display: "block",
+                          }}
+                          variant="caption"
+                        >
+                          {formatFeedNumber(post?.totalReposts)}
+                        </Typography>
+                        <Typography
+                          sx={{ display: "block", position: "relative" }}
+                          variant="caption"
+                          color="textDisabled"
+                        >
+                          Reposts
+                        </Typography>
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
@@ -652,7 +865,6 @@ const FeedCardItem = ({
                       justifyContent: "space-between",
                       px: 0,
                       mx: 0,
-                      left: -9,
                       maxWidth: "100%",
                     }}
                   >
@@ -876,7 +1088,22 @@ const FeedCardItem = ({
         />
       </Card>
       {/* post tip drawer */}
-      <PostTipDrawer post={item} isOpen={state.isOpen} toggleDrawer={toggleTipDrawer} />
+      <PostTipDrawer
+        post={item}
+        isOpen={state.isOpen}
+        toggleDrawer={toggleTipDrawer}
+      />
+      {/* tag users drawer */}
+      {state.openTagUserDrawer && (
+        <DisplayTagMentionDrawer
+          users={state.users}
+          title={state.title}
+          postId={item.id}
+          slug={state.slug}
+          isOpen={state.openTagUserDrawer}
+          toggleDrawer={toggleTagUserDrawer}
+        />
+      )}
     </React.Fragment>
   );
 };

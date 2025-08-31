@@ -78,7 +78,7 @@ const FeedSocialShare = ({
   toggleDrawer: (ev: any, open: boolean) => void;
   url: string;
   postId: string;
-  onSocialClick: (id: string) => void;
+  onSocialClick: (id: string, kind?: string) => void;
 }) => {
 
   const notif = useNotifications()
@@ -88,7 +88,7 @@ const FeedSocialShare = ({
   const [state, setState] = useState({ isCopied: false})
 
   const handleShare = (ev: any, kind?: string) => {
-    onSocialClick(postId)
+    onSocialClick(postId, kind)
     toggleDrawer(ev, false)
   };
 
@@ -99,7 +99,7 @@ const FeedSocialShare = ({
     setTimeout(() => {
         setState(prev => ({...prev, isCopied: false}))
     }, 700);
-    onSocialClick(postId)
+    onSocialClick(postId, "Link")
     toggleDrawer(ev, false)
   }
 
@@ -155,62 +155,62 @@ const FeedSocialShare = ({
                     </IconButton>
                 </Grid>
                 <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <WhatsappShareButton onClick={ev => handleShare(ev)} url={url}>
+                    <WhatsappShareButton onClick={ev => handleShare(ev, "Whatsapp")} url={url}>
                         <WhatsappIcon size={32} round={false} />
                     </WhatsappShareButton>
                 </Grid>
                 <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <FacebookShareButton onClick={ev => handleShare(ev)} url={url}>
+                    <FacebookShareButton onClick={ev => handleShare(ev, "Facebook")} url={url}>
                         <FacebookIcon size={32} round={false} />
                     </FacebookShareButton>
                 </Grid>
                 <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <FacebookMessengerShareButton appId="" onClick={ev => handleShare(ev)} url={url}>
+                    <FacebookMessengerShareButton appId="" onClick={ev => handleShare(ev, "Fb Messenger")} url={url}>
                         <FacebookMessengerIcon size={32} round={false} />
                     </FacebookMessengerShareButton>
                 </Grid>
                 <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <TwitterShareButton onClick={ev => handleShare(ev)} url={url}>
+                    <TwitterShareButton onClick={ev => handleShare(ev, "X")} url={url}>
                         <XIcon size={32} round={false} />
                     </TwitterShareButton>
                 </Grid>
                 <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <TelegramShareButton onClick={ev => handleShare(ev)} url={url}>
+                    <TelegramShareButton onClick={ev => handleShare(ev, "Telegram")} url={url}>
                         <TelegramIcon size={32} round={false} />
                     </TelegramShareButton>
                 </Grid>
                 <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <EmailShareButton onClick={ev => handleShare(ev)} url={url}>
+                    <EmailShareButton onClick={ev => handleShare(ev, "Email")} url={url}>
                         <EmailIcon size={32} round={false} />
                     </EmailShareButton>
                 </Grid>
 
                 <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <LinkedinShareButton onClick={ev => handleShare(ev)} url={url}>
+                    <LinkedinShareButton onClick={ev => handleShare(ev, "Linkedin")} url={url}>
                         <LinkedinIcon size={32} round={false} />
                     </LinkedinShareButton>
                 </Grid>
 
                 <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <RedditShareButton onClick={ev => handleShare(ev)} url={url}>
+                    <RedditShareButton onClick={ev => handleShare(ev, "Reddit")} url={url}>
                         <RedditIcon size={32} round={false} />
                     </RedditShareButton>
                 </Grid>
 
                 <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <ThreadsShareButton onClick={ev => handleShare(ev)} url={url}>
+                    <ThreadsShareButton onClick={ev => handleShare(ev, "Threads")} url={url}>
                         <ThreadsIcon size={32} round={false} />
                     </ThreadsShareButton>
                 </Grid>
 
                 <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <LivejournalShareButton onClick={ev => handleShare(ev)} url={url}>
+                    <LivejournalShareButton onClick={ev => handleShare(ev, "Livejournal")} url={url}>
                         <LivejournalIcon size={32} round={false} />
                     </LivejournalShareButton>
                 </Grid>
 
                 <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <ViberShareButton onClick={ev => handleShare(ev)} url={url}>
+                    <ViberShareButton onClick={ev => handleShare(ev, "Viber")} url={url}>
                         <ViberIcon size={32} round={false} />
                     </ViberShareButton>
                 </Grid>

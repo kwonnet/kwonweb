@@ -16,6 +16,7 @@ import "./globals.css";
 import SocketIoProvider from "@/context/SocketIoContext";
 import { constant } from "@/config";
 import SSEContextProvider from "@/context/SSEContext";
+import RegisterDeviceProvider from "@/providers/RegisterDeviceProvider";
 
 export const metadata: Metadata = {
   title: constant.siteName,
@@ -35,9 +36,11 @@ export default async function RootLayout({
           <AppRouterCacheProvider>
             <React.Suspense fallback={<LinearProgress />}>
               <NextjsAppProvider session={session}>
+                <RegisterDeviceProvider>
                 <SocketIoProvider>
-                  <SSEContextProvider>{children}</SSEContextProvider>
+                    <SSEContextProvider>{children}</SSEContextProvider>
                 </SocketIoProvider>
+                </RegisterDeviceProvider>
               </NextjsAppProvider>
             </React.Suspense>
           </AppRouterCacheProvider>

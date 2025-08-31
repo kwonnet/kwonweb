@@ -8,10 +8,11 @@ import { shuffleArray } from "@/utils";
 import ReactCardFlip from "react-card-flip";
 import { FlipCardBackSvgIcon, FlipCardFrontSvgIcon } from "../svg";
 import { useNotifications } from "@toolpad/core";
+import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const LuckyFlipBox = () => {
-  const { question, gameRoomInfo, countdown, energy, socketIo } =
-    useSocketIoContext();
+  const { question, gameRoomInfo, countdown, energy, gameSocketIo: socketIo } =
+    useGameSocketIoContext();
 
   const [state, setState] = useState<{ flips: string[] }>({ flips: [] });
 

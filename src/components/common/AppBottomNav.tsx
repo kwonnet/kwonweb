@@ -28,11 +28,13 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import EmailIcon from '@mui/icons-material/Email';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import OfflineBoltOutlinedIcon from "@mui/icons-material/OfflineBoltOutlined";
+import WavingHandIcon from "@mui/icons-material/WavingHand";
 
 
 
 const buttons = (pathname: string) => {
-  const paths = { home: "/", shortz: "/shorts", videos: "/videos", games: "/games", tasks: "/tasks", profile: "/profile", invite: "/invite", people: "/people", explore: "/explore", contests: "/contests",}
+  const paths = { home: "/", shortz: "/sparks", videos: "/videos", games: "/games", tasks: "/tasks", profile: "/profile", invite: "/invite", people: "/connections", explore: "/discover", contests: "/contests",}
 
   return  [
     {
@@ -44,8 +46,8 @@ const buttons = (pathname: string) => {
     },
     {
       id: 2,
-      title: "Shortz",
-      icon: pathname === paths.shortz ? <SlideshowIcon /> : <SlideshowOutlinedIcon />,
+      title: "Sparks",
+      icon: pathname === paths.shortz ? <OfflineBoltOutlinedIcon /> : <OfflineBoltOutlinedIcon />,
       isSmallOnly: false,
       path: paths.shortz,
     },
@@ -77,27 +79,36 @@ const buttons = (pathname: string) => {
       isSmallOnly: false,
       path: paths.explore,
     },
+    
     {
       id: 7,
-      title: "Connect",
-      icon: pathname === paths.people ? <PeopleAltIcon /> : <PeopleAltOutlinedIcon />,
+      title: "Netwaves",
+      icon: <WavingHandIcon />,
       isSmallOnly: false,
-      path: paths.people,
+      path: "/netwaves",
     },
     {
       id: 8,
-      title: "Invite",
-      icon: <GroupAddOutlinedIcon />,
+      title: "Connect",
+      icon: pathname === paths.people ? <GroupAddOutlinedIcon /> : <GroupAddOutlinedIcon />,
       isSmallOnly: false,
-      path: "/invite",
-    }
+      path: paths.people,
+    },
   ];
 }
 
+const excludePaths = ["/messages", "/games"]
+
 const AppBottomNav = () => {
+  
   const pathname = usePathname();
+
+  const checkPath = excludePaths.filter(p => pathname.startsWith(p) )
+
+  if(checkPath.length > 0) return null
+
   return (
-    <Box sx={{ position: "relative" }}>
+    <Box sx={{ position: "relative", display: {lg: "none", md: "none", sm: "block", xs: "block"} }}>
       <Box
         sx={[
           (theme) => ({
@@ -107,10 +118,10 @@ const AppBottomNav = () => {
             width: "100%",
             maxWidth: "100vw",
             borderTop: "1px solid grey",
-            background: theme.vars.palette.tints[900],
+            background: theme.vars.palette.AppBar.defaultBg,
             color: theme.vars.palette.gradient.contrastText,
             ...theme.applyStyles("dark", {
-              background: theme.vars.palette.grey[900],
+              background: theme.vars.palette.AppBar.darkBg,
             }),
           }),
         ]}
@@ -127,47 +138,35 @@ const AppBottomNav = () => {
             {buttons(pathname).map((item) => (
               <Stack
                 key={item.id}
+                spacing={-2}
+                component={Link}
+                href={item.path}
                 sx={[(theme) => (
                   {
                     alignItems: "center",
-                    color: (theme) => theme.vars.palette.tints[200],
-                    ...(pathname === item.path && {
-                      // background: (theme) => theme.vars.palette.gradient.D900,
-                      // color: (theme) => theme.vars.palette.common.white,
-                      // boxShadow: 10,
-                      // px: 2,
-                      ...theme.applyStyles("dark", {
-                        // background: theme.vars.palette.grey[800],
-                      })
-                    }),
+                    textDecoration: "none"
                   }
                 )]}
               >
                 <IconButton
                   sx={[(theme) => ({
-                    // boxShadow: 0,
-                    // ...(pathname === item.path && {
-                    //   boxShadow: 1,
-                    //   ...theme.applyStyles("dark", {
-                    //     background: theme.vars.palette.grey[800],
-                    //   })
-                    // }),
+                    boxShadow: 0,
+                    ...(pathname !== item.path && {
+                      color: "text.disabled",
+                    }),
                   })]}
                   size={"large"}
-                  LinkComponent={Link}
-                  href={item.path}
+                  
                 >
                   {item.icon}
                 </IconButton>
                 <Typography sx={[(theme) => ({ 
                   fontFamily: "PlayFair",
                   // fontSize: "8px",
-                  ...(pathname === item.path && {  
-                    color: theme.vars.palette.primary.main,                  
-                    ...theme.applyStyles("dark", {
-                      color: theme.vars.palette.primary.contrastText,
-                    })
-                  }),
+                  ...(pathname === item.path ? {  
+                    color: theme.vars.palette.text.primary,                  
+                    
+                  } : {color: "text.disabled"}),
                   })]} variant="caption">
                   {item.title}
                 </Typography>

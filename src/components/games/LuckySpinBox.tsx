@@ -7,10 +7,11 @@ import { shuffleArray } from "@/utils";
 import { toast } from "react-toastify";
 import WheelComponent from "./WheelComponent";
 import { useNotifications } from "@toolpad/core";
+import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const LuckySpinBox = () => {
-  const { question, gameRoomInfo, countdown, energy, socketIo } =
-    useSocketIoContext();
+  const { question, gameRoomInfo, countdown, energy, gameSocketIo: socketIo } =
+    useGameSocketIoContext();
 
   const theme = useTheme();
 
