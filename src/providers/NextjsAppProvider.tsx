@@ -31,7 +31,7 @@ const NextjsAppProvider = (props: {
           <CardMedia
             sx={{ height: 25, mt: {lg: 1, md: 1, sm: 0, xs: 0}, pl: { lg: 0, md: 0, sm: 1, xs: 1} }}
             component="img"
-            src="/logo.svg"
+            src="/logo.png"
             alt={constant.siteName}
           />
         ),
@@ -42,5 +42,6 @@ const NextjsAppProvider = (props: {
     </NextAppProvider>
   );
 };
+
 
 export default NextjsAppProvider;

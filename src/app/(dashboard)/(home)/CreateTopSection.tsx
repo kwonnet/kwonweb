@@ -21,7 +21,7 @@ const CreateTopSection = () => {
 
   return (
     <React.Fragment>
-      <Box sx={{ px: 1 }}>
+      <Box sx={{ px: 1, my: 1 }}>
         <Card
           elevation={0}
           sx={[

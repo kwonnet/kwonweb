@@ -795,6 +795,18 @@ export type Continent = {
   countries: Country[];
 };
 
+export type TrendingTopics = {
+  last_24_mentions: number;
+  last_24_posts: number;
+  last_24_users: number;
+  trend: string;
+  growth: string;
+  country: string;
+  users: number;
+  posts: number;
+  mentions: number;
+}
+
 //   notifications
 
 export enum INotificationKind {

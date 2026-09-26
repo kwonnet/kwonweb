@@ -29,7 +29,7 @@ import AlternateEmailOutlinedIcon from "@mui/icons-material/AlternateEmailOutlin
 import { PostScopeEnum, PostScopeSetting } from "@/types/post";
 import { getContinentsAndCountries } from "@/lib/locations";
 import useSWR from "swr";
-import { useAuthSession } from "@/hooks";
+import { useAuthSession, useContinentsCountries } from "@/hooks";
 import { useNotifications } from "@toolpad/core";
 import { Continent, Country } from "@/types";
 import DisplayCountries from "./DisplayCountries";
@@ -106,22 +106,23 @@ const PostSettingsDrawer = ({
 
   const notif = useNotifications();
 
-  const { data, isLoading } = useSWR(`/continents`, () =>
-    getContinentsAndCountries(token)
-  );
+  const { countries, continents} = useContinentsCountries()
+  // const { data, isLoading } = useSWR(`/continents`, () =>
+  //   getContinentsAndCountries(token)
+  // );
 
-  const countries: Country[] =
-    !data && isLoading
-      ? []
-      : (data
-          ?.map((item) => item.countries)
-          .flatMap((item) => item)
-          ?.sort((a, b) => a.name.localeCompare(b.name)) ?? []);
+  // const countries: Country[] =
+  //   !data && isLoading
+  //     ? []
+  //     : (data
+  //         ?.map((item) => item.countries)
+  //         .flatMap((item) => item)
+  //         ?.sort((a, b) => a.name.localeCompare(b.name)) ?? []);
 
-  const continents: Continent[] =
-    !data && isLoading
-      ? []
-      : (data?.sort((a, b) => a.name.localeCompare(b.name)) ?? []);
+  // const continents: Continent[] =
+  //   !data && isLoading
+  //     ? []
+  //     : (data?.sort((a, b) => a.name.localeCompare(b.name)) ?? []);
 
   const handleSelected = (
     ev: React.MouseEvent<HTMLLIElement, MouseEvent>,
@@ -320,7 +321,7 @@ const PostSettingsDrawer = ({
                     : "continent"}{" "}
                 </Typography>
               </Stack>
-              {!data && isLoading && <DisplaySkeleton />}
+              {/* {!data && isLoading && <DisplaySkeleton />} */}
               {PostScopeEnum.COUNTRY === state.scope && (
                 <DisplayCountries
                   countries={countries}

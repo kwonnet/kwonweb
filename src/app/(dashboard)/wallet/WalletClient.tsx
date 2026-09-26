@@ -64,26 +64,7 @@ const WalletClient = ({tonRate}: { tonRate: number}) => {
     <Box>
       <Container maxWidth="xl">
       <PageHeader title="My Wallet" />
-        <Box sx={{ pt: 2 }}>
-            <Stack direction={"row"} sx={{justifyContent: "space-between"}}>
-            <Button 
-                href="/store" 
-                LinkComponent={Link} 
-                variant="outlined" 
-                color="warning" sx={{ borderRadius: 30 }}
-            >
-              Buy Coins
-            </Button>
-            <Box>
-              {/* <TonConnectButton  /> */}
-            </Box>
-            {/* <Button variant="contained" color="info" sx={{ borderRadius: 30 }}>
-              Connect wallet
-            </Button> */}
-            </Stack>
-          </Box>
-          
-          <Box sx={{ clear: "right", pt: 4 }}>
+          <Box sx={{ clear: "right", pt: 0 }}>
             <Paper
               sx={[
                 (theme) => ({
@@ -97,87 +78,20 @@ const WalletClient = ({tonRate}: { tonRate: number}) => {
                 }),
               ]}
             >
+              <Stack justifyContent={"space-between"} direction={"row"}>
               <Typography sx={{ fontFamily: "PlayFair" }} variant="caption">
                 Balance
               </Typography>
-              {/* credit section */}
-              <Box sx={{ py: 1 }}>
-                <Typography
-                  variant="h4"
-                  component={"h3"}
-                  sx={{ fontFamily: "PlayFair", py: 1, fontStyle: "italic" }}
-                >
-                  Credit
-                </Typography>
-                <Stack
-                  direction={"row"}
-                  sx={{ alignItems: "center", justifyContent: "space-between" }}
-                  spacing={1}
-                >
-                  <Box>
-                    <Stack
-                      direction={"row"}
-                      sx={{ alignItems: "center" }}
-                      spacing={1}
-                    >
-                      <Typography
-                        sx={{ fontWeight: "bold", fontFamily: "PlayFair" }}
-                        variant="h4"
-                      >
-                        {formatNumber(wallet.credit)}{" "}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        component={"sub"}
-                        sx={{ fontStyle: "italic" }}
-                      >
-                        TZX
-                      </Typography>
-                    </Stack>
-                  </Box>
-                  <Box>
-                    <Stack
-                      direction={"row"}
-                      sx={{ alignItems: "center" }}
-                      spacing={1}
-                    >
-                      <Typography
-                        sx={{ fontWeight: "bold", fontFamily: "PlayFair" }}
-                        variant="h4"
-                        onClick={() => setState(prev => ({...prev, formatShortCredit: !prev.formatShortCredit}))}
-                      >
-                        {state.formatShortCredit ? formatNumber(tonCreditBalance) : formatNumberWithCommas(tonCreditBalance)} 
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        component={"sub"}
-                        sx={{ fontStyle: "italic" }}
-                      >
-                        TON
-                      </Typography>
-                    </Stack>
-                  </Box>
-                </Stack>
-                <Box
-                  sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}
-                >
-                  <Button
-                    variant="outlined"
-                    color={disableWithdraw ? "error" :"info"}
-                    sx={{ borderRadius: 30 }}
-                    disabled={disableWithdraw}
-                    onClick={() => toggleWithdrawalModal()}
-                  >
-                    Withdraw
-                  </Button>
-                </Box>
-              </Box>
-              <Divider
-                variant="fullWidth"
-                sx={{
-                  border: (theme) => `1px solid ${theme.palette.tints[100]}`,
-                }}
-              />
+              <Button 
+                href="/store" 
+                LinkComponent={Link} 
+                variant="outlined" 
+                color="warning" sx={{ borderRadius: 30 }}
+                size="small"
+            >
+              Buy Coins
+            </Button>
+              </Stack>
               {/* Coins  */}
               <Box sx={{ py: 1 }}>
                 <Stack
@@ -186,8 +100,8 @@ const WalletClient = ({tonRate}: { tonRate: number}) => {
                   spacing={1}
                 >
                   <Typography
-                    variant="h4"
-                    component={"h3"}
+                    variant="h5"
+                    component={"h5"}
                     sx={{ fontFamily: "PlayFair", fontStyle: "italic" }}
                   >
                     Coins
@@ -196,7 +110,7 @@ const WalletClient = ({tonRate}: { tonRate: number}) => {
                     <CoinsSvgIcon style={{ fontSize: 12 }} />
                     <Typography
                       sx={{ fontWeight: "bold", fontFamily: "PlayFair" }}
-                      variant="h4"
+                      variant="h6"
                       onClick={() => setState(prev => ({...prev, formatShortAmount: !prev.formatShortAmount}))}
                     >
                      {state.formatShortAmount ? formatNumber(wallet.coins) : formatNumberWithCommas(wallet.coins)} 
@@ -206,6 +120,16 @@ const WalletClient = ({tonRate}: { tonRate: number}) => {
                 <Box
                   sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}
                 >
+                  <Stack spacing={2} direction={"row"}>
+                  <Button
+                    variant="outlined"
+                    color={disableWithdraw ? "error" :"info"}
+                    sx={{ borderRadius: 30 }}
+                    disabled={disableWithdraw}
+                    onClick={() => toggleWithdrawalModal()}
+                  >
+                    Withdraw
+                  </Button>
                   <Button
                     variant="outlined"
                     color={disableTransfer ? "error" : "info"}
@@ -215,6 +139,7 @@ const WalletClient = ({tonRate}: { tonRate: number}) => {
                   >
                     Transfer
                   </Button>
+                  </Stack>
                 </Box>
               </Box>
               <Divider
@@ -231,8 +156,8 @@ const WalletClient = ({tonRate}: { tonRate: number}) => {
                   spacing={1}
                 >
                   <Typography
-                    variant="h4"
-                    component={"h3"}
+                    variant="h5"
+                    component={"h5"}
                     sx={{ fontFamily: "PlayFair", fontStyle: "italic" }}
                   >
                     Bonus
@@ -240,8 +165,8 @@ const WalletClient = ({tonRate}: { tonRate: number}) => {
                   <Stack direction={"row"} sx={{ alignItems: "center" }}>
                     <CoinsSvgIcon style={{ fontSize: 12 }} />
                     <Typography
-                      sx={{ fontWeight: "bold", fontFamily: "PlayFair" }}
-                      variant="h4"
+                      sx={{ fontWeight: "bold", fontFamily: "PlayFair", cursor: "pointer" }}
+                      variant="h6"
                       onClick={() => setState(prev => ({...prev, formatShortBonus: !prev.formatShortBonus}))}
                     >
                       {state.formatShortBonus ? formatNumber(wallet.bonus) : formatNumberWithCommas(wallet.bonus)}

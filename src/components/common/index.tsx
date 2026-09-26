@@ -38,3 +38,6 @@ export { default as ReportUserModal } from "./ReportUserModal"
 
 export { default as AccountSettingsModal } from "./AccountSettingsModal"
 
+export { default as FeedIndicator } from "./FeedIndicator"
+
+export { default as SidebarTrendServer } from "./SidebarTrendServer"

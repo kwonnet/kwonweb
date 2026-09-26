@@ -41,9 +41,9 @@ const DisplayPage = ({ subscription }: { subscription?: Subscription }) => {
             LinkComponent={Link}
             href="/subscribe"
             color="info"
-            sx={{borderRadius: 30}}
+            sx={{borderRadius: 30, textTransform: "inherit"}}
           >
-            Purchase a new plan
+            Subscribe a plan
           </Button>
         </Box>
       </Box>

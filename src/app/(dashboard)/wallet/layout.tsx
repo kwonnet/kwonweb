@@ -1,9 +1,8 @@
-import { SidebarTrendServer, StickySidebar, TopUserStories } from "@/components/common";
+import { SidebarTrendServer, StickySidebar } from "@/components/common";
 import { ConnectionServer } from "@/components/sections";
 import { Box } from "@mui/material";
 import React from "react";
-import CreateTopSection from "./CreateTopSection";
-import FeedTabNavigation from "./FeedTabNavigation";
+
 
 const Layout = (props: any) => {
   return (
@@ -19,9 +18,6 @@ const Layout = (props: any) => {
       >
         {/* <Box sx={{ width: { lg: "65%", md: "65%", sm: "100%", xs: "100%" } }}> */}
         <Box className="page_content">
-          {/* <TopUserStories /> */}
-          <FeedTabNavigation />
-          <CreateTopSection />
           {props.children}
         </Box>
         <StickySidebar TrendingSection={<SidebarTrendServer />} ConnectionSection={<ConnectionServer />} />

@@ -5,12 +5,12 @@ import { useInView } from "react-intersection-observer";
 import { debounce } from "lodash";
 
 export default function useLoadMore(loadMore: () => void) {
-  const { ref, inView } = useInView({ threshold: 0.1, fallbackInView: true });
+  const { ref, inView } = useInView({ threshold: 0.01, fallbackInView: true });
 
   useEffect(() => {
     const debounced = debounce(loadMore, 10)
     if (inView) {
-        console.log("loadmore called in useLoadMore hook")
+        console.log("load more called in useLoadMore hook")
         debounced()
     }
   }, [inView]);

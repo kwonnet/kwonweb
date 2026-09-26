@@ -33,7 +33,7 @@ type LocalState = {
 
 const PAGE_SIZE = 21
 
-const FeedsDisplay = ({ posts }: { posts: FeedPost[] }) => {
+const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }) => {
 
   const { token, user } = useAuthSession();
 
@@ -50,10 +50,10 @@ const FeedsDisplay = ({ posts }: { posts: FeedPost[] }) => {
     if (pageIndex !== 0 && previousPageData && !previousPageData.length)
       return null; // Stop when no more data
     return {
-      type: "fyp_newsfeed",
+      // type: "foryou",
+      feed,
       limit: PAGE_SIZE,
       page: pageIndex + 1,
-      feed: FeedTypeEnum.FORYOU
     };
   };
 
@@ -65,7 +65,9 @@ const FeedsDisplay = ({ posts }: { posts: FeedPost[] }) => {
       fallbackData: [posts],
     });
 
-  const flatData = data ? data?.flat() : [];
+  const flattened = data ? data?.flat() : [];
+
+  const flatData = [...new Map(flattened.map(item => [item.id, item])).values()];
 
   const isReachingEnd =
     (data && data[data.length - 1]?.length === 0) || !!error;

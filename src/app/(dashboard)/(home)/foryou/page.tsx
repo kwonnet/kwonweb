@@ -8,12 +8,12 @@ import React from "react";
 
 const Page = async () => {
   const session = await auth();
-  const result = await fetch(`${apiUrl}/posts/feed/${FeedTypeEnum.FORYOU}?limit=21&page=1`, {
+  const result = await fetch(`${apiUrl}/posts/feed/${FeedTypeEnum.FORYOU}?feed=${FeedTypeEnum.FORYOU}&limit=21&page=1`, {
     cache: "no-store",
     method: "GET",
     credentials: "include",
     mode: "cors",
-    next: { revalidate: 30, tags: [FeedTypeEnum.FORYOU] },
+    // next: { revalidate: 30, tags: [FeedTypeEnum.FORYOU] },
     headers: {
       Authorization: `Bearer ${session?.user?.accessToken}`,
 
@@ -42,7 +42,7 @@ const Page = async () => {
     );
   }
   const data: FeedPost[] = await result.json();
-  return <FeedSection posts={data} />;
+  return <FeedSection posts={data} feed={FeedTypeEnum.FORYOU} />;
 };
 
 export default Page;

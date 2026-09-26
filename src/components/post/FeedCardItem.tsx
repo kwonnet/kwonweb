@@ -249,7 +249,7 @@ const FeedCardItem = ({
         : undefined;
 
   // track impressions after every 2 minutes
-  const ref = useTrackImpression(item.id, 2);
+  const ref = useTrackImpression(item.id, 15);
   return (
     <Card
       ref={ref}

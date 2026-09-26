@@ -64,21 +64,23 @@ const DisplayTxnHistory = ({ data }: { data: GroupedRecord }) => {
         {data.items.map((txn) => (
           <Grid
             key={txn.id}
-            size={{ lg: 4, md: 4, sm: 12, xs: 12 }}
+            size={{ lg: 12, md: 12, sm: 12, xs: 12 }}
             id={txn.id}
           >
             <Fade>
-              <Paper
+              <Box
                 sx={[
                   (theme) => ({
                     width: "100%",
                     height: "100%",
                     p: 1,
+                    border: `0.5px solid ${theme.vars.palette.divider}`,
+                    borderRadius: 2,
                     // background: theme.vars.palette.gradient[500],
                     // color: theme.vars.palette.gradient.contrastText,
-                    ...theme.applyStyles("dark", {
-                      background: theme.vars.palette.grey[800],
-                    }),
+                    // ...theme.applyStyles("dark", {
+                    //   background: theme.vars.palette.grey[800],
+                    // }),
                   }),
                 ]}
               >
@@ -104,7 +106,7 @@ const DisplayTxnHistory = ({ data }: { data: GroupedRecord }) => {
                     {formatNumberWithCommas(txn.amount)} {txn.currency}
                   </Typography>
                 </Stack>
-              </Paper>
+              </Box>
             </Fade>
           </Grid>
         ))}
@@ -117,7 +119,7 @@ const TxnHistory = ({ refreshHistory }:{ refreshHistory?: boolean}) => {
 
   const { token, user } = useAuthSession();
 
-  const stats = useUserStats(user.id, token);
+  const { data: stats} = useUserStats({userId: user.id, token});
 
   // get keys for fetching data
   const getKey = (

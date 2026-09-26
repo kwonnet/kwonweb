@@ -2,18 +2,17 @@ import { auth } from "@/auth";
 import { apiUrl } from "@/config";
 import { TrendingTopics } from "@/types";
 import React from "react";
+import SidebarTrendClient from "./SidebarTrendClient";
 import { Session } from "next-auth";
-import PageClient from "./PageClient";
 
 const getQuery = (session: Session | null) => {
-  // console.log(session)
-  // if(session?.user?.country){
-  //   return `country=${session?.user?.country?.iso2}&limit=50`
-  // }
-  // return `limit=50`
-  return `country=NG&limit=50`
+  console.log(session)
+  if(session?.user?.country){
+    return `country=${session?.user?.country?.iso2}&limit=50`
+  }
+  return `limit=50`
 }
-const Page = async () => {
+const SidebarTrendServer = async () => {
   const session = await auth();
   const query = getQuery(session)
   const result = await fetch(`${apiUrl}/discover/trend?${query}`, {
@@ -27,8 +26,8 @@ const Page = async () => {
   });
   if (!result.ok) return null
   const data: TrendingTopics[] = await result.json();
-  return <PageClient trends={data} />;
+  return <SidebarTrendClient trends={data} />;
 };
 
-export default Page;
+export default SidebarTrendServer;
 
