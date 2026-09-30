@@ -74,15 +74,15 @@ Create a Docker Artifact Registry repository named `kwonnet` (or set `_REPOSITOR
 
 ```sh
 gcloud builds submit --config cloudbuild.yaml \
-  --substitutions=_REGION=us-central1,_REPOSITORY=kwonnet,_NEXT_PUBLIC_API_URL=https://api.example.com,_NEXT_PUBLIC_APP_URL=https://web.example.com,_NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/YOUR_ID,_NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY=YOUR_PUBLIC_KEY
+  --substitutions=_REGION=europe-west1,_REPOSITORY=kwonnet,_NEXT_PUBLIC_API_URL=https://api.example.com,_NEXT_PUBLIC_APP_URL=https://web.example.com,_NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/YOUR_ID,_NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY=YOUR_PUBLIC_KEY
 ```
 
-The build publishes `us-central1-docker.pkg.dev/PROJECT_ID/kwonnet/kwonweb:BUILD_ID`. Deploy that exact image:
+The pipeline builds, explicitly pushes `europe-west1-docker.pkg.dev/PROJECT_ID/kwonnet/kwonweb:BUILD_ID`, deploys it to `_SERVICE` (default `kwonweb`), and sends traffic to the latest revision. It preserves existing runtime environment variables, secrets, and access settings. For first-time setup or a manual deployment with secret configuration:
 
 ```sh
 gcloud run deploy kwonweb \
-  --image us-central1-docker.pkg.dev/PROJECT_ID/kwonnet/kwonweb:BUILD_ID \
-  --region us-central1 --port 8080 --allow-unauthenticated \
+  --image europe-west1-docker.pkg.dev/PROJECT_ID/kwonnet/kwonweb:BUILD_ID \
+  --region europe-west1 --port 8080 --allow-unauthenticated \
   --set-env-vars AUTH_URL=https://web.example.com \
   --set-secrets AUTH_SECRET=kwonweb-auth-secret:latest
 ```
@@ -90,3 +90,12 @@ gcloud run deploy kwonweb \
 Create the referenced Secret Manager secret and grant the Cloud Run runtime service account access first. Inject any enabled Bunny server-side keys through Secret Manager too; use the exact variable names in `src/config/bunny.ts`. `.env*` files are excluded from the image. Do not pass private credentials as build arguments or `NEXT_PUBLIC_*` variables.
 
 If using a push-triggered deployment, configure the trigger to use `cloudbuild.yaml` and its public substitutions; an automatic Docker build with no arguments cannot infer your frontend/API URLs from Cloud Run runtime settings. Ensure kwonserver's CORS configuration allows your deployed frontend origin and that its API is reachable by browsers. The existing Firebase workflows are separate and are not changed by this configuration.
+
+
+### If Cloud Run displays the placeholder page
+
+`placeholder-1` and “Hello from Cloud Run!” in service logs indicate Google's placeholder container is serving requests. A successful startup probe for that container does not verify your Next.js build. Check **Cloud Build → History**, not just Cloud Run service logs.
+
+Configure the repository trigger to use this `cloudbuild.yaml` (relative to the repository root) and the intended branch. It requires public URL substitutions, an existing Artifact Registry repository in `_REGION`, and a build service account with Artifact Registry Writer, Cloud Run deployment permissions, Service Account User on the runtime identity, and Logging Writer for Cloud Logging. Configure runtime `AUTH_SECRET` and `AUTH_URL` on the service before running the trigger. Keep secret values out of build substitutions.
+
+After pushing the changes and running the trigger, all four steps must pass: build, push, deploy, and traffic update. In Cloud Run → kwonweb → Revisions, the serving image should reference your Artifact Registry image with the build ID, not the placeholder. If your repository root contains multiple projects, configure the build steps' working directory/build context for `kwonweb`; simply choosing a nested config file does not change the checkout working directory.
