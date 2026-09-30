@@ -1,6 +1,6 @@
 # Stage 1: Install dependencies
-FROM node:22-bookworm-slim AS deps
-RUN apk add --no-cache libc6-compat
+FROM node:22-alpine AS deps
+# Debian already includes glibc; Alpine apk/libc6-compat do not apply here.
 WORKDIR /app
 
 # Copy package management files to optimize layer caching
@@ -13,7 +13,7 @@ RUN \
   fi
 
 # Stage 2: Build the application
-FROM node:22-bookworm-slim AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -26,7 +26,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN  npm run build;
 
 # Stage 3: Production runner
-FROM node:22-bookworm-slim AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -35,8 +35,8 @@ ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create a non-root user and group for runtime security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs \
+    && useradd --system --uid 1001 --gid nodejs --create-home nextjs
 
 # Copy static assets (standalone mode excludes public and static assets by default)
 COPY --from=builder /app/public ./public
