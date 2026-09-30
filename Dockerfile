@@ -23,12 +23,7 @@ COPY . .
 # Comment the following line if you want to enable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN \
-  if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  elif [ -f yarn.lock ]; then yarn build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  else npm run build; \
-  fi
+RUN  npm run build;
 
 # Stage 3: Production runner
 FROM node:22-bookworm-slim AS runner
