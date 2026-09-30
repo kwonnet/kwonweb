@@ -1,6 +1,6 @@
 # Stage 1: Install dependencies
 FROM node:22-alpine AS deps
-# Debian already includes glibc; Alpine apk/libc6-compat do not apply here.
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy package management files to optimize layer caching
@@ -35,8 +35,8 @@ ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create a non-root user and group for runtime security
-RUN groupadd --system --gid 1001 nodejs \
-    && useradd --system --uid 1001 --gid nodejs --create-home nextjs
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
 # Copy static assets (standalone mode excludes public and static assets by default)
 COPY --from=builder /app/public ./public
@@ -56,3 +56,5 @@ EXPOSE 3000
 
 # Run the standalone Node.js server
 CMD ["node", "server.js"]
+
+
