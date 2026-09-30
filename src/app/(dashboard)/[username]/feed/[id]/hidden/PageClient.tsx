@@ -9,7 +9,7 @@ import {
   shareFeedPost,
   updateRePost,
 } from "@/lib/posts";
-import { getErrorMessage } from "@/utils";
+import { getErrorMessage, getSessionId } from "@/utils";
 import { FeedPost } from "@/types";
 import { siteUrl } from "@/config";
 import { useAuthSession, useFeedCacheUpdater, usePostSseListeners } from "@/hooks";
@@ -151,9 +151,11 @@ const PageClient = ({
     toggleShareDrawer(ev, true);
   };
 
-  const onSocialClick = async (id: string) => {
+  const onSocialClick = async (id: string, kind?: string) => {
     mutations.mutatePostShares(id);
-    await shareFeedPost(id, token);
+    const sessionId = getSessionId();
+    const payload = {id, kind, sessionId, timestamp: new Date().toISOString()}
+    await shareFeedPost(payload, token);
   };
   // follow user
   const onFollowUserCallback = (

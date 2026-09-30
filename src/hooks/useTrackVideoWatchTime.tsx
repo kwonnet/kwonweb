@@ -7,6 +7,8 @@ import { PostMediaAction, PostMediaKind, PostMediaLog } from "@/types/post";
 import { sendPostLog } from "@/lib/posts";
 import { useInView } from "react-intersection-observer";
 
+const watchMilestones = [5, 10, 25, 50, 75, 90, 100] as const;
+
 const useTrackVideoWatchTime = (
   playerRef: React.RefObject<MediaPlayerInstance | null>,
   args: {
@@ -28,8 +30,6 @@ const useTrackVideoWatchTime = (
   const hasEndedLogged = useRef(false);
 
   // Common video watch milestones
-  const watchMilestones = [5, 10, 25, 50, 75, 90, 100];
-
   useEffect(() => {
     if (!inView || args.isCurrentUser) return;
 
@@ -121,7 +121,7 @@ const useTrackVideoWatchTime = (
       player.removeEventListener("ended", onEnded);
       clearInterval(intervalId);
     };
-  }, [inView, playerRef]);
+  }, [inView, playerRef, args.isCurrentUser, args.mediaId, args.postId, sessionId, token]);
 
   return ref;
 };

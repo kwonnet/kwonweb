@@ -37,7 +37,7 @@ const PageClient = ({
     return () => {
       socketIo?.off(GameEventEnum.GAME_ROOM_PARTICIPANTS, callback);
     };
-  }, [socketIo]);
+  }, [socketIo, cat.mode]);
 
 
   const handleJoinRoom = async (item: GameRoom) => {

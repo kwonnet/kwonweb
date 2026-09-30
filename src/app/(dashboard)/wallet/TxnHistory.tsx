@@ -153,9 +153,9 @@ const TxnHistory = ({ refreshHistory }:{ refreshHistory?: boolean}) => {
 
   useEffect(() => {
     if(refreshHistory) return
-    mutate(data)
+    mutate()
     return () => {}
-  }, [refreshHistory])
+  }, [refreshHistory, mutate])
   
 
   const debounceFetch = React.useRef(

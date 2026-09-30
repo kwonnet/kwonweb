@@ -7,11 +7,12 @@ import { apiUrl } from "@/config";
 
 const url = apiUrl + "/tasks/";
 
-export default async function Page({ params }: { params: { id: string } }) {
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
 
-  if (!params.id) return redirect("/tasks");
+  if (!id) return redirect("/tasks");
 
-  const result = await fetch(url + params.id, {
+  const result = await fetch(url + id, {
     method: "GET",
     next: { revalidate: 0 },
   });

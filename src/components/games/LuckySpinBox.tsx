@@ -41,7 +41,7 @@ const LuckySpinBox = () => {
   };
   const options = useMemo(() => {
     return shuffleArray(question?.options ?? []);
-  }, []);
+  }, [question?.options]);
   const segColors = [
     theme.palette.primary.main,
     theme.palette.warning.main,

@@ -48,6 +48,17 @@ export const bookmarkPost = async (id: string, accessToken?: string) => {
   }
 }
 
+// export const shareFeedPost = async (id: string, accessToken?: string) => {
+//   try {
+//     axiosAPI.accessToken = accessToken;
+//     const result = await axiosAPI.post(`/v1/posts/${id}/shares`, {id});
+//     return result.data as FeedPost;
+//   } catch (error: any) {
+//     console.log("share error ",error)
+//     throw error
+//   }
+// }
+
 export const shareFeedPost = async (body: {
     id: string;
     kind?: string;

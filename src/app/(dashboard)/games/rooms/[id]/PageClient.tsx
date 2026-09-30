@@ -198,6 +198,10 @@ const PageClient = ({
   } = useGameSocketIoContext();
 
   const notif = useNotifications()
+  const notifRef = React.useRef(notif);
+  notifRef.current = notif;
+  const routerRef = React.useRef(router);
+  routerRef.current = router;
 
   const theme = useTheme();
 
@@ -235,18 +239,21 @@ const PageClient = ({
         GameEventEnum.PLAYER_JOINED,
         room.id,
         (args: { isError: boolean; message: string }) => {
-          if (args.isError) return notif.show(args.message, {severity: "warning", autoHideDuration: 3000});
+          if (args.isError) return notifRef.current.show(args.message, {severity: "warning", autoHideDuration: 3000});
           console.log("Player joined");
-          router.push(`/games`);
+          routerRef.current.push(`/games`);
         }
       );
     }
+  }, [socketIo, isJoined, room.id]);
+
+  useEffect(() => {
     const errorCallback = (msg: string) => {
-      notif.show(msg, {severity: "warning", autoHideDuration: 3000});
-      router.back();
+      notifRef.current.show(msg, {severity: "warning", autoHideDuration: 3000});
+      routerRef.current.back();
     };
     const achievementCallback = (payload: any) => {      
-      notif.show(payload.description, {severity: "success", autoHideDuration: 5000});
+      notifRef.current.show(payload.description, {severity: "success", autoHideDuration: 5000});
     }
     // listen to error callback
     socketIo?.on(GameEventEnum.GAME_ERROR_NOTIFY, errorCallback);
@@ -259,7 +266,7 @@ const PageClient = ({
       resetState();
       // updateSocketState({messages: []})
     };
-  }, [socketIo]);
+  }, [socketIo, room.id, resetState]);
 
   
 

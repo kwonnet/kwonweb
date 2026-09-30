@@ -78,7 +78,7 @@ const GameInvite = ({
     }
   }, [])
 
-  const stats = useUserStats(user.id, token)
+  const stats = useUserStats({userId: user.id, token})
   
 
   return (
@@ -105,8 +105,8 @@ const GameInvite = ({
             gap: 2,
           }}
         >
-          {(stats && stats?.totalInvites > 0)  && (<Typography variant="h6" sx={{ fontWeight: 600 }}>
-            You've invited {formatNumber(stats?.totalInvites)} friends & earned
+          {(stats && stats?.data?.totalInvites > 0)  && (<Typography variant="h6" sx={{ fontWeight: 600 }}>
+            You've invited {formatNumber(stats?.data?.totalInvites)} friends & earned
           </Typography>) }
           
         </Box>
@@ -139,7 +139,7 @@ const GameInvite = ({
 
             })]}
           >
-            <Typography>💰{formatNumber(stats?.totalEarned ?? 0)}</Typography>
+            <Typography>💰{formatNumber(stats?.data?.totalEarned ?? 0)}</Typography>
           </Box>
         </Box>
 

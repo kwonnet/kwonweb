@@ -28,7 +28,7 @@ const LuckyWhizBox = () => {
   }
   const options = useMemo(() => {
     return shuffleArray(question?.options ?? [])
-  },[])
+  }, [question?.options])
   return (
     <Box sx={{px: 3, py: 1, height: "100%", position: "relative", overflowY: "auto"}}>
       <Box>

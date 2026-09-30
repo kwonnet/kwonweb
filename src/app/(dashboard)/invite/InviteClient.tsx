@@ -81,7 +81,7 @@ const InviteClient = () => {
     }
   }, [])
 
-  const stats = useUserStats(user.id, token)
+  const stats = useUserStats({userId: user.id, token})
 
 
   return (
@@ -109,8 +109,8 @@ const InviteClient = () => {
             gap: 2,
           }}
         >
-          {(stats && stats?.totalInvites > 0)  && (<Typography variant="h6" sx={{ fontWeight: 600 }}>
-            {getText(stats?.totalInvites, stats?.totalEarned ?? 0)}
+          {(stats && stats?.data?.totalInvites > 0)  && (<Typography variant="h6" sx={{ fontWeight: 600 }}>
+            {getText(stats?.data?.totalInvites, stats?.data?.totalEarned ?? 0)}
           </Typography>) }
         </Box>
 
@@ -143,7 +143,7 @@ const InviteClient = () => {
 
             })]}
           >
-            <Typography>🎁{formatNumber(stats?.totalEarned ?? 0)}</Typography>
+            <Typography>🎁{formatNumber(stats?.data?.totalEarned ?? 0)}</Typography>
           </Box>
         </Box>
 

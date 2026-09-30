@@ -11,7 +11,7 @@ import {
   GameRoomInfo,
   GameRoomAnswer,
 } from "@/types";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { Socket } from "socket.io-client";
 import { useSocketIoContext } from "./SocketIoContext";
 
@@ -210,20 +210,19 @@ const GameSocketIoProvider = (props: any) => {
 
       // gameSocketIo?.close();
     };
-  // eslint-disable-next-line
   }, [gameSocketIo]);
 
-  const updateSocketState = (params: Partial<SocketContextType>) => {
+  const updateSocketState = useCallback((params: Partial<SocketContextType>) => {
     setState(prev => ({...prev, ...params}))
-  }
+  }, [])
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setState((prev) => ({
       ...initialState,
       resetState: prev.resetState,
     }));
     // window?.location?.reload()
-  };
+  }, [])
 
   return (
     <GameSocketIoContext.Provider value={{ ...state, resetState, updateSocketState, gameSocketIo }}>

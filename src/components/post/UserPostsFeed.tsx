@@ -9,7 +9,7 @@ import {
   shareFeedPost,
   updateRePost,
 } from "@/lib/posts";
-import { getErrorMessage } from "@/utils";
+import { getErrorMessage, getSessionId } from "@/utils";
 import FeedSocialShare from "./FeedSocialShare";
 import { FeedPost } from "@/types";
 import { siteUrl } from "@/config";
@@ -144,9 +144,11 @@ const UserPostsFeed = ({ posts, userId, kind }: { posts: FeedPost[], userId: str
     toggleShareDrawer(ev, true);
   };
 
-  const onSocialClick = async (id: string) => {
+  const onSocialClick = async (id: string, kind?: string) => {
     mutatePostShares(id);
-    await shareFeedPost(id, token);
+    const sessionId = getSessionId();
+    const payload = {id, kind, sessionId, timestamp: new Date().toISOString()}
+    await shareFeedPost(payload, token);
   };
   // follow user
   const onFollowUserCallback = (

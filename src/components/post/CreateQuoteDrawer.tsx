@@ -54,6 +54,7 @@ import {
   PollThread,
   PostCreate,
   PostScopeEnum,
+  PostScopeSetting,
   PostThread,
   TagUser,
 } from "@/types/post";
@@ -541,8 +542,8 @@ export default function CreateQuoteDrawer({
     setState((prev) => ({ ...prev, location }));
   };
 
-  const onPostSettingsCallback = (scope: PostScopeEnum) => {
-    setState((prev) => ({ ...prev, scope }));
+  const onPostSettingsCallback = (_settings: PostScopeSetting) => {
+    setState((prev) => ({ ...prev, ..._settings }));
   };
 
   const handleSubmit = async (
@@ -1117,7 +1118,7 @@ export default function CreateQuoteDrawer({
 
         {/* post settings drawer */}
         <PostSettingsDrawer
-          postScope={state.scope}
+          settings={{scope: state.scope, continents: [], countries: []}}
           onPostSettingsCallback={onPostSettingsCallback}
           isOpen={state.isOpenPostSettings}
           toggleDrawer={togglePostSettingsDrawer}

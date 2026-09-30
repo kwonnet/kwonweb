@@ -129,6 +129,9 @@ const ContentEditor = ({
       },
     });
   }, []);
+  const tokenRef = useRef(token);
+  tokenRef.current = token;
+
   // custom mention plugin
   const { MentionSuggestions, mentionPlugin } = useMemo(() => {
     return createMentionPlugin({
@@ -138,7 +141,7 @@ const ContentEditor = ({
         try {
           const users = await searchUsers(
             { query: keyword, page: 1, limit: 50 },
-            token
+            tokenRef.current
           );
           return users.map((user) => ({ ...user, link: `/@${user.username}` }));
         } catch (error) {
@@ -149,18 +152,15 @@ const ContentEditor = ({
         mentionRef.current = mentions;
       },
     });
-    // eslint-disable-next-line
   }, []);
   // emoji plugin
   const emojiPlugin = useMemo(
     () => createEmojiPlugin({ useNativeArt: true }),
-    // eslint-disable-next-line
     []
   );
   const { EmojiSuggestions, EmojiSelect } = emojiPlugin;
   // declare the plugins
   const plugins = useMemo(
-    // eslint-disable-next-line
     () => [mentionPlugin, hashtagPlugin, linkifyPlugin, emojiPlugin],
     [mentionPlugin, linkifyPlugin, hashtagPlugin, emojiPlugin]
   );
@@ -201,16 +201,15 @@ const [editorState, setEditorState] = useState(_editorState);
     // onTagsChange(getCurrentTags())
     setState((prev) => ({ ...prev, counter: textContent.length }));
     setEditorState(_editorState);
-    // eslint-disable-next-line
-  }, []);
+  }, [onContentChange]);
 
   useEffect(() => {
     // setEditorState(() => createEditorStateWithText(content))
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       !readOnly && ref.current?.focus();
     }, 500);
-    return () => {};
-  }, [ref]);
+    return () => clearTimeout(timeout);
+  }, [readOnly]);
 
   return (
     <div>

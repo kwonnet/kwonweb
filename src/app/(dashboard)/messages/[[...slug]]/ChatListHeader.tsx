@@ -57,7 +57,7 @@ export default function ChatListHeader() {
 
   const segment = getCurrentSegment(pathname) //useSelectedLayoutSegment();
 
-  const tabItems = getTabItems(user.id)
+  const tabItems = React.useMemo(() => getTabItems(user.id), [user.id]);
 
   const currIndex = tabItems.findIndex((item) => pathname.includes(item.id));
 
@@ -83,7 +83,7 @@ export default function ChatListHeader() {
     const currIndex = tabItems.findIndex((item) => pathname.includes(item.id));
     setValue(currIndex >= 0 ? currIndex : 0);
     return () => {};
-  }, [pathname]);
+  }, [pathname, tabItems]);
 
   return (
     <React.Fragment>

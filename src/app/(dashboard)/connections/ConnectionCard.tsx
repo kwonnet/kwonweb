@@ -182,7 +182,7 @@ const ConnectionCard = ({
                 variant="caption"
               >
                 {composeMutualText({
-                  followers: item?.mutualFollowers,
+                  followers: item?.mutualFollowers as UserConnection[],
                   total: item.conn.mutualCount,
                 })}
               </Typography>

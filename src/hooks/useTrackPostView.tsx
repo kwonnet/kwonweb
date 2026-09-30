@@ -48,5 +48,5 @@ export default function useTrackPostView(postId: string, ttlMinutes = 3.5) {
       window.removeEventListener("beforeunload", sendPostView);
       document.removeEventListener("visibilitychange", onVisibilityListener);
     };
-  }, [postId]);
+  }, [postId, token, ttlMinutes]);
 }

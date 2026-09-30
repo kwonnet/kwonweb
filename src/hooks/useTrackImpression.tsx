@@ -21,7 +21,7 @@ export default function useTrackImpression(postId: string, ttlMinutes = 2.5) {
         const shouldTrack = shouldSendLog(postId, "POST_LAST_SEEN", ttlMinutes);
         shouldTrack && trackImpression(payload, token);
     }
-  }, [inView]);
+  }, [inView, postId, token, ttlMinutes]);
 
   return ref;
 }

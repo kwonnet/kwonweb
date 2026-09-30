@@ -279,7 +279,7 @@ const usePostSseListeners = (
         sseSource.removeEventListener(event, handler);
       });
     };
-  }, [sseSource, user, mutations, mutate]);
+  }, [sseSource, user, mutations, mutate, isProfile]);
 };
 
 export default usePostSseListeners;

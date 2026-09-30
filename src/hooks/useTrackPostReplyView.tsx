@@ -42,9 +42,12 @@ export default function useTrackPostReplyView(postId: string, ttlMinutes = 3.5) 
 
       const timer = setTimeout(sendPostView, 2000);
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        sendPostView.cancel();
+      };
     }
-  }, [inView, postId]);
+  }, [inView, postId, token, ttlMinutes]);
 
   return ref;
 }

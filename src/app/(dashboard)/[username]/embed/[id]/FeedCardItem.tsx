@@ -6,7 +6,7 @@ import {
   Badge,
   Card,
   CardContent,
-  Grid2,
+  Grid,
   IconButton,
   Stack,
   Tooltip,
@@ -235,8 +235,8 @@ const FeedCardItem = ({
               </Stack>
             </Stack>
           </Stack>
-          <Grid2 container spacing={0}>
-            <Grid2 size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
+          <Grid container spacing={0}>
+            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <Box
                 sx={{
                   pt: 0,
@@ -481,8 +481,8 @@ const FeedCardItem = ({
                   </Tooltip>
                 </Stack>
               </Box>
-            </Grid2>
-          </Grid2>
+            </Grid>
+          </Grid>
         </CardContent>
       </Card>
     </React.Fragment>

@@ -108,7 +108,7 @@ const PageClient = () => {
       const currMode = mode === "dark" ? "light" : "dark";
       setMode(currMode);
     }
-  }, [mode, systemMode]);
+  }, [mode, setMode]);
 
   const { user } = useAuthSession();
 

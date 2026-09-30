@@ -159,6 +159,7 @@ export enum PostScopeEnum {
 
 export interface PostScopeSetting  { scope: PostScopeEnum, countries: string[], continents: string[]}
 
+
 type PostMedia = {
     fileId: string;
     name: string;

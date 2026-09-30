@@ -99,7 +99,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -175,7 +175,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -240,7 +240,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -328,7 +328,7 @@ const useFeedMutations = (
       const update = (feed: FeedPost[]) => updatePostReposts(feed, args, local);
       mutateData(update);
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -391,7 +391,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -499,7 +499,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -556,7 +556,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -602,7 +602,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -663,7 +663,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -724,7 +724,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -777,7 +777,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -833,7 +833,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -889,7 +889,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -943,7 +943,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   /**
@@ -1039,7 +1039,7 @@ const useFeedMutations = (
         };
       });
     },
-    [mutateData]
+    [mutateData, setState]
   );
 
   return {

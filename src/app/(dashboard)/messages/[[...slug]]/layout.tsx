@@ -8,24 +8,20 @@ import StartConvo from "./StartConvo";
 
 const Layout = async ({
   params,
-  searchParams,
   children,
 }: {
-  children?: React.ReactNode;
-  params: Promise<{ slug: string[] }>;
-  searchParams: Promise<{ ms_c: string }>;
+  children: React.ReactNode;
+  params: Promise<{ slug?: string[] }>;
 }) => {
   const session = await auth()
   
   const _params = await params;
 
-  const _searchParams = await searchParams
-
   const recipientId = _params?.slug ? _params.slug[0] : undefined;
 
   const slug = _params?.slug ? _params.slug[1] : "chat";
 
-  console.log("messages layout ", _params, _searchParams);
+  console.log("messages layout ", _params);
 
   const isCurrentUser = session?.user?.id === recipientId && (slug === "requests" || slug === "anonymous")
 

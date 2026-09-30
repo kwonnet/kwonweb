@@ -13,7 +13,8 @@ export default function useLoadMore(loadMore: () => void) {
         console.log("load more called in useLoadMore hook")
         debounced()
     }
-  }, [inView]);
+    return () => debounced.cancel();
+  }, [inView, loadMore]);
 
   return ref;
 }

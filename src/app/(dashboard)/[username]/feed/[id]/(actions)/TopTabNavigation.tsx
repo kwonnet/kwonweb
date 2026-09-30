@@ -56,7 +56,7 @@ export default function TopTabNavigation() {
 
   const segment = strArr[strArr.length - 1] //useSelectedLayoutSegment();
 
-  const tabItems = getTabItems(postUrl)
+  const tabItems = React.useMemo(() => getTabItems(postUrl), [postUrl]);
 
   const currIndex = tabItems.findIndex((item) => item.id === segment);
 
@@ -81,7 +81,7 @@ export default function TopTabNavigation() {
     const currIndex = tabItems.findIndex((item) => item.id === segment);
     setValue(currIndex >= 0 ? currIndex : 0);
     return () => {};
-  }, [segment]);
+  }, [segment, tabItems]);
 
   return (
     <React.Fragment>

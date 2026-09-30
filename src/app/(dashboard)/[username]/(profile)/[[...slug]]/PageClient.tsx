@@ -163,7 +163,10 @@ const PageClient = (params: { user: UserMiniProfile; slug: string }) => {
 
   const segment = getCurrentSegment(pathname);
 
-  const filterTabItems = getTabItems(params.user, user.id);
+  const filterTabItems = React.useMemo(
+    () => getTabItems(params.user, user.id),
+    [params.user, user.id]
+  );
 
   const tabComponents = getComponents(params.user, user.id);
 
@@ -180,10 +183,10 @@ const PageClient = (params: { user: UserMiniProfile; slug: string }) => {
 
   React.useEffect(() => {
     const segment = getCurrentSegment(pathname);
-    const currItem = tabItems.find((item) => item.id === segment);
+    const currItem = filterTabItems.find((item) => item.id === segment);
     setValue(currItem ? segment : initItem.id);
     return () => {};
-  }, [pathname]);
+  }, [pathname, filterTabItems, initItem.id]);
 
   return (
     <Box>

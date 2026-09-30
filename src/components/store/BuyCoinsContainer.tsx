@@ -11,6 +11,7 @@ import {
   Grid,
   CardMedia,
   Paper,
+  type ButtonProps,
 } from "@mui/material";
 // import { Button } from "@mui/lab";
 import { toast } from "react-toastify";
@@ -52,6 +53,42 @@ import { useAuthSession } from "@/hooks";
 import { axiosAPI } from "@/config/axios";
 import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
 import { useNotifications } from "@toolpad/core";
+
+type FlutterwavePurchaseButtonProps = Omit<ButtonProps, "onClick"> & {
+  config: ReturnType<typeof getFlutterWaveCoinConfig>;
+  onStart: () => void;
+  onPayment: (response: any) => Promise<void>;
+  onClose: () => void;
+};
+
+const FlutterwavePurchaseButton = ({
+  config,
+  onStart,
+  onPayment,
+  onClose,
+  ...buttonProps
+}: FlutterwavePurchaseButtonProps) => {
+  const handleFlutterPayment = useFlutterwave(config);
+
+  return (
+    <Button
+      {...buttonProps}
+      onClick={() => {
+        onStart();
+        handleFlutterPayment({
+          callback: async (response) => {
+            try {
+              await onPayment(response);
+            } finally {
+              closePaymentModal();
+            }
+          },
+          onClose,
+        });
+      }}
+    />
+  );
+};
 
 const BuyCoinsContainer = ({
   data,
@@ -278,44 +315,36 @@ const BuyCoinsContainer = ({
     }
   };
 
-  const handleFlwPurchase = async (item: CoinPackage, isUSD: boolean) => {
-    setState((prev) => ({ ...prev, isLoading: true, selectedId: item.id }));
-    const config = getFlutterWaveCoinConfig(user, item, isUSD);
-    console.log("Flutterwave config: ", config);
-    const handleFlutterPayment = useFlutterwave(config);
-    handleFlutterPayment({
-      callback: async (response) => {
-        try {
-          console.log(response);
-          axiosAPI.accessToken = token;
-          const result = await axiosAPI.post("/v1/payments/flw/verify", response);
-          notif.show(result.data, {
-            severity: "success",
-            autoHideDuration: 5000,
-          });
-        } catch (error: any) {
-          console.log("Flutterwave payment error: ", error);
-          notif.show(getErrorMessage(error), {
-            severity: "error",
-            autoHideDuration: 5000,
-          });
-        } finally {
-          setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            selectedId: undefined,
-          }));
-        }
-        closePaymentModal();
-      },
-      onClose: () => {
-        setState((prev) => ({
-            ...prev,
-            isLoading: false,
-            selectedId: undefined,
-          }));
-      },
-    });
+  const handleFlwPurchaseResult = async (response: any) => {
+    try {
+      console.log(response);
+      axiosAPI.accessToken = token;
+      const result = await axiosAPI.post("/v1/payments/flw/verify", response);
+      notif.show(result.data, {
+        severity: "success",
+        autoHideDuration: 5000,
+      });
+    } catch (error: any) {
+      console.log("Flutterwave payment error: ", error);
+      notif.show(getErrorMessage(error), {
+        severity: "error",
+        autoHideDuration: 5000,
+      });
+    } finally {
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        selectedId: undefined,
+      }));
+    }
+  };
+
+  const resetFlwPurchase = () => {
+    setState((prev) => ({
+      ...prev,
+      isLoading: false,
+      selectedId: undefined,
+    }));
   };
 
   // useEffect(() => {
@@ -456,13 +485,16 @@ const BuyCoinsContainer = ({
                         }
                         return (
                           <Grid size={{ lg: 6, md: 6, sm: 6, xs: 6 }}>
-                            <Button
+                            <FlutterwavePurchaseButton
+                              config={getFlutterWaveCoinConfig(user, item, isUSD)}
+                              onStart={() => setState((prev) => ({ ...prev, isLoading: true, selectedId: item.id }))}
+                              onPayment={handleFlwPurchaseResult}
+                              onClose={resetFlwPurchase}
                               sx={{
                                 p: { lg: 0.5, md: 0.5, sm: 0.5, xs: 0.5 },
                                 fontSize: { lg: 12, md: 12, sm: 12, xs: 12 },
                                 borderRadius: 1,
                               }}
-                              onClick={(ev) => handleFlwPurchase(item, isUSD)}
                               variant="outlined"
                               size="small"
                               color="warning"
@@ -478,7 +510,7 @@ const BuyCoinsContainer = ({
                             >
                               Pay {itemCurrency}
                               {formatNumberWithCommas(itemPrice)}
-                            </Button>
+                            </FlutterwavePurchaseButton>
                           </Grid>
                         );
                       })()}

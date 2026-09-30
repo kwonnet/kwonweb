@@ -1,6 +1,6 @@
 "use client";
 import { useSocketIoContext } from "@/context/SocketIoContext";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -35,7 +35,10 @@ const AnswersTable = ({currentUserId}:{ currentUserId: string}) => {
 
   const { gameScores, question } = useGameSocketIoContext();
 
-  const jsConfetti = new JSConfetti()
+  const jsConfetti = useRef<JSConfetti | null>(null);
+  if (typeof window !== "undefined" && !jsConfetti.current) {
+    jsConfetti.current = new JSConfetti();
+  }
 
   
   useEffect(() => {
@@ -47,7 +50,7 @@ const AnswersTable = ({currentUserId}:{ currentUserId: string}) => {
     if((score.playerId === currentUserId) && score.score > 0){
       console.log("Showing confetti...")
         // showConfetti()
-        jsConfetti.addConfetti({
+        jsConfetti.current?.addConfetti({
 
           emojis: ['⚡️', '💥', '✨', '💫', '🌸'],
           confettiColors: [
@@ -60,7 +63,7 @@ const AnswersTable = ({currentUserId}:{ currentUserId: string}) => {
       })
     }
     return () => {}
-  }, [gameScores])
+  }, [gameScores, currentUserId])
 
   if(gameScores.length === 0){
     return null

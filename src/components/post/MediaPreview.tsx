@@ -122,7 +122,7 @@ const MediaPreview = ({
 }) => {
   const media = React.useMemo(() => {
     return post?.media ?? [];
-  }, []);
+  }, [post?.media]);
 
   const initialSlide = React.useMemo(() => {
     const index = media.findIndex((m) => m.id === item.id);

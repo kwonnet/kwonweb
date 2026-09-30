@@ -135,7 +135,7 @@ const VideoPlayer = ({
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
-  const tracks = useMemo(() => getTextTracks(item.fileId), []);
+  const tracks = useMemo(() => getTextTracks(item.fileId), [item.fileId]);
 
   useEffect(() => {
     // const { duration } = playerRef.current!.state
@@ -168,7 +168,7 @@ const VideoPlayer = ({
     });
     
     return () => {};
-  }, []);
+  }, [item.fileId]);
 
   // track video impressions
   useEffect(() => {
@@ -202,7 +202,7 @@ const VideoPlayer = ({
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [inView]);
+  }, [inView, canPlay, isCurrentUser, item.id, paused, playing, post.id, token]);
 
   // track video watch time
   const watchRef = useTrackVideoWatchTime(playerRef, {

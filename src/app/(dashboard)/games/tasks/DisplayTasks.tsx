@@ -76,7 +76,7 @@ const DisplayTasks = ({ refreshHistory }:{ refreshHistory?: boolean}) => {
 
   const { token, user } = useAuthSession();
 
-  const stats = useUserStats(user.id, token);
+  const stats = useUserStats({userId: user.id, token});
 
   // get keys for fetching data
   const getKey = (
@@ -105,14 +105,14 @@ const DisplayTasks = ({ refreshHistory }:{ refreshHistory?: boolean}) => {
     data,
     pageSize: state.limit,
     totalCurr: totalCurrentData,
-    total: stats?.totalTaskNotDone ?? state.limit,
+    total: stats?.data?.totalTaskNotDone ?? state.limit,
   });
 
   useEffect(() => {
     if(refreshHistory) return
-    mutate(data)
+    mutate()
     return () => {}
-  }, [refreshHistory])
+  }, [refreshHistory, mutate])
   
 
   const debounceFetch = React.useRef(

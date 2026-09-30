@@ -90,16 +90,19 @@ const PageClient = (params: {
     updateUrl(`/@${params.user.username}/network/${newValue}`);
   };
 
-  const filterTabItems = getTabItems(params.user.id, user.id);
+  const filterTabItems = React.useMemo(
+    () => getTabItems(params.user.id, user.id),
+    [params.user.id, user.id]
+  );
 
   const initItem = filterTabItems[0]
 
   React.useEffect(() => {
       const segment = getCurrentSegment(pathname)
-      const currItem = tabItems.find((item) => item.id === segment);
+      const currItem = filterTabItems.find((item) => item.id === segment);
       setState(prev => ({...prev, slug: currItem ? segment : initItem.id}) );
       return () => {};
-      }, [pathname]);
+      }, [pathname, filterTabItems, initItem.id]);
 
   return (
     <React.Fragment>

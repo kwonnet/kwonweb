@@ -63,6 +63,9 @@ const WheelComponent = ({
   }
   const canvasId = useRef(`canvas-${randomString()}`)
   const wheelId = useRef(`wheel-${randomString()}`)
+  const wheelInitRef = useRef<() => void>(() => {});
+  const spinRef = useRef<() => void>(() => {});
+  const spinHandlerRef = useRef<EventListener>(() => spinRef.current());
   const dimension = (size + 20) * 2
   let currentSegment = ''
   let isStarted = false
@@ -80,16 +83,23 @@ const WheelComponent = ({
   const centerX = size + 20
   const centerY = size + 20
   useEffect(() => {
-    wheelInit()
-    setTimeout(() => {
+    const canvasElementId = canvasId.current;
+    const spinHandler = spinHandlerRef.current;
+    wheelInitRef.current();
+    const timeout = window.setTimeout(() => {
       window.scrollTo(0, 1)
     }, 0)
+    return () => {
+      window.clearTimeout(timeout);
+      document.getElementById(canvasElementId)?.removeEventListener('click', spinHandler);
+    }
   }, [])
 
   const wheelInit = () => {
     initCanvas()
     wheelDraw()
   }
+  wheelInitRef.current = wheelInit;
 
   const initCanvas = () => {
     let canvas: HTMLCanvasElement | null = document.getElementById(
@@ -103,7 +113,7 @@ const WheelComponent = ({
       canvas.setAttribute('id', canvasId.current)
       document.getElementById(wheelId.current)?.appendChild(canvas)
     }
-    !disabled && canvas?.addEventListener('click', spin, false)
+    !disabled && canvas?.addEventListener('click', spinHandlerRef.current, false)
     canvasContext = canvas?.getContext('2d')
   }
   const spin = () => {
@@ -117,6 +127,7 @@ const WheelComponent = ({
       timerHandle = window.setInterval(onTimerTick, 2)
     }
   }
+  spinRef.current = spin;
   const onTimerTick = () => {
     frames++
     draw()

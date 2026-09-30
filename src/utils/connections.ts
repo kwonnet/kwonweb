@@ -1,12 +1,12 @@
 import { PostAuthor } from "@/types";
-import { FollowAction, FollowStatus, UserConn, UserConnection, UserFollower, UserMeta, UserMiniProfile } from "@/types/user";
+import { FollowAction, FollowStatus, UserConn, UserConnection, UserMeta, UserMiniProfile } from "@/types/user";
 import { ButtonProps } from "@mui/material";
 
 export const composeMutualText = ({
   followers,
   total,
 }: {
-  followers?: UserFollower[];
+  followers?: UserConnection[];
   total: number;
 }) => {
   if (followers?.length === 0) return "";

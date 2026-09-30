@@ -11,7 +11,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
 import PhoneEnabledOutlinedIcon from "@mui/icons-material/PhoneEnabledOutlined";
 import StickyBox from "react-sticky-box";
@@ -90,7 +90,7 @@ const ChatBoxClientAnon = ({
     { fallbackData: params.recipientDevices }
   );
 
-  const updateReadSeenStatus = async () => {
+  const updateReadSeenStatus = useCallback(async () => {
     // update unseen and unread messages
     if (state.convo) {
       if (state.convo?.unreadCount > 0 || state.convo.unseenCount > 0) {
@@ -106,39 +106,33 @@ const ChatBoxClientAnon = ({
         mutateStats(undefined, { revalidate: true, populateCache: true });
       }
     }
-  };
+  }, [state.convo, user.id, token, mutateStats]);
 
-  useEffect(() => {
-    const updateChatMessages = async () => {
-      // updateMesssages(params.messages);
-    };
-
-    updateChatMessages();
-
-    return () => {};
-  }, []);
+  const convoId = state.convo?.id;
 
   useEffect(() => {
     // join convo room
-    if (state.convo) {
-      socketIo?.emit("convo:join", { convoId: state?.convo?.id });
+    if (convoId) {
+      socketIo?.emit("convo:join", { convoId });
       // Join device-specific room so the server can target this device
       socketIo?.emit("room:join", {
         room: `user:${user.id}:device:${localDeviceId}`,
       });
-      // update unseen and unread messages
-      if(state.convo && state.convo.responder.acceptedAt){
-        updateReadSeenStatus();
-      }
     }
 
     return () => {
-      socketIo?.emit("convo:leave", { convoId: state?.convo?.id });
+      socketIo?.emit("convo:leave", { convoId });
     };
-  }, [socketIo]);
+  }, [socketIo, convoId, user.id, localDeviceId]);
+
+  useEffect(() => {
+    if (state.convo?.responder.acceptedAt) {
+      updateReadSeenStatus();
+    }
+  }, [state.convo?.id, state.convo?.unreadCount, state.convo?.unseenCount, state.convo?.responder.acceptedAt, updateReadSeenStatus]);
 
   useLayoutEffect(() => {
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       if (initialScrollRef.current && chatContainerRef.current) {
         chatContainerRef.current.scrollTop =
           chatContainerRef.current.scrollHeight;
@@ -146,12 +140,16 @@ const ChatBoxClientAnon = ({
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }
     }, 50);
-    return () => {};
-  }, [messages]);
+    return () => clearTimeout(timeout);
+  }, [messages, socketIo?.connected]);
 
   useEffect(() => {
-    setTimeout(() => {
-      if (isUserNearBottom()) {
+    const timeout = setTimeout(() => {
+      const container = chatContainerRef.current;
+      const nearBottom = container
+        ? container.scrollHeight - container.scrollTop - container.clientHeight < 500
+        : false;
+      if (nearBottom) {
         // If user is near the bottom, auto-scroll to the latest message
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         setShowScrollToBottom(false);
@@ -161,17 +159,8 @@ const ChatBoxClientAnon = ({
       }
       updateReadSeenStatus();
     }, 100);
-  }, [messages]);
-
-  // Check if user is near the bottom
-  const isUserNearBottom = () => {
-    if (chatContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } =
-        chatContainerRef.current;
-      return scrollHeight - scrollTop - clientHeight < 500;
-    }
-    return false;
-  };
+    return () => clearTimeout(timeout);
+  }, [messages, updateReadSeenStatus]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -446,7 +435,7 @@ const ChatBoxClientAnon = ({
               scrollbarWidth: "thin", // Firefox
               scrollbarColor: "rgba(0, 0, 0, 0.2) transparent",
             }}
-            onScroll={() => setShowScrollToBottom(!isUserNearBottom())}
+            // onScroll={() => setShowScrollToBottom(!isUserNearBottom())}
           >
             {messages.map((chat, index) => (
               <ChatBubble

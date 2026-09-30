@@ -47,6 +47,7 @@ import {
   PollThread,
   PostCreate,
   PostScopeEnum,
+  PostScopeSetting,
   PostThread,
   TagUser,
 } from "@/types/post";
@@ -245,8 +246,8 @@ export default function CreateReplyDrawer({
     setState((prev) => ({ ...prev, isOpenPostSettings: open }));
   };
 
-  const onPostSettingsCallback = (scope: PostScopeEnum) => {
-    setState((prev) => ({ ...prev, scope }));
+  const onPostSettingsCallback = (settings: PostScopeSetting) => {
+    setState((prev) => ({ ...prev, ...settings }));
   };
 
   const togglePostScheduleDrawer = (ev: any, open: boolean) => {
@@ -809,7 +810,7 @@ export default function CreateReplyDrawer({
         />
         {/* post settings drawer */}
         <PostSettingsDrawer
-          postScope={state.scope}
+          settings={{scope: state.scope, continents: [], countries: []}}
           onPostSettingsCallback={onPostSettingsCallback}
           isOpen={state.isOpenPostSettings}
           toggleDrawer={togglePostSettingsDrawer}

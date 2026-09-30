@@ -51,7 +51,7 @@ const LuckyFlipBox = () => {
   };
   const options = useMemo(() => {
     return shuffleArray(question?.options ?? []);
-  }, []);
+  }, [question?.options]);
 
   
 
