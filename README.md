@@ -55,9 +55,16 @@ Set these on the **kwonweb Cloud Run service**, under Edit and deploy new revisi
 
 - `NEXT_PUBLIC_API_URL`: public HTTPS kwonserver origin, **without a trailing slash or `/api/v1`**.
 - `NEXT_PUBLIC_APP_URL`: public HTTPS kwonweb origin.
-- `AUTH_URL`: the same frontend origin.
 - `AUTH_TRUST_HOST=true`: trust the Cloud Run proxy.
 - `AUTH_SECRET`: a stable random secret, preferably referenced from Secret Manager.
+
+For the custom domain, set `NEXT_PUBLIC_APP_URL=https://kwonnet.com`.
+Authentication derives its internal `AUTH_URL` from this setting automatically;
+you do not need to configure `AUTH_URL` or `NEXTAUTH_URL` in Cloud Run.
+Do not use Docker's `0.0.0.0:3000` listening address.
+Login redirects use the configured public origin and a relative
+callback path. The sign-in page rejects old internal-host or external callbacks
+and returns to the current site's homepage instead.
 
 Configure public ImageKit, Bunny, Flutterwave, VAPID and advertising values needed
 by enabled features there as well. `src/config/public-env.ts` lists the supported
@@ -105,7 +112,7 @@ values). Keep this file untracked and private:
 docker run --rm --env-file .env.docker -e PORT=8080 -p 8080:8080 kwonweb:latest
 ```
 
-Use `AUTH_URL=http://localhost:8080` and `NEXT_PUBLIC_APP_URL=http://localhost:8080`
+Use `NEXT_PUBLIC_APP_URL=http://localhost:8080`
 for this local check. Supply all enabled feature configuration, including ImageKit.
-Run regression checks with `node --test tests/public-env.test.cjs`.
+Run regression checks with `node --test tests/*.test.cjs`.
 Cloud Run deployment images must target `linux/amd64`; Cloud Build handles this.

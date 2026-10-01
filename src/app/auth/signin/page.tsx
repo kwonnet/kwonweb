@@ -11,6 +11,7 @@ import {
   Stack,
 } from "@mui/material";
 import { signIn } from "next-auth/react";
+import { safeAuthRedirect } from "@/lib/auth-redirect";
 
 const page = () => {
   // eslint-disable-next-line
@@ -53,24 +54,22 @@ const page = () => {
   ) => {
     ev.preventDefault();
     try {
-      // Allows callback URLs on the same origin
       const urlInfo = new URL(window.location.href)
-      console.log("redirect url parts ", urlInfo)
       const callbackUrl = urlInfo.searchParams.get("callbackUrl")
       const refId = urlInfo.searchParams.get("refId")
-      console.log("redirect callbackUrl ", callbackUrl)
-      console.log("redirect refId ", refId)
-      const redirectUrl = (callbackUrl && !callbackUrl.includes("refId=")) ? callbackUrl :  urlInfo.origin
+      const redirectUrl = safeAuthRedirect(callbackUrl, urlInfo.origin)
       setState((prev) => ({ ...prev, message: "", loading: true }));
       const res = await signIn(state.isSignIn ? "credentials-in" : "credentials-up", state.isSignIn ? {
         email: state.email,
         password: state.password,
+        redirectTo: redirectUrl,
         redirect: false,
       } : {
         name: state.name,
         email: state.email,
         password: state.password,
         refId,
+        redirectTo: redirectUrl,
         redirect: false,
       });
       if (res?.error) {

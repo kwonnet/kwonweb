@@ -4,6 +4,7 @@ import { SignInSchema, SignUpSchema } from "./schema";
 import { apiUrl } from "./config";
 import { ZodError } from "zod";
 import { UserPublic } from "./types/user";
+import { authOrigin, configureAuthOrigin, safeAuthRedirect, signInRedirect } from "./lib/auth-redirect";
 
 // Augment the User type in next-auth
 declare module "next-auth" {
@@ -44,6 +45,8 @@ class NextAuthError extends CredentialsSignin {
   }
 }
 
+
+configureAuthOrigin();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
@@ -133,11 +136,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const isLoggedIn = !!session?.user;
       const isPublicPage = nextUrl.pathname.startsWith("/public");
 
-      if (isPublicPage || isLoggedIn) {
+      if (isPublicPage || isLoggedIn || nextUrl.pathname === "/auth/signin") {
         return true;
       }
 
-      return false; // Redirect unauthenticated users to login page
+      return Response.redirect(signInRedirect(nextUrl.href));
     },
     signIn({ user }) {
       if (!user) throw new NextAuthError("Login failed.");
@@ -177,27 +180,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`
-
-      // Allows callback URLs on the same origin
-      if (new URL(url).origin === baseUrl) return url
-
-      return baseUrl
-      // console.log("redirect url", url )
-      // console.log("redirect baseUrl", baseUrl )
-      // // Allows relative callback URLs
-      // if (url.startsWith("/")) return `${baseUrl}${url}`
-      // // Allows callback URLs on the same origin
-      // const urlInfo = new URL(url)
-      // console.log("redirect url parts ", urlInfo)
-      // const isSameOrigin = urlInfo.origin === baseUrl
-      // const callbackUrl = urlInfo.searchParams.get("callbackUrl")
-      // if (isSameOrigin && callbackUrl && callbackUrl?.startsWith(urlInfo.origin)){
-      //   return url
-      // }
-  
-      // return baseUrl
+      return safeAuthRedirect(url, authOrigin(baseUrl));
     }
   },
   pages: {
