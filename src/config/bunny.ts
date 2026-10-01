@@ -1,16 +1,17 @@
+import { publicEnv } from "@/config/public-env";
 // Bunny Config
-export const bunnyVideoLibraryId = process.env.NEXT_PUBLIC_BUNNY_VIDEO_LIBRARY_ID;
+export const bunnyVideoLibraryId = publicEnv("NEXT_PUBLIC_BUNNY_VIDEO_LIBRARY_ID");
 
-export const bunnyStorageUrl = process.env.NEXT_PUBLIC_BUNNY_STORAGE_URL;
+export const bunnyStorageUrl = publicEnv("NEXT_PUBLIC_BUNNY_STORAGE_URL");
 
-export const bunnyTusEndpoint = process.env.NEXT_PUBLIC_BUNNY_TUS_ENDPOINT;
+export const bunnyTusEndpoint = publicEnv("NEXT_PUBLIC_BUNNY_TUS_ENDPOINT");
 
 //  Bunny stream
 export const bunnyStreamSecurityKey = process.env.BUNNY_STREAM_SECUIRTY_KEY;
 
 export const bunnyStreamKey = process.env.BUNNY_STREAM_API_KEY;
 
-export const bunnyStreamUrl = process.env.NEXT_PUBLIC_BUNNY_VIDEO_STREAM_URL;
+export const bunnyStreamUrl = publicEnv("NEXT_PUBLIC_BUNNY_VIDEO_STREAM_URL");
 
 // Bunny storage
 
@@ -23,12 +24,12 @@ export const bunnyStorageZone = process.env.BUNNY_STORAGE_ZONE;
 export const bunnyStorageApiKey = process.env.BUNNY_STORAGE_API_KEY;
 
 export const bunnyFilenameUID =
-  process.env.NEXT_PUBLIC_BUNNY_STORAGE_UPLOAD_FILE_UID;
+  publicEnv("NEXT_PUBLIC_BUNNY_STORAGE_UPLOAD_FILE_UID");
 
 // Bunny pull zone
-export const bunnyPullZoneUrl = process.env.NEXT_PUBLIC_BUNNY_PULL_ZONE_URL;
+export const bunnyPullZoneUrl = publicEnv("NEXT_PUBLIC_BUNNY_PULL_ZONE_URL");
 
-export const bunnyPullZone = process.env.NEXT_PUBLIC_BUNNY_PULL_ZONE;
+export const bunnyPullZone = publicEnv("NEXT_PUBLIC_BUNNY_PULL_ZONE");
 
 // Bunny webhook
 

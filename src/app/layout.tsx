@@ -1,3 +1,4 @@
+import { publicEnvScript } from "@/config/public-env";
 import type { Metadata } from "next";
 import LinearProgress from "@mui/material/LinearProgress";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
@@ -18,6 +19,8 @@ import { constant } from "@/config";
 import SSEContextProvider from "@/context/SSEContext";
 import RegisterDeviceProvider from "@/providers/RegisterDeviceProvider";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: constant.siteName,
   description: constant.siteDescription,
@@ -31,6 +34,9 @@ export default async function RootLayout({
   const session = await auth();
   return (
     <html lang="en" data-toolpad-color-scheme="system" suppressHydrationWarning>
+      <head>
+        <script id="kwonnet-public-env" dangerouslySetInnerHTML={{ __html: publicEnvScript() }} />
+      </head>
       <body>
         <SessionProvider session={session}>
           <AppRouterCacheProvider>

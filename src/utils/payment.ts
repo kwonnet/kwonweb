@@ -1,3 +1,4 @@
+import { publicEnv } from "@/config/public-env";
 import { CoinPackage, PaymentSubscriptionOptions, PlanTypeEnum, TxnCurrencyEnum, TxnGatewayEnum, TxnSourceEnum, User } from "@/types";
 import { FlutterwaveConfig } from "flutterwave-react-v3/dist/types";
 import { genUniqueRef, get_tzx_usd_rate } from ".";
@@ -10,7 +11,7 @@ export const getFlutterWaveCoinConfig = (user: User, item: CoinPackage, isUSD: b
     const currencySymbol = isUSD ? "$" : "₦"
     const currency = isUSD ? "USD" : "NGN"
     const config: FlutterwaveConfig = {
-        public_key: process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBK as string,
+        public_key: publicEnv("NEXT_PUBLIC_FLUTTERWAVE_PUBK") as string,
         // redirect_url: process.env.NEXT_PUBLIC_FLUTTERWAVE_REDIRECT_URL,
         tx_ref: genUniqueRef(),
         amount: price,
@@ -24,7 +25,7 @@ export const getFlutterWaveCoinConfig = (user: User, item: CoinPackage, isUSD: b
         customizations: {
           title: item.name,
           description: `Purchase ${item.name} coin package for ${currencySymbol} ${price}`,
-          logo: String(process.env.NEXT_PUBLIC_APP_LOGO),
+          logo: String(publicEnv("NEXT_PUBLIC_APP_LOGO")),
         },
         meta: {
             userId: user.id,
@@ -47,6 +48,8 @@ export const getFlutterWaveCoinConfig = (user: User, item: CoinPackage, isUSD: b
 
   export const getFlutterWaveSubPlanConfig = (user: User, item: PaymentSubscriptionOptions & { planType: PlanTypeEnum, isRecurring: boolean}):FlutterwaveConfig => {
 
+    if (!flwPublicKey) throw new Error("Payments are not configured.");
+
     const planRef = item.tierId ? String(`${item.planType}_${item.planId}_${item.tierId}`).toLowerCase() : String(`${item.planType}_${item.planId}`).toLowerCase()
 
     const planMeta = item?.metadata?.flw?.find(item => item.planRef === planRef)
@@ -68,7 +71,7 @@ export const getFlutterWaveCoinConfig = (user: User, item: CoinPackage, isUSD: b
         customizations: {
           title: item.planName,
           description: `Pay ${item.currency} ${item.amount} for ${item.planName}`,
-          logo: String(process.env.NEXT_PUBLIC_APP_LOGO),
+          logo: String(publicEnv("NEXT_PUBLIC_APP_LOGO")),
         },
         meta: {
             userId: user.id,

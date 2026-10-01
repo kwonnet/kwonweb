@@ -1,3 +1,4 @@
+import { publicEnv } from "@/config/public-env";
 import {
   bunnyFilenameUID,
   bunnyPullZoneUrl,
@@ -35,7 +36,7 @@ export function shuffleArray<T>(array: T[]): T[] {
 }
 
 export const getInviteLink = (refId?: string | number) => {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL}`;
+  const url = `${publicEnv("NEXT_PUBLIC_APP_URL")}`;
   return refId ? `${url}?refId=${refId}` : url;
 };
 
@@ -482,7 +483,7 @@ export function getMobileScaledDimensions(
 }
 export const genVideoUrlInfo = (videoId: string, thumbnail: string) => {
   return {
-    poster: `${thumbnail?.includes(bunnyFilenameUID) ? bunnyStorageUrl : bunnyPullZoneUrl}/${videoId}/${thumbnail}`,
+    poster: `${(bunnyFilenameUID && thumbnail?.includes(bunnyFilenameUID)) ? bunnyStorageUrl : bunnyPullZoneUrl}/${videoId}/${thumbnail}`,
     previewUrl: `${bunnyPullZoneUrl}/${videoId}/preview.webp`,
     hlsUrl: `${bunnyPullZoneUrl}/${videoId}/playlist.m3u8`,
     videoId,

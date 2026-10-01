@@ -1,3 +1,4 @@
+import { publicEnv } from "@/config/public-env";
 import { axiosAPI } from "@/config/axios";
 import { CurrUserStats, GamePlayer, Task, Transaction } from "@/types";
 import { cache } from "react";
@@ -10,7 +11,7 @@ import { AccountAnalytics, UserStats } from "@/types/user";
 
 // const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL + "/api"
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL + "/api";
+const baseUrl = publicEnv("NEXT_PUBLIC_API_URL") + "/api";
 
 // export const getSwrPlayers = cache(async(url: string) => {
 //     try {

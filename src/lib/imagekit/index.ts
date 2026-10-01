@@ -1,3 +1,4 @@
+import { publicEnv } from "@/config/public-env";
 import { constant } from "@/config";
 import { axiosAPI } from "@/config/axios";
 import { generateImagkitFilename, getFileExtension } from "@/utils";
@@ -12,8 +13,8 @@ type AuthResult = {
 }
 
 const ikCore = new IKCore({
-    urlEndpoint: String(process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT), 
-    publicKey: String(process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY)
+    urlEndpoint: String(publicEnv("NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT")),
+    publicKey: String(publicEnv("NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY"))
 });
 
 export const imagekitAuthenticator = async (accessToken?: string | undefined) => {
@@ -29,19 +30,19 @@ export const imagekitAuthenticator = async (accessToken?: string | undefined) =>
 
 export const getImagekitThumbnail = (filename: string) => {
     // return "/tr:n-ik_ml_thumbnail" + filename
-    return `/tr:n-ik_ml_thumbnail/${process.env.NEXT_PUBLIC_IMAGEKIT_UPLOAD_DIR}/${filename}`
+    return `/tr:n-ik_ml_thumbnail/${publicEnv("NEXT_PUBLIC_IMAGEKIT_UPLOAD_DIR")}/${filename}`
 
 }
 
 export const getImagekitThumbnailUrl = (filename: string) => {
-    // return process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT + "/tr:n-ik_ml_thumbnail" + filePath
-    return `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/tr:n-ik_ml_thumbnail/${process.env.NEXT_PUBLIC_IMAGEKIT_UPLOAD_DIR}/${filename}`
+    // return publicEnv("NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT") + "/tr:n-ik_ml_thumbnail" + filePath
+    return `${publicEnv("NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT")}/tr:n-ik_ml_thumbnail/${publicEnv("NEXT_PUBLIC_IMAGEKIT_UPLOAD_DIR")}/${filename}`
 }
 
 // export const getImagekitFilelUrl = (filename: string) => {
 //     if(filename.startsWith("https://") || filename.startsWith("http://")) return filename
 //     if(filename.startsWith("/")) return `${constant.siteUrl}${filename}`
-//     return `${process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT}/${process.env.NEXT_PUBLIC_IMAGEKIT_UPLOAD_DIR}/${filename}`
+//     return `${publicEnv("NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT")}/${publicEnv("NEXT_PUBLIC_IMAGEKIT_UPLOAD_DIR")}/${filename}`
 // }
 
 export const imagekitDeleteFile = async (fileId: string, accessToken?: string | undefined) => {
@@ -66,7 +67,7 @@ export const handleImagikPostFileUpload = async(userId: string, files: { altText
             const fileName = name + `_${nanoid(10)}.` + fileEx
             const result = await ikCore.upload({
                 ...imagekitAuth, 
-                folder: process.env.NEXT_PUBLIC_IMAGEKIT_UPLOAD_DIR?.toLocaleLowerCase(), fileName, 
+                folder: publicEnv("NEXT_PUBLIC_IMAGEKIT_UPLOAD_DIR")?.toLocaleLowerCase(), fileName,
                 file: item.file, 
                 customMetadata: {id},
                 useUniqueFileName: false
@@ -106,7 +107,7 @@ export const handleImagikFileUpload = async(userId: string, files: File[], acces
             const fileName = name + "_" + fileEx
             const result = await ikCore.upload({
                 ...imagekitAuth, 
-                folder: process.env.NEXT_PUBLIC_IMAGEKIT_UPLOAD_DIR?.toLocaleLowerCase(), fileName, file, customMetadata: {id}})
+                folder: publicEnv("NEXT_PUBLIC_IMAGEKIT_UPLOAD_DIR")?.toLocaleLowerCase(), fileName, file, customMetadata: {id}})
             return result
         })
         return await Promise.all(uploadPromises)
@@ -122,7 +123,7 @@ export const handleImagikProfileFileUpload = async(userId: string, file: File | 
         const fileName = trimId + "_avatar.jpg" 
         const result = await ikCore.upload({
             ...imagekitAuth, 
-            folder: process.env.NEXT_PUBLIC_IMAGEKIT_UPLOAD_DIR?.toLocaleLowerCase(), 
+            folder: publicEnv("NEXT_PUBLIC_IMAGEKIT_UPLOAD_DIR")?.toLocaleLowerCase(),
             fileName, file, customMetadata: {id: trimId}})
         return result
     } catch (error) {

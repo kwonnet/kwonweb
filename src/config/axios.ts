@@ -1,3 +1,4 @@
+import { publicEnv } from "@/config/public-env";
 // import mittEmitter, { EventEnum } from '@/mittEmitter'
 import axios, { AxiosInstance } from "axios";
 
@@ -48,7 +49,7 @@ interface IAxios extends AxiosInstance {
 }
 
 export const axiosAPI: IAxios = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL + "/api",
+  baseURL: publicEnv("NEXT_PUBLIC_API_URL") + "/api",
   withCredentials: true,
 });
 

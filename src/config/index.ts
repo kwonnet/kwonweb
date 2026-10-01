@@ -1,23 +1,24 @@
+import { publicEnv } from "@/config/public-env";
 export const constant = {
   siteName: "Kwonnet", //"Torazon" | "Kuonnet" | "Kounnet",
   siteDescription:
     "A revolutionary social networking platform that connects people from all walks of life, fostering meaningful connections and empowering individuals to achieve their dreams.",
 };
 
-export const siteUrl = process.env.NEXT_PUBLIC_APP_URL
+export const siteUrl = publicEnv("NEXT_PUBLIC_APP_URL")
 
-export const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`;
+export const apiUrl = `${publicEnv("NEXT_PUBLIC_API_URL")}/api/v1`;
 
-export const apiBaseUrl = `${process.env.NEXT_PUBLIC_API_URL}`;
+export const apiBaseUrl = `${publicEnv("NEXT_PUBLIC_API_URL")}`;
 
-export const appLogo = process.env.NEXT_PUBLIC_APP_LOGO;
+export const appLogo = publicEnv("NEXT_PUBLIC_APP_LOGO");
 
-export const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+export const appUrl = publicEnv("NEXT_PUBLIC_APP_URL");
 
-export const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+export const vapidPublicKey = publicEnv("NEXT_PUBLIC_VAPID_PUBLIC_KEY")
 
-export const flwPublicKey = process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBK
+export const flwPublicKey = publicEnv("NEXT_PUBLIC_FLUTTERWAVE_PUBK")
 
-export const flwRedirectUrl = process.env.NEXT_PUBLIC_FLUTTERWAVE_REDIRECT_URL
+export const flwRedirectUrl = publicEnv("NEXT_PUBLIC_FLUTTERWAVE_REDIRECT_URL")
 
 

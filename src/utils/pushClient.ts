@@ -1,5 +1,6 @@
 "use client";
 
+import { publicEnv } from "@/config/public-env";
 import { apiUrl } from "@/config";
 import { axiosAPI } from "@/config/axios";
 import { getErrorMessage } from ".";
@@ -8,7 +9,7 @@ export async function subscribeUserToPush(accessToken?: string) {
   try {
     // console.log(
     //   "NEXT_PUBLIC_VAPID_PUBLIC_KEY ",
-    //   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    //   publicEnv("NEXT_PUBLIC_VAPID_PUBLIC_KEY")
     // );
     // console.log(Notification.permission)
     // new Notification("Test Notification", {
@@ -26,7 +27,7 @@ export async function subscribeUserToPush(accessToken?: string) {
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(
-            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+            publicEnv("NEXT_PUBLIC_VAPID_PUBLIC_KEY")!
           ),
         });
         axiosAPI.accessToken = accessToken;

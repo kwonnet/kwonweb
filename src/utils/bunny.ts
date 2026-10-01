@@ -49,6 +49,10 @@ function getFileExtension(filename: string): string {
   }
 
 export const uploadBunnyFilesWithMetadata = async (body: FileUploadInput[]): Promise<UploadedFileInfo[]> => {
+  const libraryId = bunnyVideoLibraryId;
+  if (!libraryId || !bunnyTusEndpoint) {
+    throw new Error("Video uploads are not configured.");
+  }
   const uploadedFiles: UploadedFileInfo[] = [];
 
   for (const item of body) {
@@ -70,7 +74,7 @@ export const uploadBunnyFilesWithMetadata = async (body: FileUploadInput[]): Pro
           AuthorizationSignature: signature,
           AuthorizationExpire: expiresIn.toString(),
           VideoId: videoId,
-          LibraryId: bunnyVideoLibraryId,
+          LibraryId: libraryId,
         },
         metadata: {
           filename,

@@ -1,4 +1,5 @@
 "use client";
+import { publicEnv } from "@/config/public-env";
 import {
   Box,
   Button,
@@ -68,9 +69,9 @@ const WatchAds = ({ data }: { data?: {
       return;
     }
     const tag = document.createElement("script");
-    tag.src = String(process.env.NEXT_PUBLIC_MONETAG_ADS_SRC);
-    tag.dataset.zone = String(process.env.NEXT_PUBLIC_MONETAG_ZONE);
-    tag.dataset.sdk = String(process.env.NEXT_PUBLIC_MONETAG_SDK);
+    tag.src = String(publicEnv("NEXT_PUBLIC_MONETAG_ADS_SRC"));
+    tag.dataset.zone = String(publicEnv("NEXT_PUBLIC_MONETAG_ZONE"));
+    tag.dataset.sdk = String(publicEnv("NEXT_PUBLIC_MONETAG_SDK"));
     document.body.appendChild(tag);
   }, []);
 

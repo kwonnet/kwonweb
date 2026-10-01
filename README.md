@@ -45,57 +45,67 @@ gsutil cors set ./src/firebase/cors.json gs://torazon.firebasestorage.app
 ```
 ## Google Cloud Run
 
-The Dockerfile builds Next.js standalone output and packages only the production server, traced dependencies, static assets, and public files. It runs as a non-root user, listens on `0.0.0.0`, and honors Cloud Run's `PORT` (default `8080`). `/api/health` is an unauthenticated liveness endpoint. Authentication trusts the Cloud Run proxy via `AUTH_TRUST_HOST=true`.
+The Dockerfile builds Next.js standalone output. The server listens on `0.0.0.0`
+and honors Cloud Run's `PORT` (local image default: 3000).
 
-### Build configuration
+### Environment variables are supplied at runtime
 
-`NEXT_PUBLIC_*` values are embedded in browser bundles at **build time**. Setting them only in Cloud Run runtime environment variables will not configure the browser. Supply `NEXT_PUBLIC_API_URL` (kwonserver origin, without `/api/v1`) and `NEXT_PUBLIC_APP_URL` (public frontend origin). Both are required. Supply the additional public ImageKit, Bunny, Flutterwave, VAPID, and advertising settings used by enabled features through the corresponding Docker build arguments listed in `Dockerfile`.
+Set these on the **kwonweb Cloud Run service**, under Edit and deploy new revision
+→ Variables & secrets:
 
-Local build and smoke test:
+- `NEXT_PUBLIC_API_URL`: public HTTPS kwonserver origin, **without a trailing slash or `/api/v1`**.
+- `NEXT_PUBLIC_APP_URL`: public HTTPS kwonweb origin.
+- `AUTH_URL`: the same frontend origin.
+- `AUTH_TRUST_HOST=true`: trust the Cloud Run proxy.
+- `AUTH_SECRET`: a stable random secret, preferably referenced from Secret Manager.
+
+Configure public ImageKit, Bunny, Flutterwave, VAPID and advertising values needed
+by enabled features there as well. `src/config/public-env.ts` lists the supported
+public variables. The root layout renders dynamically and injects only those
+allowlisted settings into HTML before hydration. Server code reads the same
+runtime settings using dynamic environment lookup. No public Docker build
+arguments are needed. Local `next dev` still reads Next.js dotenv files.
+
+Only put browser-safe values in public variables. AUTH_SECRET, database passwords,
+and Bunny private API/storage keys must never be added to the public allowlist.
+Private environment variables remain server-side. `.env*` files are excluded
+from Docker builds. Inline JSON escapes HTML delimiters to prevent script injection.
+
+### Deploy this change
+
+1. Commit and push the code; let your existing Cloud Build trigger build and deploy
+   the Dockerfile. This fix needs one new image; changing variables on the old
+   image alone does not fix its browser bundle.
+2. Confirm the above variables are set on the serving Cloud Run revision. Preserve
+   existing secrets and other feature settings.
+3. Route traffic to the new revision and reload the page. Later environment-only
+   updates need a new Cloud Run revision but do not require rebuilding the image.
+4. In browser DevTools → Network, confirm API calls go to kwonserver's real HTTPS
+   origin rather than an `undefined` or localhost URL. Configure kwonserver CORS
+   to allow the exact frontend origin, with credentials where needed.
+5. Sign in and inspect the feed response's `X-Feed-Source`: `kwonrec` confirms the
+   backend used recommendations; `fallback` requires checking the backend-to-VM
+   connection. The browser must not connect directly to kwonrec's private IP.
+
+If the service shows Google's placeholder, check Cloud Build history and the
+image/traffic under Cloud Run revisions: a healthy placeholder is not this app.
+
+### Local container verification
+
+Build with no environment arguments:
 
 ```sh
-docker build -t kwonweb:latest \
-  --build-arg NEXT_PUBLIC_API_URL=https://api.example.com \
-  --build-arg NEXT_PUBLIC_APP_URL=https://web.example.com \
-  --build-arg NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/YOUR_ID \
-  --build-arg NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY=YOUR_PUBLIC_KEY .
-
-# Set AUTH_SECRET in your shell; Docker forwards it without putting it in the image.
-docker run --rm -p 8080:8080 -e AUTH_SECRET \
-  -e AUTH_URL=http://localhost:8080 kwonweb:latest
-# In another terminal: curl --fail http://localhost:8080/api/health
+docker build -t kwonweb:latest .
 ```
 
-Use your real public configuration when building for deployment. Cloud Run requires `linux/amd64`; on Apple Silicon use `docker buildx build --platform linux/amd64 --push ...` when building deployment images yourself. Cloud Build builds on the supported architecture.
-
-### Build and deploy in Google Cloud
-
-Create a Docker Artifact Registry repository named `kwonnet` (or set `_REPOSITORY` to an existing one). Configure the substitutions in `cloudbuild.yaml` or in your Cloud Build trigger, including all public settings your deployment uses. The configuration contains no private credentials. Submit from this directory:
+Run with a runtime-only environment file (Docker CLI env files require unquoted
+values). Keep this file untracked and private:
 
 ```sh
-gcloud builds submit --config cloudbuild.yaml \
-  --substitutions=_REGION=europe-west1,_REPOSITORY=kwonnet,_NEXT_PUBLIC_API_URL=https://api.example.com,_NEXT_PUBLIC_APP_URL=https://web.example.com,_NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/YOUR_ID,_NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY=YOUR_PUBLIC_KEY
+docker run --rm --env-file .env.docker -e PORT=8080 -p 8080:8080 kwonweb:latest
 ```
 
-The pipeline builds, explicitly pushes `europe-west1-docker.pkg.dev/PROJECT_ID/kwonnet/kwonweb:BUILD_ID`, deploys it to `_SERVICE` (default `kwonweb`), and sends traffic to the latest revision. It preserves existing runtime environment variables, secrets, and access settings. For first-time setup or a manual deployment with secret configuration:
-
-```sh
-gcloud run deploy kwonweb \
-  --image europe-west1-docker.pkg.dev/PROJECT_ID/kwonnet/kwonweb:BUILD_ID \
-  --region europe-west1 --port 8080 --allow-unauthenticated \
-  --set-env-vars AUTH_URL=https://web.example.com \
-  --set-secrets AUTH_SECRET=kwonweb-auth-secret:latest
-```
-
-Create the referenced Secret Manager secret and grant the Cloud Run runtime service account access first. Inject any enabled Bunny server-side keys through Secret Manager too; use the exact variable names in `src/config/bunny.ts`. `.env*` files are excluded from the image. Do not pass private credentials as build arguments or `NEXT_PUBLIC_*` variables.
-
-If using a push-triggered deployment, configure the trigger to use `cloudbuild.yaml` and its public substitutions; an automatic Docker build with no arguments cannot infer your frontend/API URLs from Cloud Run runtime settings. Ensure kwonserver's CORS configuration allows your deployed frontend origin and that its API is reachable by browsers. The existing Firebase workflows are separate and are not changed by this configuration.
-
-
-### If Cloud Run displays the placeholder page
-
-`placeholder-1` and “Hello from Cloud Run!” in service logs indicate Google's placeholder container is serving requests. A successful startup probe for that container does not verify your Next.js build. Check **Cloud Build → History**, not just Cloud Run service logs.
-
-Configure the repository trigger to use this `cloudbuild.yaml` (relative to the repository root) and the intended branch. It requires public URL substitutions, an existing Artifact Registry repository in `_REGION`, and a build service account with Artifact Registry Writer, Cloud Run deployment permissions, Service Account User on the runtime identity, and Logging Writer for Cloud Logging. Configure runtime `AUTH_SECRET` and `AUTH_URL` on the service before running the trigger. Keep secret values out of build substitutions.
-
-After pushing the changes and running the trigger, all four steps must pass: build, push, deploy, and traffic update. In Cloud Run → kwonweb → Revisions, the serving image should reference your Artifact Registry image with the build ID, not the placeholder. If your repository root contains multiple projects, configure the build steps' working directory/build context for `kwonweb`; simply choosing a nested config file does not change the checkout working directory.
+Use `AUTH_URL=http://localhost:8080` and `NEXT_PUBLIC_APP_URL=http://localhost:8080`
+for this local check. Supply all enabled feature configuration, including ImageKit.
+Run regression checks with `node --test tests/public-env.test.cjs`.
+Cloud Run deployment images must target `linux/amd64`; Cloud Build handles this.
