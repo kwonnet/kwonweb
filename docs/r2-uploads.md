@@ -23,12 +23,12 @@ Never prefix credentials with NEXT_PUBLIC_. Configuration is read at runtime; no
 
 ## Verify
 
-Run `npm run test:uploads` and `npx tsc --noEmit`. Sign in, create a post, quote and reply with an image, and verify both the media URL and displayed image. Confirm upload requests without a session fail, unsupported/oversized files show an error, and video uploads still work. Existing Firebase URLs remain unchanged; do not delete the old bucket until existing objects and stored URLs have been migrated separately.
+Run `npm run test:uploads` and `npx tsc --noEmit`. Sign in, create a post, quote and reply with an image, and verify both the media URL and displayed image. Confirm upload requests without a session fail, unsupported/oversized files show an error, and video uploads still work. Existing media URLs remain unchanged; retain legacy storage until existing objects and stored URLs have been migrated separately.
 
 ## Operational limits
 
 Maximum 10 MiB input/output, 40 million decoded pixels, 100 animation frames, four simultaneous upload operations per process and 30 uploads per user per ten minutes per process. The browser queues images to limit bursts across threads. Limits reset on restart and are not shared across Cloud Run replicas: apply distributed authenticated quotas or an edge rate limit before scaling to untrusted high-volume traffic. Budget/usage alerts should cover R2 and kwonweb compute.
 
-Uploads and post creation are separate operations. A failed/abandoned post can leave an unreferenced object; use reconciliation against saved media URLs before deleting old orphan objects. Do not apply a blanket expiry to published media. Public media removal/moderation and historical Firebase object migration are separate workflows.
+Uploads and post creation are separate operations. A failed/abandoned post can leave an unreferenced object; use reconciliation against saved media URLs before deleting old orphan objects. Do not apply a blanket expiry to published media. Public media removal/moderation and historical media migration are separate workflows.
 
 References: [Cloudflare R2 S3 SDK configuration](https://developers.cloudflare.com/r2/examples/aws/aws-sdk-js-v3/) and [sharp image limits](https://sharp.pixelplumbing.com/api-constructor/).

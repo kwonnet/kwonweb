@@ -36,13 +36,12 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 
-# Set firebase cors to allow file download
+## Image storage
 
-```bash 
+Post, quote and reply images use Cloudflare R2 through an authenticated Next.js
+upload endpoint. See [R2 setup](docs/r2-uploads.md) for environment variables,
+bucket configuration and upload limits.
 
-gsutil cors set ./src/firebase/cors.json gs://torazon.firebasestorage.app
-
-```
 ## Google Cloud Run
 
 The Dockerfile builds Next.js standalone output. The server listens on `0.0.0.0`

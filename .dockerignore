@@ -11,4 +11,3 @@ build
 *.log
 *.tsbuildinfo
 .DS_Store
-.firebase
