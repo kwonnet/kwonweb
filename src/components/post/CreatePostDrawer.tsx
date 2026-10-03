@@ -69,7 +69,8 @@ import { ZodError } from "zod";
 import { getUserLocation } from "@/utils/location";
 import { logUserLocation } from "@/lib/users";
 import { uploadMultipleFilesWithMetadata } from "@/utils/r2-upload";
-import { uploadBunnyFilesWithMetadata } from "@/utils/bunny";
+import { useVideoUploads } from "@/hooks/useVideoUploads";
+import VideoUploadProgress from "@/components/common/VideoUploadProgress";
 
 function CircularProgressWithLabel(
   props: CircularProgressProps & { value: number; max: number }
@@ -257,6 +258,7 @@ export default function CreatePostDrawer({
   const { user, token } = useAuthSession();
 
   const [state, setState] = useState<LocalState>(initialState);
+  const videoUploads = useVideoUploads(user?.id);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -688,6 +690,7 @@ export default function CreatePostDrawer({
   ) => {
     try {
       ev.preventDefault();
+      videoUploads.begin();
       setState((prev) => ({ ...prev, loading: true }));
       console.log("Threads ", state.threads);
 
@@ -716,7 +719,7 @@ export default function CreatePostDrawer({
                 const [uploadedImage] = await uploadMultipleFilesWithMetadata([f]);
                 return uploadedImage;
               } else if (f.file.type.startsWith("video/")) {
-                const [uploadedVideo] = await uploadBunnyFilesWithMetadata([f]);
+                const [uploadedVideo] = await videoUploads.upload([f]);
                 return uploadedVideo;
               } else {
                 return null; // Or handle unknown types if needed
@@ -762,7 +765,9 @@ export default function CreatePostDrawer({
         autoHideDuration: 2500,
       });
       setState(initialState);
+      videoUploads.reset();
     } catch (error) {
+      videoUploads.cancel();
       notif.show(getErrorMessage(error), {
         severity: "error",
         autoHideDuration: 2500,
@@ -782,7 +787,9 @@ export default function CreatePostDrawer({
           }}
           open={open}
           onClose={(ev) => {
+            if (state.loading) return;
             setState(initialState);
+            videoUploads.reset();
             toggleDrawer(ev, false);
           }}
           slotProps={{
@@ -816,8 +823,10 @@ export default function CreatePostDrawer({
           >
             <IconButton
               color="inherit"
+              disabled={state.loading}
               onClick={(ev) => {
                 setState(initialState);
+                videoUploads.reset();
                 toggleDrawer(ev, false);
               }}
             >
@@ -838,7 +847,8 @@ export default function CreatePostDrawer({
             </Tooltip>
           </Stack>
 
-          <DialogContent dividers sx={{ m: 0, p: 0 }}>
+          <VideoUploadProgress {...videoUploads} />
+          <DialogContent dividers inert={state.loading} aria-busy={state.loading} sx={{ m: 0, p: 0 }}>
             <Box role="presentation">
               <Container maxWidth="xl" sx={{ mt: 1, pb: 2 }}>
                 {state.threads.map((thread, index) => (

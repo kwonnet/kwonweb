@@ -36,8 +36,9 @@ const SearchVideoCard: React.FC<VideoCardProps> = ({
   const router = useRouter();
 
   const { poster, previewUrl, videoId } = genVideoUrlInfo(
-    item.videoId,
-    item.thumbnail
+    item.fileId || item.videoId,
+    item.thumbnailUrl || item.thumbnail,
+    item.url
   );
 
   return (

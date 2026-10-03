@@ -5,7 +5,7 @@ import {
   PlyrLayout,
   plyrLayoutIcons,
 } from "@vidstack/react/player/layouts/plyr";
-import { GoogleCastButton, Track, useMediaStore, useStore } from "@vidstack/react";
+import { GoogleCastButton, useMediaStore, useStore } from "@vidstack/react";
 import { Tooltip } from "@vidstack/react";
 import { ChromecastIcon } from "@vidstack/react/icons";
 
@@ -17,9 +17,10 @@ import {
 } from "@vidstack/react";
 
 import { FeedPost, PostMedia } from "@/types";
-import { genVideoUrlInfo, getBunnySubtitleUrl, getPostUrl, getSessionId, shouldSendLog } from "@/utils";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { genVideoUrlInfo, getPostUrl, getSessionId, shouldSendLog } from "@/utils";
+import { memo, useEffect, useRef, useState } from "react";
 import {
+  Alert,
   IconButton,
   List,
   ListItem,
@@ -30,46 +31,12 @@ import {
 } from "@mui/material";
 import LinkIcon from "@mui/icons-material/Link";
 import RepeatOutlinedIcon from "@mui/icons-material/RepeatOutlined";
-import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
 import { useNotifications } from "@toolpad/core";
 import { useInView } from "react-intersection-observer";
 import { PostMediaAction, PostMediaKind, PostMediaLog } from "@/types/post";
 import { useAuthSession, useTrackVideoWatchTime } from "@/hooks";
 import { sendPostLog } from "@/lib/posts";
-
-const getTextTracks = (videoId: string) => [
-  {
-    src: getBunnySubtitleUrl(videoId, "en-auto"),
-    label: "English",
-    language: "en-US",
-    kind: "subtitles",
-    type: "vtt",
-    default: true,
-  },
-  {
-    src: getBunnySubtitleUrl(videoId, "es-auto"),
-    label: "Spanish",
-    language: "es-ES",
-    kind: "subtitles",
-    type: "vtt",
-    default: false,
-  },
-  {
-    src: getBunnySubtitleUrl(videoId, "fr-auto"),
-    language: "fr-FR",
-    kind: "chapters",
-    type: "vtt",
-    default: false,
-  },
-  {
-    src: getBunnySubtitleUrl(videoId, "de-auto"),
-    language: "de-DE",
-    kind: "chapters",
-    type: "vtt",
-    default: false,
-  },
-];
 
 const trackVideoImpression = (postId: string, mediaId: string, token?: string) => {
 
@@ -105,9 +72,10 @@ const VideoPlayer = ({
   post: FeedPost;
   height?: number;
 }) => {
-  const { hlsUrl, poster, previewUrl } = genVideoUrlInfo(
+  const { hlsUrl, poster } = genVideoUrlInfo(
     item.fileId,
-    item.thumbnailUrl
+    item.thumbnailUrl,
+    item.url
   );
   const { ref: intersectionRef, inView } = useInView({
     threshold: 0.6, // adjust as needed
@@ -116,7 +84,7 @@ const VideoPlayer = ({
 
   const { user, token} = useAuthSession()
 
-  const isCurrentUser = post.userId === user.id
+  const isCurrentUser = post.userId === user?.id
 
   const notif = useNotifications();
   const playerRef = useRef<MediaPlayerInstance>(null);
@@ -135,7 +103,7 @@ const VideoPlayer = ({
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
-  const tracks = useMemo(() => getTextTracks(item.fileId), [item.fileId]);
+  const [playbackError, setPlaybackError] = useState(false);
 
   useEffect(() => {
     // const { duration } = playerRef.current!.state
@@ -147,7 +115,7 @@ const VideoPlayer = ({
     }
     // Subscribe for updates without triggering renders.
     let lastSavedTime = parseFloat(storedTime || "0");
-    playerRef.current!.subscribe(({ currentTime, duration, paused, ended }) => {
+    const unsubscribe = playerRef.current!.subscribe(({ currentTime, duration, paused, ended }) => {
       if(ended || (currentTime >= duration && currentTime > 0)){
         localStorage.removeItem(storeKey);
         lastSavedTime = 0
@@ -167,7 +135,7 @@ const VideoPlayer = ({
       }
     });
     
-    return () => {};
+    return unsubscribe;
   }, [item.fileId]);
 
   // track video impressions
@@ -180,7 +148,7 @@ const VideoPlayer = ({
       !isCurrentUser && trackVideoImpression(post.id, item.id, token)
     }
     if (inView && canPlay) {
-      playerRef?.current?.play();
+      void playerRef.current?.play().catch(() => {});
       // playerRef?.current?.muted && setIsMuted(false)
     } 
     if(!inView && playing){
@@ -193,7 +161,7 @@ const VideoPlayer = ({
         playerRef!.current!.pause();
       } else {
         if (inView && paused) {
-          playerRef!.current!.play();
+          void playerRef.current?.play().catch(() => {});
         }
       }
     };
@@ -260,16 +228,23 @@ const VideoPlayer = ({
       }}
       onContextMenu={handleContextMenu}
     >
+      {playbackError && (
+        <Alert severity="warning">
+          Video playback is unavailable. Check your connection or reload this page.
+        </Alert>
+      )}
       <MediaPlayer
         currentTime={0}
         ref={playerRef}
         title={item.altText}
         src={hlsUrl}
-        poster={previewUrl}
+        poster={poster}
+        onError={() => setPlaybackError(true)}
+        onCanPlay={() => setPlaybackError(false)}
         autoPlay={autoPlay}
         muted={isMuted}
         hideControlsOnMouseLeave={true}
-        preload="auto"
+        preload="metadata"
         load="visible"
         posterLoad="visible"
         loop={isLoop}
@@ -285,10 +260,6 @@ const VideoPlayer = ({
       >
         <MediaProvider>
           <Poster className="media-poster" src={poster} alt={item.altText} />
-          {tracks.map((track) => (
-            // @ts-ignore
-            <Track key={track.src} {...track} />
-          ))}
         </MediaProvider>
         <PlyrLayout
           controls={[
@@ -395,15 +366,6 @@ const VideoPlayer = ({
               <ListItemText primary="Embed post" />
             </ListItemButton>
           </ListItem> */}
-
-          <ListItem disablePadding>
-            <ListItemButton>
-              <ListItemIcon>
-                <FileDownloadOutlinedIcon />
-              </ListItemIcon>
-              <ListItemText primary="Download" />
-            </ListItemButton>
-          </ListItem>
         </List>
       </Popover>
     </div>

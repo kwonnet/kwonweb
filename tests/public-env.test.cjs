@@ -30,10 +30,10 @@ test('browser reads injected runtime values rather than build values', () => {
 test('inline configuration escapes HTML and excludes secrets and unknown public keys', () => {
   const value = '</script><script>alert(1)</script>\u2028\u2029';
   const script = load({ NEXT_PUBLIC_APP_LOGO: value, AUTH_SECRET: 'private-auth',
-    BUNNY_STREAM_API_KEY: 'private-bunny', NEXT_PUBLIC_UNKNOWN: 'not-allowed' }).publicEnvScript();
+    CLOUDFLARE_ACCOUNT_API_TOKEN: 'private-stream', NEXT_PUBLIC_UNKNOWN: 'not-allowed' }).publicEnvScript();
   assert.ok(!script.includes('<'));
   assert.ok(!script.includes('private-auth'));
-  assert.ok(!script.includes('private-bunny'));
+  assert.ok(!script.includes('private-stream'));
   assert.ok(!script.includes('not-allowed'));
   const browser = { window: {} };
   vm.runInNewContext(script, browser);

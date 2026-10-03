@@ -65,7 +65,7 @@ Login redirects use the configured public origin and a relative
 callback path. The sign-in page rejects old internal-host or external callbacks
 and returns to the current site's homepage instead.
 
-Configure public ImageKit, Bunny, Flutterwave, VAPID and advertising values needed
+Configure public ImageKit, Flutterwave, VAPID and advertising values needed
 by enabled features there as well. `src/config/public-env.ts` lists the supported
 public variables. The root layout renders dynamically and injects only those
 allowlisted settings into HTML before hydration. Server code reads the same
@@ -73,7 +73,7 @@ runtime settings using dynamic environment lookup. No public Docker build
 arguments are needed. Local `next dev` still reads Next.js dotenv files.
 
 Only put browser-safe values in public variables. AUTH_SECRET, database passwords,
-and Bunny private API/storage keys must never be added to the public allowlist.
+and Cloudflare API/storage credentials must never be added to the public allowlist.
 Private environment variables remain server-side. `.env*` files are excluded
 from Docker builds. Inline JSON escapes HTML delimiters to prevent script injection.
 

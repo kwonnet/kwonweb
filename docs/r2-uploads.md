@@ -1,6 +1,6 @@
 # R2 image uploads
 
-Posts, quotes and replies now upload images to `/api/uploads/images` on kwonweb. The Node.js route authenticates the existing Auth.js session, checks the request Origin against NEXT_PUBLIC_APP_URL, bounds the actual streamed body to 10 MiB, decodes/re-encodes images with sharp, strips metadata, and writes WebP objects using server-only R2 credentials. GIF animations are preserved within the frame/pixel limits. SVG is intentionally unsupported. Videos continue to use Bunny; unrelated ImageKit uploads are unchanged.
+Posts, quotes and replies now upload images to `/api/uploads/images` on kwonweb. The Node.js route authenticates the existing Auth.js session, checks the request Origin against NEXT_PUBLIC_APP_URL, bounds the actual streamed body to 10 MiB, decodes/re-encodes images with sharp, strips metadata, and writes WebP objects using server-only R2 credentials. GIF animations are preserved within the frame/pixel limits. SVG is intentionally unsupported. Videos use [Cloudflare Stream with resumable tus uploads](cloudflare-stream.md); unrelated ImageKit uploads are unchanged.
 
 ## Configure once
 
@@ -22,6 +22,10 @@ CLOUDFLARE_ZONE_ID and CLOUDFLARE_ACCOUNT_API_TOKEN are not required by the S3 u
 Never prefix credentials with NEXT_PUBLIC_. Configuration is read at runtime; no R2 secrets are needed to build the Docker image. Use separate buckets/credentials for staging and production.
 
 ## Verify
+
+New image objects use `media/<owner-hash>/<file-id>.webp`, producing URLs such as
+`https://media.kwonnet.com/media/<owner-hash>/<file-id>.webp`. Existing objects and
+saved URLs are not moved or rewritten by this change.
 
 Run `npm run test:uploads` and `npx tsc --noEmit`. Sign in, create a post, quote and reply with an image, and verify both the media URL and displayed image. Confirm upload requests without a session fail, unsupported/oversized files show an error, and video uploads still work. Existing media URLs remain unchanged; retain legacy storage until existing objects and stored URLs have been migrated separately.
 

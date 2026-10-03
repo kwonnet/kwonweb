@@ -63,7 +63,8 @@ import FeedQuoteItem from "./FeedQuoteItem";
 import {
   uploadMultipleFilesWithMetadata,
 } from "@/utils/r2-upload";
-import { uploadBunnyFilesWithMetadata } from "@/utils/bunny";
+import { useVideoUploads } from "@/hooks/useVideoUploads";
+import VideoUploadProgress from "@/components/common/VideoUploadProgress";
 import { FollowAction } from "@/types/user";
 
 function CircularProgressWithLabel(
@@ -236,6 +237,7 @@ export default function CreateQuoteDrawer({
   const { user, token } = useAuthSession();
 
   const [state, setState] = useState<LocalState>(initialState);
+  const videoUploads = useVideoUploads(user?.id);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -550,6 +552,7 @@ export default function CreateQuoteDrawer({
   ) => {
     try {
       ev.preventDefault();
+      videoUploads.begin();
       setState((prev) => ({ ...prev, loading: true }));
       console.log("Threads ", state.threads);
 
@@ -579,7 +582,7 @@ export default function CreateQuoteDrawer({
                 );
                 return uploadedImage;
               } else if (f.file.type.startsWith("video/")) {
-                const [uploadedVideo] = await uploadBunnyFilesWithMetadata([f]);
+                const [uploadedVideo] = await videoUploads.upload([f]);
                 return uploadedVideo;
               } else {
                 return null; // Or handle unknown types if needed
@@ -621,7 +624,9 @@ export default function CreateQuoteDrawer({
         autoHideDuration: 2500,
       });
       setState(initialState);
+      videoUploads.reset();
     } catch (error) {
+      videoUploads.cancel();
       notif.show(getErrorMessage(error), {
         severity: "error",
         autoHideDuration: 2500,
@@ -641,7 +646,9 @@ export default function CreateQuoteDrawer({
           }}
           open={open}
           onClose={(ev) => {
+            if (state.loading) return;
             setState(initialState);
+            videoUploads.reset();
             toggleDrawer(ev, false);
           }}
           slotProps={{
@@ -675,8 +682,10 @@ export default function CreateQuoteDrawer({
           >
             <IconButton
               color="inherit"
+              disabled={state.loading}
               onClick={(ev) => {
                 setState(initialState);
+                videoUploads.reset();
                 toggleDrawer(ev, false);
               }}
             >
@@ -697,7 +706,8 @@ export default function CreateQuoteDrawer({
             </Tooltip>
           </Stack>
 
-          <DialogContent dividers sx={{ m: 0, p: 0 }}>
+          <VideoUploadProgress {...videoUploads} />
+          <DialogContent dividers inert={state.loading} aria-busy={state.loading} sx={{ m: 0, p: 0 }}>
             <Box role="presentation">
               <Container maxWidth="xl" sx={{ mt: 1, pb: 2 }}>
                 <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>

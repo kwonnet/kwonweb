@@ -60,7 +60,8 @@ import { debounce } from "lodash";
 import PostScheduleDrawer from "./PostScheduleDrawer";
 import PostLocationDrawer from "./PostLocationDrawer";
 import { uploadMultipleFilesWithMetadata } from "@/utils/r2-upload";
-import { uploadBunnyFilesWithMetadata } from "@/utils/bunny";
+import { useVideoUploads } from "@/hooks/useVideoUploads";
+import VideoUploadProgress from "@/components/common/VideoUploadProgress";
 import { FollowAction } from "@/types/user";
 
 type LocalState = {
@@ -125,6 +126,7 @@ export default function CreateReplyDrawer({
   const token = session?.user?.accessToken;
 
   const [state, setState] = useState<LocalState>(initialState);
+  const videoUploads = useVideoUploads(user?.id);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -357,6 +359,7 @@ export default function CreateReplyDrawer({
   ) => {
     try {
       ev.preventDefault();
+      videoUploads.begin();
       if (!post) {
         return notif.show("No quoted post", { severity: 'warning', autoHideDuration: 3000})
       }
@@ -370,7 +373,7 @@ export default function CreateReplyDrawer({
                   );
                   return uploadedImage;
                 } else if (f.file.type.startsWith("video/")) {
-                  const [uploadedVideo] = await uploadBunnyFilesWithMetadata([
+                  const [uploadedVideo] = await videoUploads.upload([
                     f,
                   ]);
                   return uploadedVideo;
@@ -405,10 +408,12 @@ export default function CreateReplyDrawer({
       });
       if (result.data) {
         setState(initialState);
+        videoUploads.reset();
         onReplyCallback(post?.id!, true);
         toggleDrawer(ev, false);
       }
     } catch (error) {
+      videoUploads.cancel();
       notif.show(getErrorMessage(error), {
         autoHideDuration: 2500,
         severity: "error",
@@ -428,7 +433,9 @@ export default function CreateReplyDrawer({
           }}
           open={open}
           onClose={(ev) => {
+            if (state.loading) return;
             setState(initialState);
+            videoUploads.reset();
             toggleDrawer(ev, false);
           }}
           slotProps={{
@@ -462,8 +469,10 @@ export default function CreateReplyDrawer({
           >
             <IconButton
               color="inherit"
+              disabled={state.loading}
               onClick={(ev) => {
                 setState(initialState);
+                videoUploads.reset();
                 toggleDrawer(ev, false);
               }}
             >
@@ -483,7 +492,8 @@ export default function CreateReplyDrawer({
               </Button>
             </Tooltip>
           </Stack>
-          <DialogContent dividers sx={{ m: 0, p: 0 }}>
+          <VideoUploadProgress {...videoUploads} />
+          <DialogContent dividers inert={state.loading} aria-busy={state.loading} sx={{ m: 0, p: 0 }}>
             <Box sx={{ width: "auto" }} role="presentation">
               <Container maxWidth="xl" sx={{ pb: 2 }}>
                 <Grid sx={{ mb: 1 }} container spacing={2}>

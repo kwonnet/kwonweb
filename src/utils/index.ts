@@ -1,9 +1,6 @@
+import { videoPlayback } from "./video-playback";
 import { publicEnv } from "@/config/public-env";
-import {
-  bunnyFilenameUID,
-  bunnyPullZoneUrl,
-  bunnyStorageUrl,
-} from "@/config/bunny";
+
 
 import axios from "axios";
 import { ZodError, ZodIssue, ZodSchema } from "zod";
@@ -481,15 +478,8 @@ export function getMobileScaledDimensions(
 
   return { width: Math.round(newWidth), height: Math.round(newHeight) };
 }
-export const genVideoUrlInfo = (videoId: string, thumbnail: string) => {
-  return {
-    poster: `${(bunnyFilenameUID && thumbnail?.includes(bunnyFilenameUID)) ? bunnyStorageUrl : bunnyPullZoneUrl}/${videoId}/${thumbnail}`,
-    previewUrl: `${bunnyPullZoneUrl}/${videoId}/preview.webp`,
-    hlsUrl: `${bunnyPullZoneUrl}/${videoId}/playlist.m3u8`,
-    videoId,
-    thumbnail,
-  };
-};
+export const genVideoUrlInfo = (videoId: string, thumbnail: string, url?: string) =>
+  videoPlayback({ videoId, thumbnail, url });
 
 export function shortenText(text?: string, limit = 50): string {
   if (!text) return "";
@@ -505,9 +495,6 @@ export function getPostUrl(
   return `${appUrl}/${username}/${path}/${postId}`;
 }
 
-export function getBunnySubtitleUrl(videoId: string, langCode: string): string {
-  return `${bunnyPullZoneUrl}/${videoId}/captions/${langCode}.vtt `;
-}
 
 /**
  * Get or generate unique session ID for a user

@@ -25,7 +25,7 @@ export async function storeImage(userId: string, image: { data: Buffer; width: n
   const fileId = randomUUID();
   const name = `${fileId}.webp`;
   const owner = createHash("sha256").update(userId).digest("hex");
-  const filePath = `uploads/${owner}/${name}`;
+  const filePath = `media/${owner}/${name}`;
   await client.send(new PutObjectCommand({ Bucket: c.bucket, Key: filePath, Body: image.data, ContentType: "image/webp", ContentLength: image.data.length, ContentDisposition: "inline", CacheControl: "public, max-age=31536000, immutable" }), { abortSignal: AbortSignal.timeout(30_000) });
   const url = `${c.publicUrl}/${filePath}`;
   return { fileId, name, filePath, url, thumbnailUrl: url, fileType: "image/webp", size: image.data.length, width: image.width, height: image.height };
