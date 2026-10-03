@@ -118,6 +118,69 @@ export function createStreamService(
 ) {
   const base = `https://api.cloudflare.com/client/v4/accounts/${config.accountId}/stream`;
   const headers = { Authorization: `Bearer ${config.token}` };
+  async function providerFailure(
+    response: Response,
+    operation: string,
+    reason = "http_error",
+  ): Promise<never> {
+    let codes: number[] = [];
+    if (!response.ok) {
+      try {
+        const body = await response.json();
+        codes = Array.isArray(body.errors)
+          ? body.errors
+              .map((error: { code?: unknown }) => error?.code)
+              .filter(
+                (code: unknown): code is number =>
+                  typeof code === "number" && Number.isSafeInteger(code),
+              )
+              .slice(0, 10)
+          : [];
+      } catch {
+        /* Provider HTML must not become a JSON parser error. */
+      }
+    }
+    console.error(
+      JSON.stringify({
+        severity: "ERROR",
+        event: "cloudflare_stream_error",
+        operation,
+        reason,
+        providerStatus: response.status,
+        providerCodes: codes,
+      }),
+    );
+    const message = [401, 403].includes(response.status)
+      ? "Video uploads are unavailable because Cloudflare Stream authorization failed. Please contact support."
+      : response.status === 402
+        ? "Video uploads are unavailable. Please check the Cloudflare Stream subscription and storage allowance."
+        : operation === "create"
+          ? "Could not prepare the video upload. Please try again shortly."
+          : "Video status is temporarily unavailable.";
+    throw new StreamError(
+      message,
+      [401, 402, 403].includes(response.status) ? 503 : 502,
+    );
+  }
+  async function request(url: string, options: RequestInit, operation: string) {
+    try {
+      return await fetcher(url, options);
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          severity: "ERROR",
+          event: "cloudflare_stream_error",
+          operation,
+          reason: "request_failed",
+          errorType: error instanceof Error ? error.name : "Unknown",
+        }),
+      );
+      throw new StreamError(
+        "Cloudflare Stream could not be reached. Please try again shortly.",
+        502,
+      );
+    }
+  }
   return {
     async create(userId: string, input: unknown) {
       const file = validateVideo(input);
@@ -131,30 +194,36 @@ export function createStreamService(
         allowedorigins: new URL(config.appUrl).hostname,
         thumbnailtimestamppct: "0.1",
       };
-      const response = await fetcher(`${base}?direct_user=true`, {
-        method: "POST",
-        headers: {
-          ...headers,
-          "Tus-Resumable": "1.0.0",
-          "Upload-Length": String(file.size),
-          "Upload-Creator": creatorId(userId),
-          "Upload-Metadata": Object.entries(metadata)
-            .map(
-              ([key, value]) =>
-                `${key} ${Buffer.from(value).toString("base64")}`,
-            )
-            .join(","),
+      const response = await request(
+        `${base}?direct_user=true`,
+        {
+          method: "POST",
+          headers: {
+            ...headers,
+            "Tus-Resumable": "1.0.0",
+            "Upload-Length": String(file.size),
+            "Upload-Creator": creatorId(userId),
+            "Upload-Metadata": Object.entries(metadata)
+              .map(
+                ([key, value]) =>
+                  `${key} ${Buffer.from(value).toString("base64")}`,
+              )
+              .join(","),
+          },
+          signal: AbortSignal.timeout(20_000),
+          cache: "no-store",
+          redirect: "error",
         },
-        signal: AbortSignal.timeout(20_000),
-        cache: "no-store",
-        redirect: "error",
-      });
+        "create",
+      );
       const uploadUrl = response.headers.get("Location") || "";
       const id = response.headers.get("stream-media-id") || "";
-      if (!response.ok || !UID.test(id) || !streamUploadUrl(uploadUrl))
-        throw new StreamError(
-          "Could not prepare the video upload. Please try again shortly.",
-          502,
+      if (!response.ok) return providerFailure(response, "create");
+      if (!UID.test(id) || !streamUploadUrl(uploadUrl))
+        return providerFailure(
+          response,
+          "create",
+          !UID.test(id) ? "missing_media_id" : "invalid_upload_url",
         );
       return {
         id,
@@ -165,16 +234,19 @@ export function createStreamService(
     },
     async status(userId: string, id: string) {
       if (!UID.test(id)) throw new StreamError("Video not found.", 404);
-      const response = await fetcher(`${base}/${id}`, {
-        headers,
-        signal: AbortSignal.timeout(15_000),
-        cache: "no-store",
-        redirect: "error",
-      });
+      const response = await request(
+        `${base}/${id}`,
+        {
+          headers,
+          signal: AbortSignal.timeout(15_000),
+          cache: "no-store",
+          redirect: "error",
+        },
+        "status",
+      );
       if (response.status === 404)
         throw new StreamError("Video not found.", 404);
-      if (!response.ok)
-        throw new StreamError("Video status is temporarily unavailable.", 502);
+      if (!response.ok) return providerFailure(response, "status");
       const body = await response.json();
       const video = body.result;
       if (!body.success || !video)
@@ -241,16 +313,30 @@ export function createStreamHandlers(deps: {
       status,
       headers: { "Cache-Control": "private, no-store" },
     });
-  const error = (err: unknown) =>
-    json(
+  const error = (err: unknown, request: Request) => {
+    const status = err instanceof StreamError ? err.status : 502;
+    const rayId = request.headers.get("cf-ray") || "";
+    if (status >= 500)
+      console.error(
+        JSON.stringify({
+          severity: "ERROR",
+          event: "video_api_error",
+          method: request.method,
+          status,
+          rayId: /^[a-z0-9-]{1,80}$/i.test(rayId) ? rayId : undefined,
+          errorType: err instanceof Error ? err.name : "Unknown",
+        }),
+      );
+    return json(
       {
         error:
           err instanceof StreamError
             ? err.message
             : "Video service is temporarily unavailable. Please try again.",
       },
-      err instanceof StreamError ? err.status : 502,
+      status,
     );
+  };
   return {
     async POST(request: Request) {
       try {
@@ -303,10 +389,10 @@ export function createStreamHandlers(deps: {
           201,
         );
       } catch (err) {
-        return error(err);
+        return error(err, request);
       }
     },
-    async GET(_request: Request, id: string) {
+    async GET(request: Request, id: string) {
       try {
         const userId = await deps.userId();
         if (!userId)
@@ -318,7 +404,7 @@ export function createStreamHandlers(deps: {
           ),
         );
       } catch (err) {
-        return error(err);
+        return error(err, request);
       }
     },
   };

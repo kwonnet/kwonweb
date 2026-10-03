@@ -297,3 +297,133 @@ test("XHR timeout enters the tus error path instead of hanging", async (t) => {
   );
   assert.equal(forwarded, true);
 });
+
+test("HTML errors show actionable diagnostics without exposing the response body", async (t) => {
+  const { videoApi } = await import("../src/utils/stream-upload.ts");
+  t.mock.method(console, "warn", () => {});
+  t.mock.method(globalThis, "fetch", async (_url, options) => {
+    assert.equal(options.headers.Accept, "application/json");
+    assert.equal(options.redirect, "manual");
+    return new Response(
+      "<!DOCTYPE html><html>private upstream details</html>",
+      {
+        status: 502,
+        headers: { "content-type": "text/html", "cf-ray": "abc123-LHR" },
+      },
+    );
+  });
+  await assert.rejects(
+    videoApi("/api/uploads/videos", new AbortController().signal, {}),
+    (error) => {
+      assert.match(error.message, /HTTP 502/);
+      assert.match(error.message, /abc123-LHR/);
+      assert.ok(!error.message.includes("private upstream"));
+      assert.equal(error.invalidResponse, true);
+      return true;
+    },
+  );
+});
+test("an HTML status outage recovers without uploading the video twice", async (t) => {
+  let uploads = 0,
+    polls = 0;
+  t.mock.method(console, "warn", () => {});
+  setup(t, async (_url, o) => {
+    if (o.method === "POST") return Response.json(session, { status: 201 });
+    if (++polls === 1)
+      return new Response("<!DOCTYPE html>gateway timeout", {
+        status: 504,
+        headers: { "content-type": "text/html" },
+      });
+    return Response.json(ready);
+  });
+  class Tus {
+    constructor(_file, o) {
+      this.o = o;
+    }
+    start() {
+      uploads++;
+      this.o.onSuccess();
+    }
+    async abort() {}
+  }
+  const result = await uploadStreamVideo(
+    { file },
+    {
+      owner: "user",
+      signal: new AbortController().signal,
+      onProgress: () => {},
+      controls: () => {},
+    },
+    { Upload: Tus, pollInterval: 0 },
+  );
+  assert.equal(result.fileId, id);
+  assert.equal(uploads, 1);
+  assert.equal(polls, 2);
+});
+test("HTML 404 does not discard a cached upload or create duplicate videos", async (t) => {
+  t.mock.method(console, "warn", () => {});
+  setup(t, async (_url, o) =>
+    o.method === "POST"
+      ? Response.json(session, { status: 201 })
+      : Response.json(ready),
+  );
+  class Tus {
+    constructor(_file, o) {
+      this.o = o;
+    }
+    start() {
+      this.o.onSuccess();
+    }
+    async abort() {}
+  }
+  const options = {
+    owner: "user",
+    signal: new AbortController().signal,
+    onProgress: () => {},
+    controls: () => {},
+  };
+  await uploadStreamVideo({ file }, options, { Upload: Tus });
+  let creates = 0;
+  t.mock.method(globalThis, "fetch", async (_url, o) => {
+    if (o.method === "POST") creates++;
+    return new Response("<!DOCTYPE html>not found", {
+      status: 404,
+      headers: { "content-type": "text/html" },
+    });
+  });
+  await assert.rejects(
+    uploadStreamVideo({ file }, options, { Upload: Tus }),
+    /HTTP 404/,
+  );
+  assert.equal(creates, 0);
+});
+test("redirects and Cloudflare challenges are reported instead of parsed as JSON", async (t) => {
+  const { videoApi } = await import("../src/utils/stream-upload.ts");
+  t.mock.method(console, "warn", () => {});
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () =>
+      new Response(null, {
+        status: 307,
+        headers: { location: "/auth/signin" },
+      }),
+  );
+  await assert.rejects(
+    videoApi("/api/uploads/videos", new AbortController().signal, {}),
+    /Sign in again/,
+  );
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () =>
+      new Response("<html>challenge</html>", {
+        status: 403,
+        headers: { "content-type": "text/html", "cf-mitigated": "challenge" },
+      }),
+  );
+  await assert.rejects(
+    videoApi("/api/uploads/videos", new AbortController().signal, {}),
+    /security challenge/,
+  );
+});

@@ -180,15 +180,25 @@ test("rejects missing UID and arbitrary upstream upload destinations", async () 
     );
 });
 test("Cloudflare playback uses stored HLS and thumbnail URLs", () => {
-  const media = videoPlayback({ videoId: id, thumbnail: ready.thumbnail, url: ready.playback.hls });
+  const media = videoPlayback({
+    videoId: id,
+    thumbnail: ready.thumbnail,
+    url: ready.playback.hls,
+  });
   assert.equal(media.hlsUrl, ready.playback.hls);
   assert.equal(media.poster, ready.thumbnail);
   assert.equal(media.previewUrl, ready.thumbnail);
 });
 test("Cloudflare playback constructs missing URLs from the Stream UID", () => {
   const media = videoPlayback({ videoId: id, thumbnail: "" });
-  assert.equal(media.hlsUrl, `https://videodelivery.net/${id}/manifest/video.m3u8`);
-  assert.equal(media.poster, `https://videodelivery.net/${id}/thumbnails/thumbnail.jpg`);
+  assert.equal(
+    media.hlsUrl,
+    `https://videodelivery.net/${id}/manifest/video.m3u8`,
+  );
+  assert.equal(
+    media.poster,
+    `https://videodelivery.net/${id}/thumbnails/thumbnail.jpg`,
+  );
   assert.equal(media.previewUrl, media.poster);
 });
 test("bounds new upload reservations per authenticated user", async () => {
@@ -208,4 +218,40 @@ test("bounds new upload reservations per authenticated user", async () => {
     assert.equal((await handlers.POST(request())).status, 201);
   assert.equal((await handlers.POST(request())).status, 429);
   assert.equal(created, 10);
+});
+
+test("provider authorization failures report a safe configuration error with diagnostic codes", async (t) => {
+  const logs = [];
+  t.mock.method(console, "error", (value) => logs.push(JSON.parse(value)));
+  const service = createStreamService(config, async () =>
+    Response.json(
+      { errors: [{ code: 10000, message: "SECRET API TOKEN" }] },
+      { status: 403 },
+    ),
+  );
+  await assert.rejects(service.create("user-1", file), (error) => {
+    assert.equal(error.status, 503);
+    assert.match(error.message, /authorization failed/);
+    assert.ok(!error.message.includes("SECRET"));
+    return true;
+  });
+  assert.equal(logs[0].providerStatus, 403);
+  assert.deepEqual(logs[0].providerCodes, [10000]);
+  assert.ok(!JSON.stringify(logs).includes("SECRET"));
+});
+test("provider HTML failure is logged safely without parsing or exposing its body", async (t) => {
+  const logs = [];
+  t.mock.method(console, "error", (value) => logs.push(JSON.parse(value)));
+  const service = createStreamService(
+    config,
+    async () =>
+      new Response("<!DOCTYPE html>private diagnostics", {
+        status: 502,
+        headers: { "content-type": "text/html" },
+      }),
+  );
+  await assert.rejects(service.create("user-1", file), { status: 502 });
+  assert.equal(logs[0].operation, "create");
+  assert.equal(logs[0].providerStatus, 502);
+  assert.ok(!JSON.stringify(logs).includes("private diagnostics"));
 });

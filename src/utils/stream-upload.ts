@@ -46,7 +46,7 @@ const canceled = () =>
 const check = (signal: AbortSignal) => {
   if (signal.aborted) throw canceled();
 };
-async function api<T>(
+export async function videoApi<T>(
   path: string,
   signal: AbortSignal,
   body?: unknown,
@@ -55,21 +55,72 @@ async function api<T>(
     method: body ? "POST" : "GET",
     credentials: "same-origin",
     cache: "no-store",
+    redirect: "manual",
+    headers: {
+      Accept: "application/json",
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
     signal: AbortSignal.any([signal, AbortSignal.timeout(30_000)]),
-    ...(body
-      ? {
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        }
-      : {}),
+    ...(body ? { body: JSON.stringify(body) } : {}),
   });
-  const result = await response.json();
-  if (!response.ok)
+  const contentType = response.headers.get("content-type") || "";
+  const isJson = /^application\/(?:[\w.+-]+\+)?json(?:;|$)/i.test(contentType);
+  const redirected =
+    response.type === "opaqueredirect" ||
+    response.redirected ||
+    (response.status >= 300 && response.status < 400);
+  const challenge = response.headers.get("cf-mitigated") === "challenge";
+  let result: unknown;
+  if (isJson && !redirected) {
+    try {
+      result = await response.json();
+    } catch {
+      /* Report a bounded, safe protocol error below. */
+    }
+  }
+  if (
+    !result ||
+    typeof result !== "object" ||
+    Array.isArray(result) ||
+    redirected ||
+    challenge
+  ) {
+    const ray = response.headers.get("cf-ray") || "";
+    const reference = /^[a-z0-9-]{1,80}$/i.test(ray)
+      ? ` Reference: ${ray}.`
+      : "";
+    const operation = body
+      ? "Video upload preparation"
+      : "Video processing check";
+    const message = redirected
+      ? "Your upload request was redirected. Sign in again in another tab, then retry this draft."
+      : challenge
+        ? "Cloudflare blocked the video API with a security challenge. Reload the site in another tab, then retry this draft."
+        : `${operation} received an unexpected server response (HTTP ${response.status}). Keep your draft and try again shortly.`;
+    // No HTML bodies, cookies, upload capabilities, or credentials are logged.
+    console.warn("Video API returned a non-JSON response", {
+      path,
+      status: response.status,
+      contentType,
+      rayId: reference ? ray : undefined,
+    });
+    throw Object.assign(new Error(message + reference), {
+      status: redirected ? 401 : response.status,
+      invalidResponse: true,
+    });
+  }
+  if (!response.ok) {
+    const error = (result as { error?: unknown }).error;
     throw Object.assign(
-      new Error(result.error || "Video service unavailable. Please try again."),
+      new Error(
+        typeof error === "string"
+          ? error
+          : "Video service unavailable. Please try again.",
+      ),
       { status: response.status },
     );
-  return result;
+  }
+  return result as T;
 }
 export function waitForVideoPoll(
   ms: number,
@@ -155,9 +206,16 @@ export async function uploadStreamVideo(
   let status: Status | undefined;
   if (session) {
     try {
-      status = await api<Status>(`/api/uploads/videos/${session.id}`, signal);
+      status = await videoApi<Status>(
+        `/api/uploads/videos/${session.id}`,
+        signal,
+      );
     } catch (error) {
-      if ((error as { status?: number }).status === 404) session = undefined;
+      if (
+        (error as { status?: number }).status === 404 &&
+        !(error as { invalidResponse?: boolean }).invalidResponse
+      )
+        session = undefined;
       else throw error;
     }
     if (status?.failed) {
@@ -166,7 +224,7 @@ export async function uploadStreamVideo(
     }
   }
   if (!session) {
-    session = await api<Session>("/api/uploads/videos", signal, {
+    session = await videoApi<Session>("/api/uploads/videos", signal, {
       name: file.name,
       size: file.size,
       type: file.type,
@@ -291,13 +349,22 @@ export async function uploadStreamVideo(
         "Your video is still processing. Keep your draft and submit again shortly; the video will not be uploaded again.",
       );
     try {
-      status = await api<Status>(`/api/uploads/videos/${session.id}`, signal);
+      status = await videoApi<Status>(
+        `/api/uploads/videos/${session.id}`,
+        signal,
+      );
       failures = 0;
     } catch (error) {
       check(signal);
       const code = (error as { status?: number }).status;
       if (++failures >= 5 || code === 401 || code === 404) throw error;
-      await waitForVideoPoll(5000, signal);
+      onProgress({
+        phase: "processing",
+        percent: status?.progress || 0,
+        message:
+          "The video status service is temporarily unavailable. Retrying without uploading again…",
+      });
+      await waitForVideoPoll(dependencies.pollInterval ?? 5000, signal);
       continue;
     }
     if (status.failed)
