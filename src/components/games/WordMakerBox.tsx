@@ -29,7 +29,7 @@ const WordMakerBox = () => {
     socketIo?.emit(GameEventEnum.GAME_ROOM_ANSWER, {
       answer,
       timer: countdown,
-      qId: question?.id,
+      qId: question?.id, roundId: question?.roundId,
       gameType: gameRoomInfo?.gameType,
       catType: gameRoomInfo?.catType
     });

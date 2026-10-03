@@ -256,6 +256,7 @@ export enum GameEventEnum {
 }
 
 export interface ThemedGameQuestion {
+  roundId?: string;
   id: string | number;
   question: string;
   options: string[];

@@ -61,9 +61,8 @@ import {
 import { useNotifications } from "@toolpad/core";
 import FeedQuoteItem from "./FeedQuoteItem";
 import {
-  ensureSignedInAnon,
   uploadMultipleFilesWithMetadata,
-} from "@/firebase/utils";
+} from "@/utils/r2-upload";
 import { uploadBunnyFilesWithMetadata } from "@/utils/bunny";
 import { FollowAction } from "@/types/user";
 
@@ -571,16 +570,12 @@ export default function CreateQuoteDrawer({
           });
         }
       }
-      // sign in to firebase anonymously to upload files
-      await ensureSignedInAnon();
       const posts = await Promise.all(
         state.threads.map(async (thread) => {
           const media = await Promise.all(
             thread.files.map(async (f) => {
               if (f.file.type.startsWith("image/")) {
-                const [uploadedImage] = await uploadMultipleFilesWithMetadata(
-                  user?.id,
-                  [f]
+                const [uploadedImage] = await uploadMultipleFilesWithMetadata([f]
                 );
                 return uploadedImage;
               } else if (f.file.type.startsWith("video/")) {

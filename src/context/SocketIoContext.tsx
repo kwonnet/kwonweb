@@ -42,6 +42,10 @@ const SocketIoProvider = (props: any) => {
   const { token } = useAuthSession();
 
   useEffect(() => {
+    if (!token) {
+      setState({});
+      return;
+    }
     const socketConn = io(apiBaseUrl, {
       withCredentials: true,
       auth: { token },
@@ -64,16 +68,17 @@ const SocketIoProvider = (props: any) => {
       console.log("Connected TO SERVER", socketConn.id);
     });
 
-    socketConn?.on("error", (ev) => {
+    socketConn?.on("connect_error", (ev) => {
       console.log("Socket connection error ", ev )
     })
 
     return () => {
 
       socketConn.close();
+      gameSocketIo.close();
+      convoSocketIo.close();
     };
-  // eslint-disable-next-line
-  }, []);
+  }, [token]);
 
   return (
     <SocketIoContext.Provider value={{ ...state }}>

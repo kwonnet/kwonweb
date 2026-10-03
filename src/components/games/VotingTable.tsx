@@ -28,7 +28,7 @@ const VotingTable = () => {
   const [state, setState] = useState<{votedId?: string}>({votedId: undefined})
 
   const handleVoting = (args: { answerId: string, roomId: string; votedUserId: string}) => {
-    socketIo?.emit(GameEventEnum.GAME_ROOM_VOTE, { ...args,  timer: countdown});
+    socketIo?.emit(GameEventEnum.GAME_ROOM_VOTE, { ...args, roundId: question?.roundId, timer: countdown});
     setState(prev => ({...prev, votedId: args.answerId }))
   }
 

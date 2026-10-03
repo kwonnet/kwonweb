@@ -59,7 +59,7 @@ import CreatePollCard from "./CreatePollCard";
 import { debounce } from "lodash";
 import PostScheduleDrawer from "./PostScheduleDrawer";
 import PostLocationDrawer from "./PostLocationDrawer";
-import { ensureSignedInAnon, uploadMultipleFilesWithMetadata } from "@/firebase/utils";
+import { uploadMultipleFilesWithMetadata } from "@/utils/r2-upload";
 import { uploadBunnyFilesWithMetadata } from "@/utils/bunny";
 import { FollowAction } from "@/types/user";
 
@@ -360,17 +360,13 @@ export default function CreateReplyDrawer({
       if (!post) {
         return notif.show("No quoted post", { severity: 'warning', autoHideDuration: 3000})
       }
-      // sign in to firebase anonymously to upload files
-      await ensureSignedInAnon()
       setState((prev) => ({ ...prev, loading: true }));
       const uploadedFiles =
         state.post.files.length > 0
           ? await Promise.all(
               state.post.files.map(async (f) => {
                 if (f.file.type.startsWith("image/")) {
-                  const [uploadedImage] = await uploadMultipleFilesWithMetadata(
-                    user?.id,
-                    [f]
+                  const [uploadedImage] = await uploadMultipleFilesWithMetadata([f]
                   );
                   return uploadedImage;
                 } else if (f.file.type.startsWith("video/")) {

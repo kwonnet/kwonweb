@@ -23,7 +23,7 @@ const LuckyWhizBox = () => {
     if(energy?.gauge <= 5 || energy?.turbo <= 5) {
       return notif.show("Your game energy is low, please switch to energy tab & recharge!", { severity: "warning", autoHideDuration: 4000})
     }
-    socketIo?.emit(GameEventEnum.GAME_ROOM_ANSWER, { answer: choice, timer: countdown, qId: question?.id, gameType: gameRoomInfo?.gameType, catType: gameRoomInfo?.catType});
+    socketIo?.emit(GameEventEnum.GAME_ROOM_ANSWER, { answer: choice, timer: countdown, qId: question?.id, roundId: question?.roundId, gameType: gameRoomInfo?.gameType, catType: gameRoomInfo?.catType});
     setState({choice})
   }
   const options = useMemo(() => {

@@ -69,8 +69,16 @@ const GameSocketIoProvider = (props: any) => {
 
     function messageCallback(arg: ChatMessage) {
       console.log(arg);
-      setState((prev) => ({ ...prev, messages: [...prev.messages, arg] }));
+      setState((prev) => ({ ...prev, messages: [...prev.messages.filter(m=>m.id!==arg.id), arg].slice(-100) }));
     }
+
+    function historyCallback(messages: ChatMessage[]) {
+      setState(prev=>({...prev,messages:[...new Map([...prev.messages,...messages].map(m=>[m.id,m])).values()].slice(-100)}));
+    }
+    const recoverMessages = () => { if(gameSocketIo?.connected) gameSocketIo.emit(GameEventEnum.GAME_ROOM_CHAT); };
+    gameSocketIo?.on(GameEventEnum.GAME_ROOM_CHAT,historyCallback);
+    const recoveryTimer = setInterval(recoverMessages,5000);
+    recoverMessages();
 
     function roomStateCallback(args: {
       status: GameStatusEnum;
@@ -163,7 +171,6 @@ const GameSocketIoProvider = (props: any) => {
 
     gameSocketIo?.on(GameEventEnum.NOTIFY_MESSAGE, notificationCallback);
 
-    gameSocketIo?.on(GameEventEnum.GAME_ROOM_CHAT, () => {});
 
     gameSocketIo?.on(GameEventEnum.GAME_ROOM_SCORE, roomScoreCallback);
 
@@ -190,9 +197,10 @@ const GameSocketIoProvider = (props: any) => {
 
 
     return () => {
+      clearInterval(recoveryTimer);
+      gameSocketIo?.off(GameEventEnum.GAME_ROOM_CHAT,historyCallback);
       gameSocketIo?.off(GameEventEnum.MESSAGE, messageCallback);
       gameSocketIo?.off(GameEventEnum.NOTIFY_MESSAGE, notificationCallback);
-      gameSocketIo?.off(GameEventEnum.GAME_ROOM_CHAT, () => {});
       gameSocketIo?.off(GameEventEnum.GAME_ROOM_SCORE, roomScoreCallback);
       gameSocketIo?.off(GameEventEnum.GAME_ROOM_STATE, roomStateCallback);
       gameSocketIo?.off(GameEventEnum.GAME_ROOM_PLAYERS, roomPlayersCallback);

@@ -1,3 +1,5 @@
+import { getSession } from 'next-auth/react';
+import { prepareWalletIntent, completeWalletIntent, isWalletCharge } from '@/utils/wallet-intents';
 import { publicEnv } from "@/config/public-env";
 // import mittEmitter, { EventEnum } from '@/mittEmitter'
 import axios, { AxiosInstance } from "axios";
@@ -56,7 +58,19 @@ export const axiosAPI: IAxios = axios.create({
 // intercept the request
 axiosAPI.interceptors.request.use(
   async (config) => {
-    const accessToken = axiosAPI.accessToken;
+    let accessToken = axiosAPI.accessToken;
+    if (config.method?.toLowerCase() === 'post' && isWalletCharge(config.url || '') && !config.headers.has('Idempotency-Key')) {
+      if (typeof window === 'undefined') throw new Error('Server wallet requests require an explicit Idempotency-Key');
+      const session = await getSession();
+      const actor = session?.user?.id;
+      if (!actor) throw new Error('Sign in before making a wallet request');
+      accessToken = session?.user?.accessToken ?? accessToken;
+      const body = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+      // Fail closed if browser storage is unavailable: never send an untracked charge.
+      const intent = await prepareWalletIntent(actor, config.url!, body, window.sessionStorage);
+      config.headers.set('Idempotency-Key', intent.key);
+      (config as any)._walletIntent = intent;
+    }
     // if(!accessToken && !config.url?.includes("type=public")) return Promise.reject(new Error("No access token provided"))
     config.headers.set("Authorization", `Bearer ${accessToken}`);
     config.headers.set("Accept", "application/json");
@@ -69,6 +83,11 @@ axiosAPI.interceptors.request.use(
 
 axiosAPI.interceptors.response.use(
   async (response) => {
+    const intent = (response.config as any)._walletIntent;
+    if (intent && typeof window !== 'undefined') {
+      // A cleanup error must not turn a committed purchase into an apparent failure.
+      try { completeWalletIntent(intent.slot, intent.key, window.sessionStorage); } catch {}
+    }
     return response;
   },
   async function (error) {

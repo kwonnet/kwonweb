@@ -68,9 +68,7 @@ import { PostCreateSchema } from "@/schema/post";
 import { ZodError } from "zod";
 import { getUserLocation } from "@/utils/location";
 import { logUserLocation } from "@/lib/users";
-import { signInAnonymously } from "firebase/auth";
-import { auth, signInAnon } from "@/firebase";
-import { ensureSignedInAnon, uploadMultipleFilesWithMetadata } from "@/firebase/utils";
+import { uploadMultipleFilesWithMetadata } from "@/utils/r2-upload";
 import { uploadBunnyFilesWithMetadata } from "@/utils/bunny";
 
 function CircularProgressWithLabel(
@@ -710,14 +708,12 @@ export default function CreatePostDrawer({
           });
         }
       }
-      // sign in to firebase anonymously to upload files
-      // await ensureSignedInAnon()
       const posts = await Promise.all(
         state.threads.map(async (thread) => {
           const media = await Promise.all(
             thread.files.map(async (f) => {
               if (f.file.type.startsWith("image/")) {
-                const [uploadedImage] = await uploadMultipleFilesWithMetadata(user?.id, [f]);
+                const [uploadedImage] = await uploadMultipleFilesWithMetadata([f]);
                 return uploadedImage;
               } else if (f.file.type.startsWith("video/")) {
                 const [uploadedVideo] = await uploadBunnyFilesWithMetadata([f]);
