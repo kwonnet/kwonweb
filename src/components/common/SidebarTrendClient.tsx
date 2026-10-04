@@ -12,20 +12,21 @@ import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
 import Link from "next/link";
 import { TrendingTopics } from "@/types";
 import useSWR from "swr";
-import { getTrendingTopics } from "@/lib/discover";
+import { getSidebarTrends } from "@/lib/discover";
 import { useAuthSession } from "@/hooks";
 import { formatNumber } from "@/utils";
 
 
-const SidebarTrendClient = ({trends}: { trends: TrendingTopics[]}) => {
+const SidebarTrendClient = ({trends, initialError = false}: { trends: TrendingTopics[]; initialError?: boolean }) => {
   const { token, user} = useAuthSession()
-  const { data, error, isLoading, mutate } =
-    useSWR({country: user?.country?.id, limit: 50, id: user.id}, ({id, ...rest}) => getTrendingTopics(rest, token), {
-      keepPreviousData: true,
+  const { data = [], error, isLoading } =
+    useSWR({country: user?.country?.id, limit: 3, id: user?.id ?? "guest"}, ({id, ...rest}) => getSidebarTrends(rest, token), {
+      keepPreviousData: false,
       refreshWhenOffline: false,
       revalidateOnReconnect: true,
       fallbackData: trends,
-      revalidateOnMount: false,
+      revalidateOnMount: initialError,
+      refreshInterval: 60000,
     });
   return (
     <Box
@@ -45,8 +46,11 @@ const SidebarTrendClient = ({trends}: { trends: TrendingTopics[]}) => {
         }}>
         Check What's happening
       </Typography>
+      {data.length === 0 && <Typography color="text.secondary" sx={{ p: 2 }} role="status">
+        {error || (initialError && isLoading) ? "Trending topics are temporarily unavailable." : "No public topics in the last 24 hours."}
+      </Typography>}
       {data.slice(0,3).map((item, index) => (
-        <Box key={index} sx={{ margin: 1 }}>
+        <Box key={item.trend} sx={{ margin: 1 }}>
           <Stack
             direction={"row"}
             sx={{
@@ -65,7 +69,7 @@ const SidebarTrendClient = ({trends}: { trends: TrendingTopics[]}) => {
           <Typography
             color="textDisabled"
             variant="caption"
-          >{`${formatNumber(item.mentions)} Posts - ${formatNumber(item.users)} Users`}</Typography>
+          >{`${formatNumber(item.posts)} Posts - ${formatNumber(item.users)} Users`}</Typography>
           <Divider />
         </Box>
       ))}

@@ -1,34 +1,15 @@
 import { getServerSession } from "@/lib/server-session";
-import { apiUrl } from "@/config";
-import { TrendingTopics } from "@/types";
-import React from "react";
+import { getSidebarTrends } from "@/lib/discover";
 import SidebarTrendClient from "./SidebarTrendClient";
-import { Session } from "next-auth";
 
-const getQuery = (session: Session | null) => {
-  if(session?.user?.country){
-    return `country=${session?.user?.country?.iso2}&limit=50`
-  }
-  return `limit=50`
-}
 const SidebarTrendServer = async () => {
   const session = await getServerSession();
-  if (!session?.user?.accessToken) return null;
-  const query = getQuery(session)
-  const result = await fetch(`${apiUrl}/discover/trend?${query}`, {
-    cache: "no-store",
-
-    method: "GET",
-    credentials: "include",
-    mode: "cors",
-    headers: {
-      Authorization: `Bearer ${session?.user?.accessToken}`,
-    },
-  });
-  if (!result.ok) return null
-  const data: TrendingTopics[] = await result.json();
-  return <SidebarTrendClient trends={data} />;
+  try {
+    const trends = await getSidebarTrends({ country: session?.user?.country?.id, limit: 3 }, session?.user?.accessToken);
+    return <SidebarTrendClient trends={trends} />;
+  } catch {
+    return <SidebarTrendClient trends={[]} initialError />;
+  }
 };
 
 export default SidebarTrendServer;
-

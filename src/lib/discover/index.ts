@@ -1,16 +1,23 @@
-import { axiosAPI } from "@/config/axios";
-import { TrendingTopics } from "@/types";
-import { composeUrlQuery } from "@/utils";
-import { cache } from "react";
+import { apiUrl } from "@/config";
+import type { TrendingTopics } from "@/types";
 
-export const getTrendingTopics = cache(async (args:{country?: string | null, limit: number}, accessToken?: string) => {
-    try {
-      const queryString = composeUrlQuery(args)
-      axiosAPI.accessToken = accessToken;
-      console.log("getTrendingTopics ", queryString)
-      const result = await axiosAPI.get(`/v1/discover/trend?${queryString}`);
-      return result.data as TrendingTopics[];
-    } catch (error: any) {
-      throw error
-    }
-  })
+export async function getTrendingTopics(args: { country?: string | null; limit: number }, accessToken?: string): Promise<TrendingTopics[]> {
+  const query = new URLSearchParams({ limit: String(args.limit) });
+  if (args.country) query.set("country", args.country);
+  const response = await fetch(`${apiUrl}/discover/trend?${query}`, {
+    cache: "no-store",
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    signal: AbortSignal.timeout(8000),
+  });
+  // Compatibility while the backend's empty-collection response rolls out.
+  if (response.status === 404) return [];
+  if (!response.ok) throw new Error("Unable to load trending topics.");
+  const data: unknown = await response.json();
+  if (!Array.isArray(data)) throw new Error("Invalid trending topics response.");
+  return data as TrendingTopics[];
+}
+
+export async function getSidebarTrends(args: { country?: string | null; limit: number }, accessToken?: string) {
+  const local = await getTrendingTopics(args, accessToken);
+  return local.length || !args.country ? local : getTrendingTopics({ limit: args.limit }, accessToken);
+}
