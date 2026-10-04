@@ -20,7 +20,7 @@ export const getNewsfeed = cache(async (args:{feed: FeedTypeEnum, limit: number,
     try {
       const queryString = composeUrlQuery(args)
       axiosAPI.accessToken = accessToken;
-      const result = await axiosAPI.get(`/v1/posts/feed/${args.feed}?${queryString}`);
+      const result = await axiosAPI.get(`/v1/posts/feed/${args.feed}?${queryString}`, { timeout: 15000 });
       return result.data as FeedPost[];
     } catch (error: any) {
       throw error

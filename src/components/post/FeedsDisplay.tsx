@@ -3,9 +3,9 @@ import { useNotifications } from "@toolpad/core";
 import usePostInteractions from "@/hooks/usePostInteractions";
 import useFeedCacheMutate from "@/hooks/useFeedCacheMutate";
 import { newsfeedKey } from "@/utils/newsfeed-key";
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import Box from "@mui/material/Box";
-import { CircularProgress, Typography } from "@mui/material";
+import { Button, CircularProgress, Typography } from "@mui/material";
 import {
   getNewsfeed,
   shareFeedPost,
@@ -64,19 +64,41 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
       fallbackData: [posts],
       revalidateOnMount: true,
       revalidateFirstPage: false,
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
     });
 
   const mutate = useFeedCacheMutate(mutatePages, data);
 
   const flatData = useMemo(() => [...new Map((data ?? [posts]).flat().map(item => [item.id, item])).values()], [data, posts]);
 
-  const isReachingEnd =
-    (data && data[data.length - 1]?.length === 0) || !!error;
-
-  const loadingPage = isLoading || isValidating || !!(data && size > data.length);
-  const loadMore = useCallback(() => {
-    if (!loadingPage && !isReachingEnd) void setSize(num => num + 1);
-  }, [loadingPage, isReachingEnd, setSize]);
+  const isReachingEnd = data?.[data.length - 1]?.length === 0;
+  // A background refresh must not replace existing cards with a loading state.
+  const loadingPage = !error && (isLoading || !!(data && size > data.length));
+  const requestingPage = useRef(false);
+  const loadMore = useCallback(async () => {
+    if (requestingPage.current || isValidating || loadingPage || isReachingEnd || error) return;
+    requestingPage.current = true;
+    try {
+      await setSize(num => num + 1);
+    } catch {
+      // SWR exposes the failure below; keep existing posts and allow retry.
+    } finally {
+      requestingPage.current = false;
+    }
+  }, [loadingPage, isValidating, isReachingEnd, error, setSize]);
+  const retryPage = async () => {
+    if (requestingPage.current || isValidating) return;
+    requestingPage.current = true;
+    try {
+      // Retry the requested size, never increment past a failed page.
+      await setSize(size);
+    } catch {
+      // Keep the retry action available if the connection is still unavailable.
+    } finally {
+      requestingPage.current = false;
+    }
+  };
   // feed cache update
   const { mutatePostLikes, mutatePostBookmarks, mutatePostQuotes, mutatePostShares, mutatePostReposts, mutatePostAuthor } = useFeedCacheUpdater(mutate)
 
@@ -136,7 +158,7 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
     updateUserFollower(args, token);
   }, [mutatePostAuthor, token]);
   // track load more posts
-  const ref = useLoadMore(loadMore, !loadingPage && !isReachingEnd)
+  const ref = useLoadMore(loadMore, !loadingPage && !isValidating && !isReachingEnd && !error, "0px 0px 1600px 0px")
 
   return (
     <Box sx={{ mt: 1 }}>
@@ -177,9 +199,13 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
         onQuoteCallback={onQuoteCallback}
         onFollowUserCallback={onFollowUserCallback}
       />}
+      {error && <Box role="alert" sx={{ textAlign: "center", py: 2 }}>
+        <Typography>Couldn’t load more posts. Your feed is still here.</Typography>
+        <Button onClick={retryPage} disabled={isValidating}>Retry loading posts</Button>
+      </Box>}
       {!isReachingEnd ? <div ref={ref} style={{padding: "10px 0px 10px 0px"}} /> : <Typography variant="caption" textAlign={"center"} sx={{display: "block"}} color="textDisabled">No More Feed</Typography>}
       <Box sx={{display: 'block', textAlign: 'center'}}>
-        {loadingPage && <CircularProgress size={24} color="warning" />}
+        {(loadingPage || (error && isValidating)) && <CircularProgress size={24} aria-label="Loading more posts" />}
       </Box>
     </Box>
   );

@@ -301,3 +301,8 @@ body {
 .MuiSnackbar-root {
   z-index: 99999999999 !important
 }
+/* Suppress the browser's full-card touch flash, preserving selection and keyboard focus. */
+.newsfeed-card,
+.newsfeed-card * {
+  -webkit-tap-highlight-color: transparent;
+}

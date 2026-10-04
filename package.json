@@ -85,6 +85,7 @@
     "@types/react-window": "^1.8.8",
     "eslint": "^9",
     "eslint-config-next": "15.2.3",
+    "jsdom": "20.0.3",
     "typescript": "^5"
   },
   "overrides": {

@@ -255,6 +255,7 @@ const FeedCardItem = ({
   return (
     <Card
       ref={ref}
+      className="newsfeed-card"
       key={item.id}
       id={item.id}
       elevation={0}
