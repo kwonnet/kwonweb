@@ -5,7 +5,7 @@ import {
   PlyrLayout,
   plyrLayoutIcons,
 } from "@vidstack/react/player/layouts/plyr";
-import { GoogleCastButton, useMediaStore, useStore } from "@vidstack/react";
+import { GoogleCastButton, useMediaStore } from "@vidstack/react";
 import { Tooltip } from "@vidstack/react";
 import { ChromecastIcon } from "@vidstack/react/icons";
 
@@ -37,6 +37,7 @@ import { useInView } from "react-intersection-observer";
 import { PostMediaAction, PostMediaKind, PostMediaLog } from "@/types/post";
 import { useAuthSession, useTrackVideoWatchTime } from "@/hooks";
 import { sendPostLog } from "@/lib/posts";
+import { createVideoPlayback } from "@/utils/video-playback-controller";
 
 const trackVideoImpression = (postId: string, mediaId: string, token?: string) => {
 
@@ -88,13 +89,9 @@ const VideoPlayer = ({
 
   const notif = useNotifications();
   const playerRef = useRef<MediaPlayerInstance>(null);
-  const playerState = useStore(MediaPlayerInstance, playerRef);
-  const { paused, playing, canPlay } = useMediaStore(playerRef);
+  const { canPlay } = useMediaStore(playerRef);
+  const playbackRef = useRef<ReturnType<typeof createVideoPlayback> | null>(null);
 
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isMuted, setIsMuted] = useState(muted);
-  const [isVisible, setIsVisible] = useState(false);
   const [isLoop, setIsLoop] = useState(false);
   const [anchorPosition, setAnchorPosition] = useState<{
     top: number;
@@ -138,39 +135,32 @@ const VideoPlayer = ({
     return unsubscribe;
   }, [item.fileId]);
 
-  // track video impressions
   useEffect(() => {
-    if (!playerRef.current) return;
-    // containerRef?.current?.click()
-    if(inView){
-      playerRef?.current?.$el?.click()
-      // log analytics here
-      !isCurrentUser && trackVideoImpression(post.id, item.id, token)
-    }
-    if (inView && canPlay) {
-      void playerRef.current?.play().catch(() => {});
-      // playerRef?.current?.muted && setIsMuted(false)
-    } 
-    if(!inView && playing){
-      playerRef.current.pause()
-    }
-    // check when the tab is hidden
-    const handleVisibilityChange = () => {
-      containerRef?.current?.click()
-      if (document.hidden) {
-        playerRef!.current!.pause();
-      } else {
-        if (inView && paused) {
-          void playerRef.current?.play().catch(() => {});
-        }
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    // check when the tab is closed
+    const player = playerRef.current;
+    if (!player) return;
+    const playback = createVideoPlayback(player, autoPlay);
+    playbackRef.current = playback;
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      playback.dispose();
+      playbackRef.current = null;
     };
-  }, [inView, canPlay, isCurrentUser, item.id, paused, playing, post.id, token]);
+  }, [hlsUrl, autoPlay]);
+
+  useEffect(() => {
+    const updateVisibility = () => {
+      playbackRef.current?.update(inView, !document.hidden, canPlay);
+    };
+    updateVisibility();
+    document.addEventListener("visibilitychange", updateVisibility);
+    return () => document.removeEventListener("visibilitychange", updateVisibility);
+  }, [hlsUrl, autoPlay, inView, canPlay]);
+
+  // Analytics and authentication changes must not trigger playback.
+  useEffect(() => {
+    if (inView && !isCurrentUser) {
+      trackVideoImpression(post.id, item.id, token);
+    }
+  }, [inView, isCurrentUser, post.id, item.id, token]);
 
   // track video watch time
   const watchRef = useTrackVideoWatchTime(playerRef, {
@@ -222,7 +212,6 @@ const VideoPlayer = ({
     <div
       onClick={(ev) => ev.stopPropagation()}
       ref={(node) => {
-        containerRef.current = node;
         intersectionRef(node); // connect both refs
         watchRef(node)
       }}
@@ -234,15 +223,20 @@ const VideoPlayer = ({
         </Alert>
       )}
       <MediaPlayer
-        currentTime={0}
         ref={playerRef}
         title={item.altText}
         src={hlsUrl}
         poster={poster}
         onError={() => setPlaybackError(true)}
         onCanPlay={() => setPlaybackError(false)}
-        autoPlay={autoPlay}
-        muted={isMuted}
+        // Visibility controller owns autoplay; controls retain normal manual playback.
+        autoPlay={false}
+        onMediaPlayRequest={() => playbackRef.current?.userPlay()}
+        onMediaPauseRequest={() => playbackRef.current?.userPause()}
+        onEnded={() => {
+          if (!isLoop) playbackRef.current?.ended();
+        }}
+        muted={muted}
         hideControlsOnMouseLeave={true}
         preload="metadata"
         load="visible"
