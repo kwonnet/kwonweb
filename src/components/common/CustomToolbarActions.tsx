@@ -14,6 +14,8 @@ import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import Link from "next/link";
 import AccountToolbar from "./AccountToolbar";
 // import AccountContent from "./AccountContent";
+import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LocalMallOutlinedIcon from "@mui/icons-material/LocalMallOutlined";
 import { useAuthSession } from "@/hooks";
 import { useUserStats } from "@/lib/swrHooks";
@@ -31,15 +33,11 @@ const CustomToolbarActions = (props: {
   const { data: stats, mutate } = useUserStats({ userId: user?.id, token})
 
   const updateMsgUnseen = async() => {
-    if (!user?.id || stats?.totalUnseenMsg === 0) return;
+    if (!token || !user?.id || stats?.totalUnseenMsg === 0) return;
     await updateUserConversations({ userId: user.id, isSeen: true }, token);
     mutate();
   }
 
-  if (!token) return <Stack direction="row" spacing={1}>
-    <Button href="/?auth=signin" data-auth-mode="signin">Log in</Button>
-    <Button href="/?auth=signup" data-auth-mode="signup" variant="contained" sx={{ borderRadius: 5 }}>Sign up</Button>
-  </Stack>;
 
   return (
     <React.Fragment>
@@ -73,16 +71,16 @@ const CustomToolbarActions = (props: {
             <IconButton onClick={() => updateMsgUnseen()} size="small" LinkComponent={Link} href="/messages">
               <Badge
                 color="error"
-                badgeContent={stats.totalUnseenMsg}
+                badgeContent={stats?.totalUnseenMsg ?? 0}
                 max={99}
               >
                 <EmailOutlinedIcon />
               </Badge>
             </IconButton>
           </Tooltip>
-        {props.NotificationNode}
+        {token ? props.NotificationNode : <Tooltip title="Notifications"><IconButton size="small" aria-label="Notifications" href="/?auth=signin"><NotificationsOutlinedIcon /></IconButton></Tooltip>}
 
-        <AccountMenu />
+        {token ? <AccountMenu /> : <Tooltip title="Log in"><IconButton size="small" aria-label="Log in" href="/?auth=signin"><AccountCircleIcon /></IconButton></Tooltip>}
       </Stack>
     </React.Fragment>
   );

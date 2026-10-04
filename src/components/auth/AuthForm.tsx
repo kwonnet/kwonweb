@@ -4,7 +4,7 @@ import { Alert, Box, Button, Stack, TextField, Typography } from "@mui/material"
 import { signIn } from "next-auth/react";
 import { safeAuthRedirect } from "@/lib/auth-redirect";
 
-export default function AuthForm({ initialMode = "signup" }: { initialMode?: "signin" | "signup" }) {
+export default function AuthForm({ initialMode = "signin" }: { initialMode?: "signin" | "signup" }) {
   const [mode, setMode] = useState(initialMode);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");

@@ -10,6 +10,7 @@ export default function useTrackImpression(postId: string, ttlMinutes = 2.5) {
   const { ref, inView } = useInView({ threshold: 0.5, fallbackInView: true });
   const { token } = useAuthSession();
   useEffect(() => {
+    if (!token) return;
     const sessionId = getSessionId();
     const trackImpression = async (body: {id: string, sessionId: string, timestamp: string | Date}, accessToken?: string) => {
       const data = convertJsonToFormBody(body);

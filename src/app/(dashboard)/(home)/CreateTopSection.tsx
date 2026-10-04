@@ -1,5 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
+import { requestGuestLogin } from "@/utils/guest-auth-trigger";
 const CreatePostDrawer = dynamic(() => import("@/components/post/CreatePostDrawer"), { ssr: false });
 import { useAuthSession } from "@/hooks";
 import { FeedTypeEnum } from "@/types/post";
@@ -18,15 +19,10 @@ const CreateTopSection = () => {
 
   const toggleDrawer = (ev: any, open: boolean) => {
     ev.preventDefault();
+    if (!user?.id) { requestGuestLogin(); return; }
     setState((prev) => ({ ...prev, isOpen: open, hasOpened: true }));
   };
 
-  if (!user?.id) return <Box sx={{ px: 1, my: 2 }}>
-    <Card elevation={0} sx={{ p: 2 }}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-      <Avatar />
-      <Button href="/?auth=signup" fullWidth variant="outlined" sx={{ borderRadius: 5, justifyContent: "flex-start", color: "text.secondary" }}>What’s happening?</Button>
-    </Stack></Card>
-  </Box>;
 
   return (
     <React.Fragment>
@@ -51,15 +47,15 @@ const CreateTopSection = () => {
               alignItems: "center",
               pb: 1
             }}>
-            <Link href={`/@${user?.username}`} style={{textDecoration: "none"}}>
+            <Link href={user?.username ? `/@${user.username}` : "/?auth=signin"} style={{textDecoration: "none"}}>
               <Avatar src={user?.avatar!} alt={user?.name}>
-              {user?.name[0]}
+              {user?.name?.[0]}
             </Avatar>
             </Link>
             <TextField
               onClick={(ev) => toggleDrawer(ev, true)}
               size="small"
-              placeholder={`${user?.name?.split(" ")[0]}, what's happening?`}
+              placeholder={user?.name ? `${user.name.split(" ")[0]}, what's happening?` : "What’s happening?"}
               fullWidth
               sx={{ borderRadius: 5 }}
               slotProps={{

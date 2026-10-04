@@ -6,7 +6,8 @@ import type { FeedPost } from "@/types";
 import type { FeedTypeEnum } from "@/types/post";
 import DisplayError from "@/components/common/DisplayError";
 import FeedSection from "./FeedSection";
-import GuestFeed, { type PublicPostPreview } from "./GuestFeed";
+import GuestFeed from "./GuestFeed";
+import { getPublicFeed } from "@/lib/public-feed";
 
 /** Stream real posts as soon as the API returns; sidebar requests remain independent. */
 export default async function ServerFeed({ feed }: { feed: FeedTypeEnum }) {
@@ -16,15 +17,7 @@ export default async function ServerFeed({ feed }: { feed: FeedTypeEnum }) {
   if (!session?.user?.accessToken) {
     // Only the home preview is public. Never downgrade other feeds to anonymous data.
     if (feed !== "foryou") return <DisplayError status={401} message="Please sign in to view your feed." />;
-    let posts: PublicPostPreview[] = [];
-    let unavailable = false;
-    try {
-      const response = await fetch(`${apiUrl}/posts/preview`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
-      if (response.ok) posts = await response.json();
-      else unavailable = true;
-    } catch {
-      unavailable = true;
-    }
+    const { posts, unavailable } = await getPublicFeed();
     return <GuestFeed posts={posts} unavailable={unavailable} />;
   }
 

@@ -1,4 +1,5 @@
 'use client'
+import { requestGuestLogin } from "@/utils/guest-auth-trigger";
 import { useAuthSession } from '@/hooks'
 import { getSuggestedConnections, updateUserFollower } from '@/lib/users'
 import { ConnTypeEnum } from '@/types'
@@ -13,7 +14,7 @@ import ConnectionCard from './ConnectionCard'
 const ConnectionSection = ({ users, connType }: { users: UserConnection[], connType: ConnTypeEnum  }) => {
   
   const { token, user } = useAuthSession();
-  const swrKey = `${user.id}_connections_${connType}`;
+  const swrKey = token && user?.id ? `${user.id}_connections_${connType}` : null;
   const { data, mutate } = useSWR(
     swrKey,
     () => getSuggestedConnections({ limit: 3, type: connType }, token),
@@ -70,6 +71,7 @@ const ConnectionSection = ({ users, connType }: { users: UserConnection[], connT
 
 
   const onFollowUser = (connUser: UserConnection, action: FollowAction) => {
+    if (!token || !user?.id) { requestGuestLogin(); return; }
     const conn = getFollowStatus(connUser.conn, connUser.meta, action);
     const recipientId = connUser.id
     // mutate for current user

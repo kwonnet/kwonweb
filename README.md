@@ -64,19 +64,24 @@ bucket configuration and upload limits.
 
 ## Guest homepage and authentication
 
-Visitors can open `/` and see a server-rendered preview of real public posts.
-The centered login/signup dialog opens after 10 seconds, scrolling down, or the
-first click/tap. It cannot be dismissed with Escape or a backdrop click. Login
+Visitors can open `/` with the normal dashboard, Search, composer, sidebar and
+the same newsfeed cards as signed-in users. Scrolling is allowed during the
+preview. The centered authentication dialog opens after 30 seconds or the first
+action, with login shown first and signup available as an alternative. It cannot
+be dismissed with Escape or a backdrop click. Login
 refreshes the server session and returns to the originally requested safe URL.
 Other feeds, private pages, uploads and post actions still require authentication.
 
 Deploy **kwonserver before kwonweb** for this feature: the frontend reads
 `GET /api/v1/posts/preview` from the existing `NEXT_PUBLIC_API_URL`. No new
 environment variables or database migrations are needed. The endpoint returns
-at most 12 published public root posts from active public accounts, with a small
+at most 21 published public root posts from active public accounts. Posts from
+the last 72 hours are ranked by likes, replies, reposts and shares; newer posts
+break ties. Older posts fill any remaining spaces, newest first. It uses a small
 field projection; private/restricted posts, polls, quizzes and personalized data
 are excluded. It rechecks visibility on every request rather than sharing a
-cached personalized feed. Guest videos show posters until authentication.
+cached personalized feed. Guest videos do not autoplay and interactions require
+login. Guest rendering does not send authenticated impressions, views or reactions.
 
 ## Google Cloud Run
 

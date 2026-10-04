@@ -54,6 +54,7 @@ const AuthorHoverPreview = ({
   const handleMouseEnter = (
     e: React.MouseEvent<HTMLAnchorElement | HTMLDivElement>
   ) => {
+    if (!token) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     const rect = e.currentTarget.getBoundingClientRect();
     setPosition({
@@ -94,7 +95,7 @@ const AuthorHoverPreview = ({
         revalidate: false,
       }
     );
-    onFollowUserCallback({ senderId: user.id, recipientId, action });
+    onFollowUserCallback({ senderId: user?.id, recipientId, action });
   };
 
   // const composeText = ({ followers, total}: {followers?: MutualFollower[], total: number}) => {
@@ -108,7 +109,7 @@ const AuthorHoverPreview = ({
   // };
 
   // check if it's the current reader
-  const isCurrentUser = user.id === author?.id;
+  const isCurrentUser = user?.id === author?.id;
 
   const badgeColor = useBadgeColor(author?.meta?.color)
 
@@ -323,7 +324,7 @@ const AuthorHoverPreview = ({
                   </Stack>
                   
                 </Stack>
-                {data && data.id !== user.id && (
+                {data && data.id !== user?.id && (
                   <Stack direction={"row"} spacing={1} sx={{ py: 1 }}>
                     <AvatarGroup spacing="medium">
                       {data?.mutualFollowers?.map((conn) => (

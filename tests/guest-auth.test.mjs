@@ -9,13 +9,13 @@ function fixture() {
   return { dom, doc: dom.window.document, opened };
 }
 
-test("guest prompt appears after ten seconds, once, and is cleaned up", t => {
+test("guest prompt appears after thirty seconds, once, and is cleaned up", t => {
   t.mock.timers.enable({ apis: ["setTimeout"] });
   const { doc, opened } = fixture();
   const cleanup = installGuestAuthTrigger(doc, mode => opened.push(mode));
-  t.mock.timers.tick(9999); assert.deepEqual(opened, []);
-  t.mock.timers.tick(1); assert.deepEqual(opened, ["signup"]);
-  doc.querySelector('a').click(); assert.deepEqual(opened, ["signup"]);
+  t.mock.timers.tick(29999); assert.deepEqual(opened, []);
+  t.mock.timers.tick(1); assert.deepEqual(opened, ["signin"]);
+  doc.querySelector('a').click(); assert.deepEqual(opened, ["signin"]);
   cleanup();
 });
 
@@ -36,7 +36,7 @@ test("first click opens login and prevents navigation/actions underneath, while 
   } finally { cleanup(); dom.window.close(); }
 });
 
-test("nested feed scrolling triggers the prompt, but scrolling the auth form does not", () => {
+test("scrolling and touch gestures can browse the preview without opening authentication", () => {
   const { dom, doc, opened } = fixture();
   const cleanup = installGuestAuthTrigger(doc, mode => opened.push(mode));
   try {
@@ -46,7 +46,14 @@ test("nested feed scrolling triggers the prompt, but scrolling the auth form doe
     const main = doc.querySelector('main');
     main.dispatchEvent(new dom.window.Event('scroll')); assert.deepEqual(opened, []);
     main.scrollTop = 20; main.dispatchEvent(new dom.window.Event('scroll'));
-    assert.deepEqual(opened, ['signup']);
+    assert.deepEqual(opened, []);
+    const touch = new dom.window.Event('pointerdown', { bubbles: true, cancelable: true });
+    main.dispatchEvent(touch);
+    assert.equal(touch.defaultPrevented, false);
+    const space = new dom.window.KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+    main.dispatchEvent(space);
+    assert.equal(space.defaultPrevented, false);
+    assert.deepEqual(opened, []);
   } finally { cleanup(); dom.window.close(); }
 });
 
@@ -55,10 +62,31 @@ test("cleanup removes the timer and capture listeners after authentication or na
   const { dom, doc, opened } = fixture();
   const cleanup = installGuestAuthTrigger(doc, mode => opened.push(mode));
   cleanup();
-  t.mock.timers.tick(10000);
-  const event = new dom.window.Event('pointerdown', { bubbles: true, cancelable: true });
+  t.mock.timers.tick(30000);
+  const event = new dom.window.Event('click', { bubbles: true, cancelable: true });
   doc.querySelector('main').dispatchEvent(event);
   assert.deepEqual(opened, []);
   assert.equal(event.defaultPrevented, false);
   dom.window.close();
+});
+
+test("keyboard actions and shared-card requests open login, explicit signup remains available", () => {
+  const { dom, doc, opened } = fixture();
+  const input = doc.createElement('input'); doc.querySelector('main').append(input);
+  let cleanup = installGuestAuthTrigger(doc, mode => opened.push(mode));
+  try {
+    const typing = new dom.window.KeyboardEvent('keydown', { key: 'k', bubbles: true, cancelable: true });
+    input.dispatchEvent(typing);
+    assert.equal(typing.defaultPrevented, true);
+    assert.deepEqual(opened, ['signin']);
+    cleanup(); opened.length = 0;
+    cleanup = installGuestAuthTrigger(doc, mode => opened.push(mode));
+    doc.dispatchEvent(new dom.window.Event('guest-auth-required'));
+    assert.deepEqual(opened, ['signin']);
+    cleanup(); opened.length = 0;
+    cleanup = installGuestAuthTrigger(doc, mode => opened.push(mode));
+    doc.querySelector('a').setAttribute('data-auth-mode', 'signup');
+    doc.querySelector('a').click();
+    assert.deepEqual(opened, ['signup']);
+  } finally { cleanup(); dom.window.close(); }
 });

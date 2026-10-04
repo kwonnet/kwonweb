@@ -37,6 +37,9 @@ test('authentication preserves input when switching modes and sends the correct 
   const root = createRoot(document.getElementById('root'));
   try {
     await React.act(async () => root.render(React.createElement(AuthForm)));
+    assert.equal(document.querySelector('input[name="name"]'), null, 'login is the default view');
+    assert.match(document.body.textContent, /Welcome back/);
+    await React.act(async () => document.querySelector('button[type="button"]').click());
     await React.act(async () => {
       fields.name.onChange({ target: { value: 'Ada' } });
       fields.email.onChange({ target: { value: 'ada@example.invalid' } });

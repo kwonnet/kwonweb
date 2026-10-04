@@ -33,7 +33,7 @@ export default function GuestAuthGate({ guest, children }: { guest: boolean; chi
     <div ref={background} inert={open} style={{ display: "contents" }}>{children}</div>
     <Dialog data-guest-auth-dialog open={open} onClose={() => { /* Authentication is required to continue. */ }} aria-labelledby="guest-auth-title" aria-describedby="guest-auth-description"
       maxWidth="xs" fullWidth slotProps={{ paper: { sx: { borderRadius: 3, m: 2, width: "calc(100% - 32px)", maxHeight: "calc(100dvh - 32px)" } } }}>
-      <DialogContent sx={{ p: { xs: 2.5, sm: 4 } }}><AuthForm initialMode={requestedMode ?? mode ?? "signup"} /></DialogContent>
+      <DialogContent sx={{ p: { xs: 2.5, sm: 4 } }}><AuthForm initialMode={requestedMode ?? mode ?? "signin"} /></DialogContent>
     </Dialog>
   </>;
 }

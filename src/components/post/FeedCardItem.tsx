@@ -43,6 +43,7 @@ import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlin
 import { trackUserProfileVisit } from "@/lib/users";
 import Link from "next/link";
 import PostText from "./PostText";
+import { requestGuestLogin } from "@/utils/guest-auth-trigger";
 import { sendPostClick } from "@/lib/posts";
 import { PostMetricAction, PostMetricSource, PostTagMention } from "@/types/post";
 import dynamic from "next/dynamic";
@@ -126,7 +127,7 @@ const FeedCardItem = ({
   };
 
   const sendPostClickLog = (action: PostMetricAction) => {
-    if (user.id !== item?.userId) {
+    if (token && user?.id !== item?.userId) {
       const sessionId = getSessionId();
       sendPostClick(
         {
@@ -142,7 +143,7 @@ const FeedCardItem = ({
   };
 
   const handlePost = (
-    ev: React.MouseEvent<HTMLDivElement | HTMLButtonElement, MouseEvent>
+    ev: React.MouseEvent<HTMLElement, MouseEvent>
   ) => {
     ev.preventDefault();
     ev.stopPropagation();
@@ -156,7 +157,7 @@ const FeedCardItem = ({
   ) => {
     ev.preventDefault();
     ev.stopPropagation();
-    if (user.id !== author.id) {
+    if (token && user?.id !== author.id) {
       const sessionId = getSessionId();
       trackUserProfileVisit(
         { postId: item.id, userId: author.id, sessionId },
@@ -211,7 +212,7 @@ const FeedCardItem = ({
   // handle follower
   const handleFollowUser = (recipientId: string, action: FollowAction) => {
     sendPostClickLog(PostMetricAction[action]);
-    onFollowUserCallback({ senderId: user.id, recipientId, action });
+    onFollowUserCallback({ senderId: user?.id, recipientId, action });
   };
 
   const handleToggleRepost = (
@@ -238,7 +239,7 @@ const FeedCardItem = ({
 
   // check if the current reader is following the post author
   const isFollowed =
-    user.id === item.author.id || item.author.conn.isFollowedByUser;
+    user?.id === item.author.id || item.author.conn.isFollowedByUser;
   const { isFriends } = getUserConnInfo(item?.author?.conn);
   // console.log(item.hasLiked, item.totalLikes, item.id)
   // get tags
@@ -256,6 +257,10 @@ const FeedCardItem = ({
     <Card
       ref={ref}
       className="newsfeed-card"
+      component="article"
+      onClickCapture={token ? undefined : (event) => {
+        event.preventDefault(); event.stopPropagation(); requestGuestLogin();
+      }}
       key={item.id}
       id={item.id}
       elevation={0}
@@ -330,7 +335,7 @@ const FeedCardItem = ({
               variant="body2"
               color="textDisabled"
             >
-              {post?.author?.id === user.id ? "You" : post?.author?.name}{" "}
+              {post?.author?.id === user?.id ? "You" : post?.author?.name}{" "}
               reposted
             </Typography>
           </Stack>
@@ -444,7 +449,7 @@ const FeedCardItem = ({
                   />
                 </IconButton>
               </Tooltip>
-              <PostOptions
+              {token && <PostOptions
                 item={item}
                 handleClose={onCloseOptionsMenu}
                 handleListKeyDown={handleListKeyDown}
@@ -452,7 +457,7 @@ const FeedCardItem = ({
                 anchorRef={anchorMenuRef}
                 handleBookmark={handleBookmark}
                 handleFollowUser={handleFollowUser}
-              />
+              />}
             </Box>
           </Stack>
         </Stack>
@@ -577,7 +582,8 @@ const FeedCardItem = ({
             {item.media.length > 0 && (
               <DisplayFeedMedia
                 post={item}
-                autoPlay={item.media.length === 1}
+                autoPlay={Boolean(token) && item.media.length === 1}
+                preview={Boolean(token)}
               />
             )}
           </Box>

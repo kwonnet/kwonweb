@@ -38,7 +38,7 @@ const ConnectionCard = ({
 
   const badgeColor = useBadgeColor(item?.meta?.color);
 
-  const isCurrentUser = item.id === user.id
+  const isCurrentUser = item.id === user?.id
 
   const { isFriends } = getUserConnInfo(item.conn);
 

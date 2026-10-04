@@ -95,7 +95,7 @@ const FeedMediaItem = memo(
         watchedPct: 0,
         sessionId,
       }
-      if(open && shouldSend && post.userId !== user.id){
+      if(token && open && shouldSend && post.userId !== user?.id){
         sendPostLog(payload, token)
       }
     };

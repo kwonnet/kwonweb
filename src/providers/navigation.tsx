@@ -53,12 +53,12 @@ export const getNavigationItems = (user?: Session["user"]) => {
     },
 
     {
-      segment: `@${user?.username}/network/followers`,
+      segment: user?.username ? `@${user.username}/network/followers` : "?auth=signin&intent=network",
       title: "My Network",
       icon: <PeopleAltOutlinedIcon key={102} />,
     },
     {
-      segment: `@${user?.username}`,
+      segment: user?.username ? `@${user.username}` : "?auth=signin&intent=profile",
       title: "My Profile",
       icon: <PermIdentityOutlinedIcon key={13} />,
     },

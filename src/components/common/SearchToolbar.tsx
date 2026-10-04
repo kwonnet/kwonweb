@@ -5,6 +5,8 @@ import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import SearchVideoCard from './SearchVideoCard';
 import { useNotifications } from "@/providers/NotificationsProvider";
+import { useAuthSession } from "@/hooks";
+import { requestGuestLogin } from "@/utils/guest-auth-trigger";
 import debounce  from 'lodash/debounce';
 // import { searchVideos } from '@/lib/actions/stream';
 
@@ -25,6 +27,7 @@ const initialState: LocalState = {
   message: "",
 };
 const SearchToolbar = () => {
+  const { token } = useAuthSession();
   const [state, setState] = React.useState<LocalState>(initialState);
 
   const notif = useNotifications();
@@ -66,6 +69,7 @@ const SearchToolbar = () => {
   ).current;
 
   const handleClick = (open: boolean) => {
+    if (!token) { requestGuestLogin(); return; }
     setState((prev) => ({ ...prev, open }));
   };
 
@@ -74,6 +78,7 @@ const SearchToolbar = () => {
   };
 
   const handleSearch = (text: string) => {
+    if (!token) { requestGuestLogin(); return; }
     setState((prev) => ({ ...prev, searchValue: text }));
     debounceSearch(text);
   };
