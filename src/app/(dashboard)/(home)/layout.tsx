@@ -21,7 +21,7 @@ const Layout = (props: any) => {
         className="page_wrapper"
       >
         {/* <Box sx={{ width: { lg: "65%", md: "65%", sm: "100%", xs: "100%" } }}> */}
-        <Box className="page_content">
+        <Box className="page_content" sx={{ minWidth: 0 }}>
           {/* <TopUserStories /> */}
           <FeedTabNavigation />
           <CreateTopSection />

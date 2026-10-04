@@ -26,13 +26,12 @@ const CreateTopSection = () => {
 
   return (
     <React.Fragment>
-      <Box sx={{ px: 1, my: 1 }}>
+      <Box sx={{ my: 1 }}>
         <Card
           elevation={0}
           sx={[
             (theme) => ({
               p: 2,
-              mb: 1,
               boxShadow: theme.shadows[1],
               ...theme.applyStyles("dark", {
                 boxShadow: theme.shadows[8],
@@ -42,10 +41,10 @@ const CreateTopSection = () => {
         >
           <Stack
             direction={"row"}
-            spacing={0.5}
+            spacing={1}
             sx={{
               alignItems: "center",
-              pb: 1
+              pb: 0
             }}>
             <Link href={user?.username ? `/@${user.username}` : "/?auth=signin"} style={{textDecoration: "none"}}>
               <Avatar src={user?.avatar!} alt={user?.name}>

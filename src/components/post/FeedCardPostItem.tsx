@@ -267,7 +267,7 @@ const FeedCardPostItem = ({
           mb: 1,
           pt: 0,
           pb: 0,
-          p: 1,
+          p: 0,
           cursor: "pointer",
           boxShadow: theme.shadows[1],
           ...theme.applyStyles("dark", {
@@ -285,18 +285,15 @@ const FeedCardPostItem = ({
     >
       <CardContent
         sx={{
+          p: 2,
           maxWidth: "100%",
-          "&:last-child": { pb: 0 },
-          mt: 0,
-          ml: 0,
-          mr: 0,
-          p: 1,
-          
+          minWidth: 0,
+          "&:last-child": { pb: 2 },
         }}
         suppressHydrationWarning
       >
         {post.kind === PostKind.REPOST && (
-          <Stack direction={"row"} sx={{ alignItems: "center", ml: 3 }}>
+          <Stack direction={"row"} sx={{ alignItems: "center", gap: 0.5, mb: 1 }}>
             <RepeatOutlinedIcon
               sx={{
                 height: 14,
@@ -310,8 +307,8 @@ const FeedCardPostItem = ({
                 fontFamily: "PlayFair",
                 position: "relative",
                 display: "block",
-                py: -2,
-                my: -2,
+                py: 0,
+                my: 0,
               }}
               variant="body2"
               color="textDisabled"
@@ -321,7 +318,7 @@ const FeedCardPostItem = ({
             </Typography>
           </Stack>
         )}
-        <Stack direction={"row"} sx={{ maxWidth: "100%" }}>
+        <Stack direction={"row"} sx={{ maxWidth: "100%", gap: 1, minWidth: 0, mb: 1 }}>
           <Box>
             <Badge
               overlap="circular"
@@ -369,7 +366,8 @@ const FeedCardPostItem = ({
             sx={{
               justifyContent: "space-between",
               alignItems: "center",
-              width: "100%",
+              flex: 1,
+              minWidth: 0,
             }}
           >
             <Stack onClick={(ev) => trackProfileVisit(ev, item.author)}>
@@ -384,8 +382,8 @@ const FeedCardPostItem = ({
                 sx={{
                   position: "relative",
                   alignItems: "center",
-                  mt: -1,
-                  pt: -2,
+                  mt: 0,
+                  pt: 0,
                 }}
                 spacing={0.3}
               >
@@ -452,7 +450,7 @@ const FeedCardPostItem = ({
             pt: 0,
             pb: 0,
             mb: 0,
-            px: 1,
+            px: 0,
             width: "100%",
             position: "relative",
           }}

@@ -23,8 +23,8 @@ const FeedSkeleton = ({rows = 3, items = 6, height = 200}: {rows?:number; height
         >
           <Stack direction={"row"} sx={{ justifyContent: "space-between", p: 2 }}>
             <Stack direction={"row"} sx={{ alignItems: "center" }}>
-              <Skeleton variant="circular" width={50} height={50} />
-              <Stack sx={{ ml: 2 }}>
+              <Skeleton variant="circular" width={45} height={45} />
+              <Stack sx={{ ml: 1 }}>
                 <Skeleton variant="text" width={120} height={20} />
                 <Skeleton variant="text" width={80} height={15} />
               </Stack>
