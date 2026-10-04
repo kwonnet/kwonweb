@@ -1,13 +1,16 @@
+// Keep environment lookup dynamic: Next.js otherwise embeds NEXT_PUBLIC values
+// during the build, which can differ from the deployed container's origin.
+function runtimeEnv(name: string): string | undefined { return process.env[name]; }
+
 /** Use the deployed public origin rather than Docker's listening address. */
 export function authOrigin(fallback: string): string {
-  const key = "NEXT_PUBLIC_APP_URL";
-  return new URL(process.env[key] || fallback).origin;
+  return new URL(runtimeEnv("NEXT_PUBLIC_APP_URL") || fallback).origin;
 }
 
 /** Auth.js expects AUTH_URL internally; derive it from our single public setting. */
 export function configureAuthOrigin(): void {
-  const key = "NEXT_PUBLIC_APP_URL";
-  if (process.env[key]) process.env.AUTH_URL = authOrigin(process.env[key]!);
+  const origin = runtimeEnv("NEXT_PUBLIC_APP_URL");
+  if (origin) process.env.AUTH_URL = authOrigin(origin);
 }
 
 /** Callback URLs are untrusted input, including old callback cookies. */

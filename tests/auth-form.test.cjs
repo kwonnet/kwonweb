@@ -13,6 +13,7 @@ test('authentication preserves input when switching modes and sends the correct 
   let form, resolveSignIn;
   const element = ({ children }) => React.createElement('div', null, children);
   const mocks = {
+    '@/lib/account-actions': { rememberCurrentAccount: async () => {} },
     '@mui/material': {
       Box: props => { form = props; return React.createElement('form', { onSubmit: props.onSubmit }, props.children); },
       Stack: element, Typography: element, Alert: element,

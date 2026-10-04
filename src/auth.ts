@@ -1,3 +1,8 @@
+import { headers } from "next/headers";
+import type { NextRequest } from "next/server";
+import { ACTIVE_SESSION_COOKIE, ACCOUNT_MAX_AGE, cookieValue, logoutTime, sessionLoginTime, sessionWasLoggedOut } from "./lib/account-session-policy";
+import { getToken } from "next-auth/jwt";
+import { readSavedAccounts } from "./lib/saved-accounts";
 import { shouldRefreshAccessToken } from "./lib/auth-refresh-policy";
 import NextAuth, { CredentialsSignin, type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
@@ -49,13 +54,40 @@ class NextAuthError extends CredentialsSignin {
 
 configureAuthOrigin();
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const authRuntime = NextAuth(async request => {
+  const requestHeaders = request?.headers ?? await headers();
+  const loggedOutAt = logoutTime(requestHeaders.get("cookie"));
+  const activeGeneration = cookieValue(requestHeaders.get("cookie"), ACTIVE_SESSION_COOKIE);
+  const secure = new URL(process.env.AUTH_URL || request?.url || "http://localhost").protocol === "https:";
+  return {
+  useSecureCookies: secure,
   session: {
     strategy: "jwt",
     // maxAge: 5 * 60
   },
   secret: process.env.AUTH_SECRET,
   providers: [
+    Credentials({
+      id: "saved-account",
+      credentials: { accountId: { type: "text" } },
+      async authorize(credentials, request) {
+        const cookieHeader = request.headers.get("cookie") || "";
+        const jar = { getAll: () => cookieHeader.split(";").map(part => {
+          const index = part.indexOf("=");
+          return { name: part.slice(0, index).trim(), value: part.slice(index + 1).trim() };
+        }) };
+        const account = (await readSavedAccounts(jar, secure)).find(account => account.id === credentials.accountId);
+        if (!account) throw new NextAuthError("Please log in to this account again.");
+        const response = await fetch(`${apiUrl}/auth/refresh-token`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: account.accessToken }), signal: AbortSignal.timeout(8000), cache: "no-store",
+        });
+        if (!response.ok) throw new NextAuthError("Please log in to this account again.");
+        const { user, accessToken } = await response.json();
+        if (user?.id !== account.id || typeof accessToken !== "string") throw new NextAuthError("Please log in to this account again.");
+        return { ...user, image: user.avatar, accessToken };
+      },
+    }),
     Credentials({
       id: "credentials-up",
       name: "Credentials",
@@ -154,9 +186,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async jwt({ token, user, trigger }) {
       if (token && user) {
+        token.sessionIssuedAt = Date.now();
+        token.sessionGeneration = crypto.randomUUID();
         token.user = user;
         token.accessTokenRefreshedAt = Date.now();
       }
+      if (!user && sessionWasLoggedOut(token, loggedOutAt)) return null;
+      if (!user && activeGeneration && token.sessionGeneration !== activeGeneration) return null;
+      token.sessionIssuedAt ??= sessionLoginTime(token);
       if (token && !user && (trigger === "update" || shouldRefreshAccessToken(
         (token.user as { accessToken?: string } | undefined)?.accessToken, token.accessTokenRefreshedAt
       ))) {
@@ -191,4 +228,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: "/auth/signin",
   },
+};
 });
+
+export const { auth, signIn, signOut } = authRuntime;
+export const handlers = {
+  GET: authRuntime.handlers.GET,
+  async POST(request: NextRequest) {
+    const response = await authRuntime.handlers.POST(request);
+    if (new URL(request.url).pathname.startsWith("/api/auth/callback/")) {
+      // A late refresh from the previous account cannot become the active identity.
+      const cookieName = new URL(authOrigin(request.url)).protocol === "https:" ? "__Secure-authjs.session-token" : "authjs.session-token";
+      const cookieHeader = response.headers.getSetCookie().map(cookie => cookie.split(";")[0]).join("; ");
+      const token = await getToken({ req: new Request(request.url, { headers: { cookie: cookieHeader } }), secret: process.env.AUTH_SECRET, cookieName, salt: cookieName });
+      if (typeof token?.sessionGeneration === "string") {
+        response.headers.append("Set-Cookie", `${ACTIVE_SESSION_COOKIE}=${token.sessionGeneration}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${ACCOUNT_MAX_AGE}${cookieName.startsWith("__Secure-") ? "; Secure" : ""}`);
+      }
+    }
+    return response;
+  },
+};

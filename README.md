@@ -157,3 +157,19 @@ for this local check. Supply all enabled feature configuration, including the
 server-only Cloudflare R2 and Stream settings documented in `docs/`.
 Run regression checks with `npm test`.
 Cloud Run deployment images must target `linux/amd64`; Cloud Build handles this.
+
+### Logout and multiple accounts
+
+The account menu lists real accounts saved on this device, with a maximum of five.
+“Add another account” opens a login form; selecting a saved account starts a fresh
+verified session and reloads the page to clear the previous account's private data
+and sockets. Expired saved API credentials require logging in again.
+
+Saved account credentials are encrypted using `AUTH_SECRET` in HttpOnly cookies;
+passwords are never saved. Signing out clears current and legacy session cookies,
+invalidates late session refreshes, and removes the current saved account. Other
+saved accounts remain available after an explicit login; logout does not select
+another account automatically. Keep `NEXT_PUBLIC_APP_URL` set to the actual public
+origin. No new environment variables or database migration are required.
+
+Deploy kwonserver first (bearer identity priority and `/auth/logout`), then kwonweb.
