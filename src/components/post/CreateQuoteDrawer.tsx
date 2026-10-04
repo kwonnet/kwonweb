@@ -643,8 +643,9 @@ export default function CreateQuoteDrawer({
             zIndex: 999999,
           }}
           open={open}
-          onClose={(ev) => {
-            if (state.loading) return;
+          onClose={(ev, reason) => {
+            // A click outside the composer must not discard a draft.
+            if (state.loading || reason === "backdropClick") return;
             setState(initialState);
             videoUploads.reset();
             toggleDrawer(ev, false);

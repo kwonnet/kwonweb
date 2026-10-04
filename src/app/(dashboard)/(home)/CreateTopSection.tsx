@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 const CreatePostDrawer = dynamic(() => import("@/components/post/CreatePostDrawer"), { ssr: false });
 import { useAuthSession } from "@/hooks";
 import { FeedTypeEnum } from "@/types/post";
-import { Avatar, Box, Card, Stack, TextField } from "@mui/material";
+import { Avatar, Box, Button, Card, Stack, TextField } from "@mui/material";
 import Link from "next/link";
 import React, { useState } from "react";
 
@@ -20,6 +20,13 @@ const CreateTopSection = () => {
     ev.preventDefault();
     setState((prev) => ({ ...prev, isOpen: open, hasOpened: true }));
   };
+
+  if (!user?.id) return <Box sx={{ px: 1, my: 2 }}>
+    <Card elevation={0} sx={{ p: 2 }}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+      <Avatar />
+      <Button href="/?auth=signup" fullWidth variant="outlined" sx={{ borderRadius: 5, justifyContent: "flex-start", color: "text.secondary" }}>What’s happening?</Button>
+    </Stack></Card>
+  </Box>;
 
   return (
     <React.Fragment>

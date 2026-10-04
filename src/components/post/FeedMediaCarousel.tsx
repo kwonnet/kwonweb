@@ -38,7 +38,8 @@ const FeedMediaCarousel = ({
           ref={sliderRef}
           {...{
             autoplay: false,
-            infinite: true,
+            // Cloned slides would mount extra players for the same video.
+            infinite: !media.some(item => item.fileType.startsWith("video")),
             speed: 500,
             slidesToShow: 1,
             slidesToScroll: 1,

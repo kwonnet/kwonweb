@@ -28,6 +28,18 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Continuous integration
+
+[Kwonweb CI](.github/workflows/ci.yml) runs on every push (all branches and tags),
+on pull requests, and manually from GitHub's **Actions** tab. It uses the Node
+version in `.nvmrc`, caches npm downloads, installs with `npm ci`, and runs the
+full test suite, TypeScript checks, lint, and a production build. A failing step
+fails the check; existing lint warnings do not fail it.
+
+No repository secrets or live services are required. The workflow validates
+changes but does not deploy them. To require passing CI before merging, select
+the **Tests and build** check in the branch's GitHub ruleset/branch protection.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
@@ -49,6 +61,22 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 Post, quote and reply images use Cloudflare R2 through an authenticated Next.js
 upload endpoint. See [R2 setup](docs/r2-uploads.md) for environment variables,
 bucket configuration and upload limits.
+
+## Guest homepage and authentication
+
+Visitors can open `/` and see a server-rendered preview of real public posts.
+The centered login/signup dialog opens after 10 seconds, scrolling down, or the
+first click/tap. It cannot be dismissed with Escape or a backdrop click. Login
+refreshes the server session and returns to the originally requested safe URL.
+Other feeds, private pages, uploads and post actions still require authentication.
+
+Deploy **kwonserver before kwonweb** for this feature: the frontend reads
+`GET /api/v1/posts/preview` from the existing `NEXT_PUBLIC_API_URL`. No new
+environment variables or database migrations are needed. The endpoint returns
+at most 12 published public root posts from active public accounts, with a small
+field projection; private/restricted posts, polls, quizzes and personalized data
+are excluded. It rechecks visibility on every request rather than sharing a
+cached personalized feed. Guest videos show posters until authentication.
 
 ## Google Cloud Run
 

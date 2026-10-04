@@ -136,7 +136,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const isLoggedIn = !!session?.user;
       const isPublicPage = nextUrl.pathname.startsWith("/public");
 
-      if (isPublicPage || isLoggedIn || nextUrl.pathname === "/auth/signin") {
+      if (isPublicPage || isLoggedIn || nextUrl.pathname === "/" || nextUrl.pathname === "/auth/signin") {
         return true;
       }
 

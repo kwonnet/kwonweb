@@ -13,6 +13,7 @@ const getQuery = (session: Session | null) => {
 }
 const SidebarTrendServer = async () => {
   const session = await getServerSession();
+  if (!session?.user?.accessToken) return null;
   const query = getQuery(session)
   const result = await fetch(`${apiUrl}/discover/trend?${query}`, {
     cache: "no-store",

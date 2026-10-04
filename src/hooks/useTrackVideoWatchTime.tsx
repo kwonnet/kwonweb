@@ -29,9 +29,15 @@ const useTrackVideoWatchTime = (
 
   const hasEndedLogged = useRef(false);
 
+  useEffect(() => {
+    watchTimeRef.current = 0;
+    triggeredMilestones.current.clear();
+    hasEndedLogged.current = false;
+  }, [args.mediaId, args.postId]);
+
   // Common video watch milestones
   useEffect(() => {
-    if (!inView || args.isCurrentUser) return;
+    if (!token || !inView || args.isCurrentUser) return;
 
     const sessionId = getSessionId();
     const player = playerRef.current;
@@ -43,16 +49,17 @@ const useTrackVideoWatchTime = (
     let intervalId: NodeJS.Timeout;
 
     const calSessionDuration = (reset?: boolean) => {
-      if (sessionStartTime) {
+      if (sessionStartTime !== null) {
         const sessionEnd = Date.now();
         watchTimeRef.current += (sessionEnd - sessionStartTime) / 1000;
+        sessionStartTime = sessionEnd;
       }
       if (reset) sessionStartTime = null;
       return Number(watchTimeRef.current.toFixed(2));
     };
 
     const onPlay = () => {
-      sessionStartTime = Date.now();
+      if (sessionStartTime === null) sessionStartTime = Date.now();
     };
 
     const onPause = () => {
@@ -117,6 +124,7 @@ const useTrackVideoWatchTime = (
     }, 5000);
 
     return () => {
+      calSessionDuration(true);
       player.removeEventListener("play", onPlay);
       player.removeEventListener("pause", onPause);
       player.removeEventListener("ended", onEnded);

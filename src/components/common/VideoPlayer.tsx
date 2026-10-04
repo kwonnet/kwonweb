@@ -5,7 +5,7 @@ import {
   PlyrLayout,
   plyrLayoutIcons,
 } from "@vidstack/react/player/layouts/plyr";
-import { GoogleCastButton, useMediaStore } from "@vidstack/react";
+import { GoogleCastButton, useMediaState } from "@vidstack/react";
 import { Tooltip } from "@vidstack/react";
 import { ChromecastIcon } from "@vidstack/react/icons";
 
@@ -18,7 +18,7 @@ import {
 
 import { FeedPost, PostMedia } from "@/types";
 import { genVideoUrlInfo, getPostUrl, getSessionId, shouldSendLog } from "@/utils";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   IconButton,
@@ -42,7 +42,7 @@ import { createVideoPlayback } from "@/utils/video-playback-controller";
 const trackVideoImpression = (postId: string, mediaId: string, token?: string) => {
 
   const sessionId = getSessionId();
-  const shouldSend = shouldSendLog(mediaId, "MEDIA_IMAGE_IMPRESSION", 5)
+  const shouldSend = shouldSendLog(mediaId, "MEDIA_VIDEO_IMPRESSION", 5)
   const payload: PostMediaLog = {
     action: PostMediaAction.VIEW,
     kind: PostMediaKind.VIDEO,
@@ -55,7 +55,6 @@ const trackVideoImpression = (postId: string, mediaId: string, token?: string) =
     watchedPct: 0,
     sessionId,
   };
-  console.log("sending video view... ", shouldSend)
   shouldSend && sendPostLog(payload, token);
   
 }
@@ -70,7 +69,7 @@ const VideoPlayer = ({
   item: PostMedia;
   autoPlay?: boolean;
   muted?: boolean;
-  post: FeedPost;
+  post: Pick<FeedPost, "id" | "userId"> & { author: { username: string } };
   height?: number;
 }) => {
   const { hlsUrl, poster } = genVideoUrlInfo(
@@ -89,7 +88,7 @@ const VideoPlayer = ({
 
   const notif = useNotifications();
   const playerRef = useRef<MediaPlayerInstance>(null);
-  const { canPlay } = useMediaStore(playerRef);
+  const canPlay = useMediaState("canPlay", playerRef);
   const playbackRef = useRef<ReturnType<typeof createVideoPlayback> | null>(null);
 
   const [isLoop, setIsLoop] = useState(false);
@@ -103,36 +102,29 @@ const VideoPlayer = ({
   const [playbackError, setPlaybackError] = useState(false);
 
   useEffect(() => {
-    // const { duration } = playerRef.current!.state
-    const id = item.fileId.slice(-10);
-    const storeKey = `${id}_lwt`;
-    const storedTime = localStorage.getItem(storeKey);
-    if (storedTime) {
-      playerRef.current!.currentTime = parseFloat(storedTime);
-    }
-    // Subscribe for updates without triggering renders.
-    let lastSavedTime = parseFloat(storedTime || "0");
-    const unsubscribe = playerRef.current!.subscribe(({ currentTime, duration, paused, ended }) => {
-      if(ended || (currentTime >= duration && currentTime > 0)){
-        localStorage.removeItem(storeKey);
-        lastSavedTime = 0
+    const player = playerRef.current;
+    if (!player) return;
+    const storeKey = `video:${item.fileId}:time`;
+    let lastSavedTime = 0;
+    // Storage can be unavailable in private browsing. It must never break playback.
+    try {
+      const storedTime = Number(localStorage.getItem(storeKey));
+      if (Number.isFinite(storedTime) && storedTime > 0) {
+        player.currentTime = storedTime;
+        lastSavedTime = storedTime;
       }
-      else if (paused && currentTime !== duration && currentTime > 0) {
-        localStorage.setItem(storeKey, currentTime.toString());
-        lastSavedTime = currentTime;
-      } 
-      // else if (currentTime >= duration && currentTime > 0) {
-      //   localStorage.removeItem(storeKey);
-      // } 
-      else {
-        if (Math.abs(currentTime - lastSavedTime) >= 3 && currentTime > 0) {
-          localStorage.setItem(storeKey, currentTime.toString());
+    } catch {}
+    return player.subscribe(({ currentTime, duration, paused, ended }) => {
+      try {
+        if (ended || (duration > 0 && currentTime >= duration)) {
+          localStorage.removeItem(storeKey);
+          lastSavedTime = 0;
+        } else if (currentTime > 0 && (paused || Math.abs(currentTime - lastSavedTime) >= 3)) {
+          localStorage.setItem(storeKey, String(currentTime));
           lastSavedTime = currentTime;
         }
-      }
+      } catch {}
     });
-    
-    return unsubscribe;
   }, [item.fileId]);
 
   useEffect(() => {
@@ -157,7 +149,7 @@ const VideoPlayer = ({
 
   // Analytics and authentication changes must not trigger playback.
   useEffect(() => {
-    if (inView && !isCurrentUser) {
+    if (token && inView && !isCurrentUser) {
       trackVideoImpression(post.id, item.id, token);
     }
   }, [inView, isCurrentUser, post.id, item.id, token]);
@@ -168,6 +160,12 @@ const VideoPlayer = ({
     mediaId: item.id,
     isCurrentUser,
   })
+
+  // Stable callback: a changing ref detaches both observers and toggles visibility.
+  const setVisibilityNode = useCallback((node: HTMLDivElement | null) => {
+    intersectionRef(node);
+    watchRef(node);
+  }, [intersectionRef, watchRef]);
 
   const handleContextMenu = (
     ev: React.MouseEvent<HTMLDivElement, MouseEvent>
@@ -211,10 +209,7 @@ const VideoPlayer = ({
 
     <div
       onClick={(ev) => ev.stopPropagation()}
-      ref={(node) => {
-        intersectionRef(node); // connect both refs
-        watchRef(node)
-      }}
+      ref={setVisibilityNode}
       onContextMenu={handleContextMenu}
     >
       {playbackError && (
@@ -366,4 +361,11 @@ const VideoPlayer = ({
   );
 };
 
-export default memo(VideoPlayer);
+export default memo(VideoPlayer, (previous, next) =>
+  previous.post.id === next.post.id && previous.post.userId === next.post.userId &&
+  previous.post.author.username === next.post.author.username &&
+  previous.item.id === next.item.id && previous.item.fileId === next.item.fileId &&
+  previous.item.url === next.item.url && previous.item.thumbnailUrl === next.item.thumbnailUrl &&
+  previous.item.altText === next.item.altText && previous.height === next.height &&
+  previous.autoPlay === next.autoPlay && previous.muted === next.muted
+);

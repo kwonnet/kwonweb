@@ -1,5 +1,5 @@
 import { getServerSession } from "@/lib/server-session";
-import ErrorMessage from "@/components/common/ErrorMessage";
+import { Box, Button, Paper, Typography } from "@mui/material";
 import { apiUrl } from '@/config';
 import React from 'react'
 import ConnectionClient from './ConnectionClient';
@@ -12,7 +12,11 @@ const ConnectionServer = async() => {
 
   const session = await getServerSession();
 
-  if (!session) return <ErrorMessage message="Error: Can't serve request" />;
+  if (!session?.user?.accessToken) return <Paper sx={{ p: 3, mt: 2 }}>
+    <Typography variant="h6" sx={{ fontWeight: 700 }}>Find your community</Typography>
+    <Typography color="text.secondary" sx={{ my: 1 }}>Follow creators, share what matters to you, and discover something new.</Typography>
+    <Box sx={{ mt: 2 }}><Button href="/?auth=signup" variant="contained" fullWidth>Join Kwonnet</Button></Box>
+  </Paper>;
 
   const result = await fetch(`${apiUrl}/users/connections/?type=${ConnTypeEnum.POPULAR_CREATORS}&d=${date.getTime()}&limit=3`, {
     method: "GET",

@@ -201,7 +201,14 @@ const ContentEditor = ({
             }}
           >
             <IconButton size="small" aria-label="Choose emoji" onMouseDown={event => event.preventDefault()} onClick={event => setEmojiAnchor(event.currentTarget)}><EmojiEmotionsOutlinedIcon fontSize="small" /></IconButton>
-            <Popover open={Boolean(emojiAnchor)} anchorEl={emojiAnchor} onClose={() => setEmojiAnchor(null)} disableRestoreFocus anchorOrigin={{ vertical: "bottom", horizontal: "right" }} transformOrigin={{ vertical: "top", horizontal: "right" }}>
+            <Popover
+              // Portal into the owning dialog so its stacking context and focus scope
+              // also contain the picker (post, reply, quote and nested previews).
+              container={emojiAnchor?.closest<HTMLElement>('[role="dialog"]') ?? undefined}
+              sx={{ zIndex: (theme) => theme.zIndex.modal + 1 }}
+              onClick={event => event.stopPropagation()}
+              slotProps={{ paper: { sx: { maxWidth: "calc(100vw - 32px)", maxHeight: "min(450px, 70dvh)", overflow: "auto" } } }}
+              open={Boolean(emojiAnchor)} anchorEl={emojiAnchor} onClose={() => setEmojiAnchor(null)} disableRestoreFocus anchorOrigin={{ vertical: "bottom", horizontal: "right" }} transformOrigin={{ vertical: "top", horizontal: "right" }}>
               {emojiAnchor && <EmojiPicker onEmojiClick={(data: EmojiClickData) => {
                 const updated = Modifier.replaceText(editorState.getCurrentContent(), editorState.getSelection(), data.emoji, editorState.getCurrentInlineStyle());
                 const next = EditorState.push(editorState, updated, "insert-characters");

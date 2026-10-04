@@ -36,6 +36,11 @@ const CustomToolbarActions = (props: {
     mutate();
   }
 
+  if (!token) return <Stack direction="row" spacing={1}>
+    <Button href="/?auth=signin" data-auth-mode="signin">Log in</Button>
+    <Button href="/?auth=signup" data-auth-mode="signup" variant="contained" sx={{ borderRadius: 5 }}>Sign up</Button>
+  </Stack>;
+
   return (
     <React.Fragment>
       <Stack
