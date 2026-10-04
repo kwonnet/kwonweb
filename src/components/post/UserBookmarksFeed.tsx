@@ -1,13 +1,13 @@
 "use client";
+import { useNotifications } from "@toolpad/core";
+import usePostInteractions from "@/hooks/usePostInteractions";
+import useFeedCacheMutate from "@/hooks/useFeedCacheMutate";
 import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import { CircularProgress, Typography } from "@mui/material";
 import {
-  bookmarkPost,
   getNewsfeed,
-  postReaction,
   shareFeedPost,
-  updateRePost,
 } from "@/lib/posts";
 import { getErrorMessage, getSessionId } from "@/utils";
 import FeedSocialShare from "./FeedSocialShare";
@@ -37,6 +37,7 @@ const PAGE_SIZE = 21
 const UserBookmarksFeed = ({ posts, userId }: { posts: FeedPost[], userId: string }) => {
 
   const { token, user } = useAuthSession();
+  const notifications = useNotifications();
 
   const [state, setState] = useState<LocalState>({
     open: false,
@@ -51,6 +52,7 @@ const UserBookmarksFeed = ({ posts, userId }: { posts: FeedPost[], userId: strin
     if (pageIndex !== 0 && previousPageData && !previousPageData.length)
       return null; // Stop when no more data
     return {
+      viewerId: user.id,
       type: `${userId}_bookmarks_posts`,
       limit: PAGE_SIZE,
       page: pageIndex + 1,
@@ -59,13 +61,15 @@ const UserBookmarksFeed = ({ posts, userId }: { posts: FeedPost[], userId: strin
     };
   };
 
-  const { data, error, isLoading, mutate, setSize } =
+  const { data, error, isLoading, mutate: mutatePages, setSize } =
     useSWRInfinite(getKey, (args) => getUserPostsFeed(args, token), {
-      keepPreviousData: true,
+      keepPreviousData: false,
       refreshWhenOffline: false,
       revalidateOnReconnect: true,
       fallbackData: [posts],
     });
+
+  const mutate = useFeedCacheMutate(mutatePages, data);
 
   const flatData = data ? data?.flat() : [];
 
@@ -78,42 +82,10 @@ const UserBookmarksFeed = ({ posts, userId }: { posts: FeedPost[], userId: strin
   // feed cache update
   const { mutatePostLikes, mutatePostBookmarks, mutatePostQuotes, mutatePostShares, mutatePostReposts, mutatePostAuthor } = useFeedCacheUpdater(mutate)
 
+  const { handleReaction, handleBookmark, handleRepost } = usePostInteractions(user.id, token, { mutatePostLikes, mutatePostBookmarks, mutatePostReposts }, mutate);
+
   // listen to sse streams
-  usePostSseListeners(user, mutate, undefined, true)
-
-
-  const handleReaction = async (
-    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-    id: string,
-    hasLiked: boolean
-  ) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    // handle local update
-    mutatePostLikes({ id, liked: hasLiked });
-    await postReaction(id, token);
-  };
-
-  const handleBookmark = async (
-    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-    id: string,
-    hasSaved: boolean
-  ) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    // handle local update
-    mutatePostBookmarks({ id, saved: hasSaved });
-    // api update
-    await bookmarkPost(id, token);
-  };
-
-  const handleRepost = async (ev: any, id: string, reposted: boolean) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    // handle local update
-    mutatePostReposts({ postId: id, reposted });
-    await updateRePost(id, token);
-  };
+  usePostSseListeners(user, mutate, undefined, true, undefined, data)
 
   const onQuoteCallback = (id: string, quoted: boolean) => {
     mutatePostQuotes({ id, quoted });
@@ -139,7 +111,7 @@ const UserBookmarksFeed = ({ posts, userId }: { posts: FeedPost[], userId: strin
   const handleShare = (ev: any, item: FeedPost) => {
     setState((prev) => ({
       ...prev,
-      url: `${siteUrl}/feed/${item.id}`,
+      url: `${siteUrl}/${item.author.username}/feed/${item.id}`,
       postId: item.id,
     }));
     toggleShareDrawer(ev, true);
@@ -147,10 +119,15 @@ const UserBookmarksFeed = ({ posts, userId }: { posts: FeedPost[], userId: strin
 
   const onSocialClick = async (id: string, kind?: string) => {
     console.log("share post ID ", id);
-    mutatePostShares(id);
+
     const sessionId = getSessionId();
     const payload = {id, kind, sessionId, timestamp: new Date().toISOString()}
-    await shareFeedPost(payload, token);
+    try {
+      await shareFeedPost(payload, token);
+      void mutate();
+    } catch {
+      notifications.show("Could not record the share. Please try again.", { severity: "error", autoHideDuration: 5000 });
+    }
   };
   // follow user
   const onFollowUserCallback = (

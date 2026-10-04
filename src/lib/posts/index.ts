@@ -31,7 +31,7 @@ export const getNewsfeed = cache(async (args:{feed: FeedTypeEnum, limit: number,
 export const postReaction = async (id: string, accessToken?: string) => {
   try {
     axiosAPI.accessToken = accessToken;
-    const result = await axiosAPI.post(`/v1/posts/${id}/reactions`, { id });
+    const result = await axiosAPI.post(`/v1/posts/${id}/reactions`, { id }, { timeout: 15000 });
     return result.data as FeedPost;
   } catch (error: any) {
     throw error
@@ -41,7 +41,7 @@ export const postReaction = async (id: string, accessToken?: string) => {
 export const bookmarkPost = async (id: string, accessToken?: string) => {
   try {
     axiosAPI.accessToken = accessToken;
-    const result = await axiosAPI.post(`/v1/posts/${id}/bookmarks`, { id });
+    const result = await axiosAPI.post(`/v1/posts/${id}/bookmarks`, { id }, { timeout: 15000 });
     return result.data as FeedPost;
   } catch (error: any) {
     throw error
@@ -67,7 +67,7 @@ export const shareFeedPost = async (body: {
 }, accessToken?: string) => {
   try {
     axiosAPI.accessToken = accessToken;
-    const result = await axiosAPI.post(`/v1/posts/${body.id}/shares`, body);
+    const result = await axiosAPI.post(`/v1/posts/${body.id}/shares`, body, { timeout: 15000 });
     return result.data as FeedPost;
   } catch (error: any) {
     console.log("share error ",error)
@@ -78,7 +78,7 @@ export const shareFeedPost = async (body: {
 export const updateRePost = async (id: string, accessToken?: string) => {
   try {
     axiosAPI.accessToken = accessToken;
-    const result = await axiosAPI.post(`/v1/posts/${id}/reposts`, { id });
+    const result = await axiosAPI.post(`/v1/posts/${id}/reposts`, { id }, { timeout: 15000 });
     return result.data as FeedPost;
   } catch (error: any) {
     throw error
@@ -108,7 +108,7 @@ export const createPostReply= async (postId: string, body: PostCreate, accessTok
 export const votePollPost = async (postId: string, optionId: string, accessToken?: string) => {
   try {
     axiosAPI.accessToken = accessToken;
-    const result = await axiosAPI.patch(`/v1/posts/${postId}/poll`, { optionId });
+    const result = await axiosAPI.patch(`/v1/posts/${postId}/poll`, { optionId }, { timeout: 15000 });
     return result.data as FeedPost;
   } catch (error: any) {
     throw error
@@ -118,7 +118,7 @@ export const votePollPost = async (postId: string, optionId: string, accessToken
 export const voteQuizPost = async (postId: string, optionId: string, accessToken?: string) => {
   try {
     axiosAPI.accessToken = accessToken;
-    const result = await axiosAPI.patch(`/v1/posts/${postId}/quiz`, { optionId });
+    const result = await axiosAPI.patch(`/v1/posts/${postId}/quiz`, { optionId }, { timeout: 15000 });
     return result.data as FeedPost;
   } catch (error: any) {
     throw error

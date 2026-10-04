@@ -1,13 +1,13 @@
 "use client";
+import { useNotifications } from "@toolpad/core";
+import usePostInteractions from "@/hooks/usePostInteractions";
+import useFeedCacheMutate from "@/hooks/useFeedCacheMutate";
 import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import { Button, Typography } from "@mui/material";
 import {
-  bookmarkPost,
   getPostReplies,
-  postReaction,
   shareFeedPost,
-  updateRePost,
 } from "@/lib/posts";
 import { getErrorMessage, getSessionId } from "@/utils";
 import { FeedPost } from "@/types";
@@ -44,6 +44,7 @@ const PageClient = ({
   posts: FeedPost[];
 }) => {
   const { token, user } = useAuthSession();
+  const notifications = useNotifications();
 
   const [state, setState] = useState<LocalState>({
     open: false,
@@ -58,6 +59,7 @@ const PageClient = ({
     if (pageIndex !== 0 && previousPageData && !previousPageData.length)
       return null; // Stop when no more data
     return {
+      viewerId: user.id,
       type: "post-hidden-replies",
       id: postId,
       userId: user.id,
@@ -67,12 +69,14 @@ const PageClient = ({
     };
   };
 
-  const { data, error, isLoading, isValidating, size, mutate, setSize } =
+  const { data, error, isLoading, isValidating, size, mutate: mutatePages, setSize } =
     useSWRInfinite(getKey, (args) => getPostReplies(args, token), {
-      keepPreviousData: true,
+      keepPreviousData: false,
       refreshWhenOffline: false,
       fallbackData: posts.length > 0 ? [posts] : undefined,
     });
+
+  const mutate = useFeedCacheMutate(mutatePages, data);
 
   const flatData = data ? data?.flat() : [];
 
@@ -80,45 +84,14 @@ const PageClient = ({
     (data && data[data.length - 1]?.length < PAGE_SIZE) || !!error;
   // feed cache update
   const mutations = useFeedCacheUpdater(mutate);
+  const { handleReaction, handleBookmark, handleRepost } = usePostInteractions(user.id, token, mutations, mutate);
+
   // listen to sse streams
-  usePostSseListeners(user, mutate);
+  usePostSseListeners(user, mutate, undefined, false, undefined, data);
 
   const debouncedLoadMore = debounce(() => {
     setSize((num) => num + 1);
   }, 700);
-
-  const handleReaction = async (
-    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-    id: string,
-    hasLiked: boolean
-  ) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    // handle local update
-    mutations.mutatePostLikes({ id, liked: hasLiked });
-    await postReaction(id, token);
-  };
-
-  const handleBookmark = async (
-    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-    id: string,
-    hasSaved: boolean
-  ) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    // handle local update
-    mutations.mutatePostBookmarks({ id, saved: hasSaved });
-    // api update
-    await bookmarkPost(id, token);
-  };
-
-  const handleRepost = async (ev: any, id: string, reposted: boolean) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    // handle local update
-    mutations.mutatePostReposts({ postId: id, reposted });
-    await updateRePost(id, token);
-  };
 
   const onQuoteCallback = (id: string, quoted: boolean) => {
     mutations.mutatePostQuotes({ id, quoted });
@@ -144,17 +117,22 @@ const PageClient = ({
   const handleShare = (ev: any, item: FeedPost) => {
     setState((prev) => ({
       ...prev,
-      url: `${siteUrl}/feed/${item.id}`,
+      url: `${siteUrl}/${item.author.username}/feed/${item.id}`,
       postId: item.id,
     }));
     toggleShareDrawer(ev, true);
   };
 
   const onSocialClick = async (id: string, kind?: string) => {
-    mutations.mutatePostShares(id);
+
     const sessionId = getSessionId();
     const payload = {id, kind, sessionId, timestamp: new Date().toISOString()}
-    await shareFeedPost(payload, token);
+    try {
+      await shareFeedPost(payload, token);
+      void mutate();
+    } catch {
+      notifications.show("Could not record the share. Please try again.", { severity: "error", autoHideDuration: 5000 });
+    }
   };
   // follow user
   const onFollowUserCallback = (

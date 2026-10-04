@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Box,
   Button,
@@ -12,6 +12,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { useNotifications } from "@toolpad/core";
 import { FeedPost } from "@/types";
 import Link from "next/link";
 import Countdown from "react-countdown";
@@ -34,13 +35,16 @@ const DisplayPollItem = ({
   fullwidth?: boolean;
 }) => {
   const { token, user } = useAuthSession();
+  const notifications = useNotifications();
 
   const [state, setState] = useState<{ selected: string[]; elasped: boolean }>({
     selected: [],
     elasped: false,
   });
 
-  const poll = post?.poll;
+  const [poll, setPoll] = useState(post.poll);
+  const pending = useRef(false);
+  useEffect(() => { if (!pending.current) setPoll(post.poll); }, [post.poll]);
 
   const handleSelect = async (
     ev: React.MouseEvent<HTMLLIElement, MouseEvent>,
@@ -48,13 +52,16 @@ const DisplayPollItem = ({
   ) => {
     ev.preventDefault();
     ev.stopPropagation();
-    setState((prev) => {
-      if (prev.selected.includes(id)) {
-        return { ...prev, selected: prev.selected.filter((el) => el !== id) };
-      }
-      return { ...prev, selected: [...prev.selected, id] };
-    });
-    await votePollPost(post.id, id, token);
+    if (pending.current || !token || !poll || poll.isExpired || state.elasped || !poll.canVote || post.userId === user.id || (!poll.isMultiVote && poll.hasVoted) || poll.options.some(opt => opt.id === id && opt.voters.some(v => v.userId === user.id))) return;
+    pending.current = true;
+    const previous = poll;
+    setState(prev => ({ ...prev, selected: [...prev.selected, id] }));
+    setPoll({ ...poll, hasVoted: true, options: poll.options.map(opt => opt.id === id ? {
+      ...opt, votes: opt.votes + 1, voters: [...opt.voters, { id: `pending-${id}`, userId: user.id, optionId: id } as any]
+    } : opt) });
+    try { await votePollPost(post.id, id, token); }
+    catch { setPoll(previous); setState(prev => ({ ...prev, selected: prev.selected.filter(value => value !== id) })); notifications.show("Could not save your vote. Please try again.", { severity: "error", autoHideDuration: 5000 }); }
+    finally { pending.current = false; }
   };
   if (!poll) return <div />;
 
@@ -77,10 +84,10 @@ const DisplayPollItem = ({
                 state.selected.includes(item.id) ||
                 poll.isExpired ||
                 isNotVoting ||
-                poll.hasVoted ||
+                (!poll.isMultiVote && poll.hasVoted) ||
                 state.elasped ||
                 isCreator ||
-                item.voters.length > 0
+                item.voters.some(person => person.userId === user.id)
                   ? {}
                   : handleSelect(ev, item.id)
               }
@@ -122,12 +129,12 @@ const DisplayPollItem = ({
               <ListItemButton
                 disabled={
                   state.selected.includes(item.id) ||
-                  poll.hasVoted ||
+                  (!poll.isMultiVote && poll.hasVoted) ||
                   poll.isExpired ||
                   isNotVoting ||
                   state.elasped ||
                   isCreator ||
-                  item.voters.length > 0
+                  item.voters.some(person => person.userId === user.id)
                 }
                 sx={{
                   border: "0.5px solid grey",
@@ -143,9 +150,9 @@ const DisplayPollItem = ({
                       edge="end"
                       color="default"
                       checked={
-                        (poll.isExpired && item.votes > 0) ||
+
                         state.selected.includes(item.id) ||
-                        item.voters.length > 0
+                        item.voters.some(person => person.userId === user.id)
                       }
                       tabIndex={-1}
                       disableRipple
@@ -253,7 +260,7 @@ const DisplayPollItem = ({
               state.elasped ||
               state.selected.includes(item.id) ||
               isCreator ||
-              item.voters.length > 0
+              item.voters.some(person => person.userId === user.id)
                 ? {}
                 : handleSelect(ev, item.id)
             }
@@ -310,9 +317,9 @@ const DisplayPollItem = ({
                   color="default"
                   edge="end"
                   checked={
-                    (poll.isExpired && item.votes > 0) ||
+
                     state.selected.includes(item.id) ||
-                    item.voters.length > 0
+                    item.voters.some(person => person.userId === user.id)
                   }
                   tabIndex={-1}
                   disableRipple

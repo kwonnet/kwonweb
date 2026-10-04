@@ -1,4 +1,7 @@
 "use client";
+import { useNotifications } from "@toolpad/core";
+import usePostInteractions from "@/hooks/usePostInteractions";
+import useFeedCacheMutate from "@/hooks/useFeedCacheMutate";
 import { FeedPost, FeedPostDetail } from "@/types";
 import {
   Avatar,
@@ -21,11 +24,8 @@ import {
   useTrackPostView,
 } from "@/hooks";
 import {
-  bookmarkPost,
   getPostReplies,
-  postReaction,
   shareFeedPost,
-  updateRePost,
 } from "@/lib/posts";
 import FeedCardItem from "./FeedCardItem";
 import ThreadCardItem from "./ThreadCardItem";
@@ -38,6 +38,7 @@ import { debounce } from "lodash";
 // import DisabledVisibleOutlinedIcon from '@mui/icons-material/DisabledVisibleOutlined';
 import SpeakerNotesOffOutlinedIcon from "@mui/icons-material/SpeakerNotesOffOutlined";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FollowAction } from "@/types/user";
 import StickyWrapper from "@/components/common/StickyWrapper";
 import { getSessionId } from "@/utils";
@@ -142,6 +143,8 @@ const PAGE_SIZE = 20;
 
 const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
   const { token, user } = useAuthSession();
+  const notifications = useNotifications();
+  const router = useRouter();
 
   const [state, setState] = useState<LocalState>({
     open: false,
@@ -153,6 +156,7 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
     postId: "",
     feedPost,
   });
+  useEffect(() => { setState(prev => ({ ...prev, feedPost })); }, [feedPost]);
 
   const post = useMemo(() => state.feedPost, [state.feedPost]);
 
@@ -172,6 +176,7 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
     if (pageIndex !== 0 && previousPageData && !previousPageData.length)
       return null; // Stop when no more data
     return {
+      viewerId: user.id,
       type: "post_replies",
       id: activePost.id,
       userId: user.id,
@@ -180,7 +185,7 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
     };
   };
 
-  const { data, error, isLoading, mutate, setSize } = useSWRInfinite(
+  const { data, error, isLoading, mutate: mutatePages, setSize } = useSWRInfinite(
     getKey,
     (args) => getPostReplies(args, token),
     {
@@ -189,6 +194,8 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
     }
   );
 
+  const mutate = useFeedCacheMutate(mutatePages, data);
+
   const postReplies = data ? data?.flat() : [];
 
   const isReachingEnd =
@@ -196,8 +203,10 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
 
   // feed cache update
   const mutations = useFeedCacheUpdater(mutate, setState);
+  const { handleReaction, handleBookmark, handleRepost } = usePostInteractions(user.id, token, mutations, mutate);
+
   // listen to sse streams
-  usePostSseListeners(user, mutate, setState);
+  usePostSseListeners(user, mutate, setState, false, () => router.refresh(), [[state.feedPost], ...(data ?? [])]);
   // track post views
   useTrackPostView(activePost?.id);
 
@@ -214,27 +223,6 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
     setState((prev) => ({ ...prev, isReplyOpen: open }));
   };
   // event handlers
-  const handleReaction = async (
-    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-    id: string,
-    liked: boolean
-  ) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    mutations.mutatePostLikes({ id, liked }, true);
-    await postReaction(id, token);
-  };
-
-  const handleBookmark = async (
-    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-    id: string,
-    saved: boolean
-  ) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    mutations.mutatePostBookmarks({ saved, id }, true);
-    await bookmarkPost(id, token);
-  };
 
   const toggleShareDrawer = (ev: any, open: boolean) => {
     ev.preventDefault();
@@ -267,17 +255,8 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
     });
   };
 
-
   const onQuoteCallback = (id: string, quoted: boolean) => {
     mutations.mutatePostQuotes({ id, quoted });
-  };
-
-  const handleRepost = async (ev: any, postId: string, reposted: boolean) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    // handle local update
-    mutations.mutatePostReposts({ postId, reposted }, true);
-    await updateRePost(postId, token);
   };
 
   const handleReply = (ev: any, item: FeedPost) => {
@@ -292,10 +271,11 @@ const PageClient = ({ post: feedPost }: { post: FeedPostDetail }) => {
   };
 
   const onSocialCallback = async (id: string, kind?: string) => {
-    mutations.mutatePostShares(id);
+
     const sessionId = getSessionId();
     const payload = {id, kind, sessionId, timestamp: new Date().toISOString()}
-    await shareFeedPost(payload, token);
+    try { await shareFeedPost(payload, token); router.refresh(); }
+    catch { notifications.show("Could not record the share. Please try again.", { severity: "error", autoHideDuration: 5000 }); }
   };
 
   const onReplyCallback = (id: string, replied: boolean, reply?: FeedPost) => {

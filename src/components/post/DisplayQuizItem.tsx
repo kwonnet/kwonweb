@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Box,
   Button,
@@ -12,6 +12,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { useNotifications } from "@toolpad/core";
 import { FeedPost } from "@/types";
 import Link from "next/link";
 import Countdown from "react-countdown";
@@ -35,7 +36,7 @@ function updateQuiz(quiz: FeedPost['quiz'], optionId: string, userId: string){
       ? {
           ...opt,
           votes: opt.votes + 1,
-          participants: [{ ...opt, optionId: opt.id, userId }],
+          participants: [...opt.participants, { id: `pending-${opt.id}`, optionId: opt.id, userId, isCorrect: opt.isCorrect } as any],
         }
       : opt
   )} }
@@ -49,6 +50,7 @@ const DisplayQuizItem = ({
   fullwidth?: boolean;
 }) => {
   const { token, user } = useAuthSession();
+  const notifications = useNotifications();
 
   const [state, setState] = useState<{
     elasped: boolean;
@@ -61,6 +63,8 @@ const DisplayQuizItem = ({
   });
 
   const quiz = state.post?.quiz;
+  const pending = useRef(false);
+  useEffect(() => { if (!pending.current) setState(prev => ({ ...prev, post })); }, [post]);
 
   const handleSelect = async (
     ev: React.MouseEvent<HTMLLIElement, MouseEvent>,
@@ -68,17 +72,13 @@ const DisplayQuizItem = ({
   ) => {
     ev.preventDefault();
     ev.stopPropagation();
-    setState((prev) => {
-      return {
-        ...prev,
-        post: {
-          ...prev.post,
-          ...(prev?.post?.quiz && updateQuiz(prev.post.quiz, id, user.id)),
-        },
-      };
-       
-    });
-    await voteQuizPost(post.id, id, token);
+    if (pending.current || !token || !quiz || quiz.hasVoted || quiz.isExpired || state.elasped || !quiz.canVote || post.userId === user.id) return;
+    pending.current = true;
+    const previous = state.post;
+    setState(prev => ({ ...prev, post: { ...prev.post, ...updateQuiz(quiz, id, user.id) } }));
+    try { await voteQuizPost(post.id, id, token); }
+    catch { setState(prev => ({ ...prev, post: previous })); notifications.show("Could not save your answer. Please try again.", { severity: "error", autoHideDuration: 5000 }); }
+    finally { pending.current = false; }
   };
   if (!quiz) return <div />;
 
@@ -106,7 +106,7 @@ const DisplayQuizItem = ({
               quiz.hasVoted ||
               isNotVoting ||
               state.elasped ||
-              item.participants.length > 0 ||
+              item.participants.some(person => person.userId === user.id) ||
               isCreator
                 ? {}
                 : handleSelect(ev, item.id)
@@ -188,7 +188,7 @@ const DisplayQuizItem = ({
                   edge="end"
                   checked={
                     (quiz.isExpired && item.isCorrect) ||
-                    item.participants.length > 0 || (post.userId === user.id && item.isCorrect)
+                    item.participants.some(person => person.userId === user.id) || (post.userId === user.id && item.isCorrect)
                   }
                   tabIndex={-1}
                   disableRipple
@@ -269,7 +269,7 @@ const DisplayQuizItem = ({
                 color="inherit"
                 sx={{ textTransform: "lowercase" }}
                 size="small"
-                href={`/${post?.author?.username}/feed/${post.id}}`}
+                href={`/${post?.author?.username}/feed/${post.id}`}
                 LinkComponent={Link}
               >
                 Show more

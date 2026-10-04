@@ -1,13 +1,14 @@
 "use client";
+import { useNotifications } from "@toolpad/core";
+import usePostInteractions from "@/hooks/usePostInteractions";
+import useFeedCacheMutate from "@/hooks/useFeedCacheMutate";
+import { newsfeedKey } from "@/utils/newsfeed-key";
 import React, { useState, useMemo, useCallback } from "react";
 import Box from "@mui/material/Box";
 import { CircularProgress, Typography } from "@mui/material";
 import {
-  bookmarkPost,
   getNewsfeed,
-  postReaction,
   shareFeedPost,
-  updateRePost,
 } from "@/lib/posts";
 import { getErrorMessage, getSessionId } from "@/utils";
 
@@ -34,11 +35,10 @@ type LocalState = {
   post?: FeedPost;
 };
 
-const PAGE_SIZE = 21
-
 const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }) => {
 
   const { token, user } = useAuthSession();
+  const notifications = useNotifications();
 
   const [state, setState] = useState<LocalState>({
     open: false,
@@ -53,24 +53,20 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
     if (!user?.id || !token) return null;
     if (pageIndex !== 0 && previousPageData && !previousPageData.length)
       return null; // Stop when no more data
-    return {
-      // type: "foryou",
-      userId: user.id,
-      feed,
-      limit: PAGE_SIZE,
-      page: pageIndex + 1,
-    };
+    return newsfeedKey(user.id, feed, pageIndex);
   };
 
-  const { data, error, isLoading, isValidating, size, mutate, setSize } =
+  const { data, error, isLoading, isValidating, size, mutate: mutatePages, setSize } =
     useSWRInfinite(getKey, (args) => getNewsfeed(args, token), {
-      keepPreviousData: true,
+      keepPreviousData: false,
       refreshWhenOffline: false,
       revalidateOnReconnect: true,
       fallbackData: [posts],
-      revalidateOnMount: false,
+      revalidateOnMount: true,
       revalidateFirstPage: false,
     });
+
+  const mutate = useFeedCacheMutate(mutatePages, data);
 
   const flatData = useMemo(() => [...new Map((data ?? [posts]).flat().map(item => [item.id, item])).values()], [data, posts]);
 
@@ -84,42 +80,10 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
   // feed cache update
   const { mutatePostLikes, mutatePostBookmarks, mutatePostQuotes, mutatePostShares, mutatePostReposts, mutatePostAuthor } = useFeedCacheUpdater(mutate)
 
+  const { handleReaction, handleBookmark, handleRepost } = usePostInteractions(user.id, token, { mutatePostLikes, mutatePostBookmarks, mutatePostReposts }, mutate);
+
   // listen to sse streams
-  usePostSseListeners(user, mutate)
-
-
-  const handleReaction = useCallback(async (
-    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-    id: string,
-    hasLiked: boolean
-  ) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    // handle local update
-    mutatePostLikes({ id, liked: hasLiked });
-    await postReaction(id, token);
-  }, [mutatePostLikes, token]);
-
-  const handleBookmark = useCallback(async (
-    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-    id: string,
-    hasSaved: boolean
-  ) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    // handle local update
-    mutatePostBookmarks({ id, saved: hasSaved });
-    // api update
-    await bookmarkPost(id, token);
-  }, [mutatePostBookmarks, token]);
-
-  const handleRepost = useCallback(async (ev: any, id: string, reposted: boolean) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    // handle local update
-    mutatePostReposts({ postId: id, reposted });
-    await updateRePost(id, token);
-  }, [mutatePostReposts, token]);
+  usePostSseListeners(user, mutate, undefined, false, undefined, data)
 
   const onQuoteCallback = useCallback((id: string, quoted: boolean) => {
     mutatePostQuotes({ id, quoted });
@@ -145,7 +109,7 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
   const handleShare = useCallback((ev: any, item: FeedPost) => {
     setState((prev) => ({
       ...prev,
-      url: `${siteUrl}/feed/${item.id}`,
+      url: `${siteUrl}/${item.author.username}/feed/${item.id}`,
       postId: item.id,
     }));
     toggleShareDrawer(ev, true);
@@ -153,11 +117,16 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
 
   const onSocialClick = useCallback(async (id: string, kind?: string) => {
     console.log("share post ID ", id);
-    mutatePostShares(id);
+
     const sessionId = getSessionId();
     const payload = {id, kind, sessionId, timestamp: new Date().toISOString()}
-    await shareFeedPost(payload, token);
-  }, [mutatePostShares, token]);
+    try {
+      await shareFeedPost(payload, token);
+      void mutate();
+    } catch {
+      notifications.show("Could not record the share. Please try again.", { severity: "error", autoHideDuration: 5000 });
+    }
+  }, [mutatePostShares, token, mutate, notifications]);
   // follow user
   const onFollowUserCallback = useCallback((
     args: { senderId: string; recipientId: string; action: FollowAction }

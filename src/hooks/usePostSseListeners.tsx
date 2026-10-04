@@ -1,11 +1,11 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import useFeedMutations from "./useFeedCacheUpdater"; // Adjust the path as needed
 import { useSSEContext } from "@/context/SSEContext";
 import { FeedPost, SwrGenericMutateFunction } from "@/types";
 import { User } from "next-auth";
 import { FollowResponse } from "@/types/user";
-import { usePathname } from "next/navigation";
+import { isReactionPending } from "@/utils/post-reactions";
 
 interface SseEventArgs {
   userId?: string;
@@ -35,13 +35,37 @@ const usePostSseListeners = (
   user: User,
   mutate: SwrGenericMutateFunction<FeedPost>,
   setState?: (value: React.SetStateAction<any>) => void,
-  isProfile?: boolean
+  isProfile?: boolean,
+  onRevalidate?: () => void,
+  visiblePosts?: FeedPost[][]
 ) => {
   const { sseSource } = useSSEContext();
   const mutations = useFeedMutations(mutate, setState);
 
+  const latest = useRef({ mutations, mutate, onRevalidate, visiblePosts, user });
+  latest.current = { mutations, mutate, onRevalidate, visiblePosts, user };
+
+  const userId = user.id;
   useEffect(() => {
     if (!sseSource) return;
+
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    const refresh = () => {
+      if (refreshTimer) return;
+      refreshTimer = setTimeout(() => {
+        refreshTimer = undefined;
+        // Fetch authoritative counts instead of adding replayable SSE deltas.
+        void latest.current.mutate();
+        latest.current.onRevalidate?.();
+      }, 150);
+    };
+    const refreshFor = (id?: string) => {
+      const includes = (post: FeedPost): boolean => post.id === id || (!!post.parent && includes(post.parent));
+      if (id && latest.current.visiblePosts?.flat().some(includes)) refresh();
+    };
+    let opened = sseSource.readyState === EventSource.OPEN;
+    const onOpen = () => { if (opened) refresh(); opened = true; };
+    sseSource.addEventListener("open", onOpen);
 
     const listeners: { event: string; handler: (ev: MessageEvent) => void }[] =
       [
@@ -49,98 +73,64 @@ const usePostSseListeners = (
           event: "post_reaction",
           handler: (ev: MessageEvent) => {
             const arg: SseEventArgs = JSON.parse(ev.data);
-            if (arg.userId !== user.id) {
-              mutations.mutatePostLikes(
-                { id: arg.id!, liked: arg.liked! },
-                false
-              );
-            }
+            if (isReactionPending(`${userId}:like:${arg.id}`) && arg.userId === userId) return;
+            if (arg.userId === userId && typeof arg.liked === "boolean") {
+              latest.current.mutations.mutatePostLikes({ id: arg.id, liked: arg.liked });
+            } else refreshFor(arg.id);
           },
         },
         {
           event: "post_bookmark",
           handler: (ev: MessageEvent) => {
             const arg: SseEventArgs = JSON.parse(ev.data);
-            if (arg.userId !== user.id) {
-              mutations.mutatePostBookmarks(
-                { id: arg.id!, saved: arg.saved! },
-                false
-              );
-            }
+            if (isReactionPending(`${userId}:bookmark:${arg.id}`) && arg.userId === userId) return;
+            if (arg.userId === userId && typeof arg.saved === "boolean") {
+              latest.current.mutations.mutatePostBookmarks({ id: arg.id, saved: arg.saved });
+            } else refreshFor(arg.id);
           },
         },
-        {
-          event: "post_share",
-          handler: (ev: MessageEvent) => {
-            const arg: SseEventArgs = JSON.parse(ev.data);
-            if (arg.userId !== user.id) {
-              mutations.mutatePostShares(arg.id!);
-            }
-          },
-        },
+        { event: "post_share", handler: (ev: MessageEvent) => refreshFor(JSON.parse(ev.data).id) },
         {
           event: "post_repost",
           handler: (ev: MessageEvent) => {
             const arg: SseEventArgs = JSON.parse(ev.data);
-            if (!arg.reposted || arg.userId !== user.id) {
-              mutations.mutatePostReposts(
-                {
-                  childId: arg.id,
-                  postId: arg.postId!,
-                  reposted: arg.reposted!,
-                },
-                false
-              );
-            }
+            if (isReactionPending(`${userId}:repost:${arg.postId}`) && arg.userId === userId) return;
+            if (arg.userId === userId && arg.postId && typeof arg.reposted === "boolean") {
+              latest.current.mutations.mutatePostReposts({ postId: arg.postId, childId: arg.childId, reposted: arg.reposted });
+            } else refreshFor(arg.postId);
           },
         },
-        {
-          event: "post_quote",
-          handler: (ev: MessageEvent) => {
-            const arg: SseEventArgs = JSON.parse(ev.data);
-            if (arg.userId !== user.id) {
-              mutations.mutatePostQuotes({ id: arg.id!, quoted: arg.quoted! });
-            }
-          },
-        },
-        {
-          event: "post_reply",
-          handler: (ev: MessageEvent) => {
-            const arg: SseEventArgs = JSON.parse(ev.data);
-            // if (arg.userId !== user.id) {
-            mutations.mutatePostReplies(arg, user);
-            // }
-          },
-        },
+        { event: "post_quote", handler: (ev: MessageEvent) => refreshFor(JSON.parse(ev.data).id) },
+        { event: "post_reply", handler: (ev: MessageEvent) => refreshFor(JSON.parse(ev.data).id) },
         {
           event: "user_follower",
           handler: (ev: MessageEvent) => {
             const arg: FollowResponse = JSON.parse(ev.data);
-            if (arg.senderId === user.id) {
-              mutations.mutatePostAuthor(arg.recipientId, arg.action);
+            if (arg.senderId === userId) {
+              latest.current.mutations.mutatePostAuthor(arg.recipientId, arg.action);
             }
           },
         },
         {
-          event: `post_not_interested_${user.id}`,
+          event: `post_not_interested_${userId}`,
           handler: (ev: MessageEvent) => {
             const arg: SseEventArgs = JSON.parse(ev.data);
-            if (arg.userId === user.id && !arg.interested) {
-              mutations.mutatePostFilter(arg.id!);
+            if (arg.userId === userId && !arg.interested) {
+              latest.current.mutations.mutatePostFilter(arg.id!);
             }
           },
         },
         {
-          event: `post_report_${user.id}`,
+          event: `post_report_${userId}`,
           handler: (ev: MessageEvent) => {
             const arg: SseEventArgs = JSON.parse(ev.data);
-            if (arg.userId === user.id && !arg.interested) {
-              mutations.mutatePostFilter(arg.id!);
+            if (arg.userId === userId && !arg.interested) {
+              latest.current.mutations.mutatePostFilter(arg.id!);
             }
           },
         },
         {
-          event: `user_blocked_${user.id}`,
+          event: `user_blocked_${userId}`,
           handler: (ev: MessageEvent) => {
             const args:  {
               isBlocked: boolean;
@@ -150,8 +140,8 @@ const usePostSseListeners = (
               blockedId: string;
               blockerId: string;
             } = JSON.parse(ev.data);
-            if (args.blockerId === user.id) {
-              mutations.mutateBlockUser({
+            if (args.blockerId === userId) {
+              latest.current.mutations.mutateBlockUser({
                 blockedId: args.blockedId!,
                 isBlocked: args.isBlocked,
                 isFilter: isProfile ? false : args.isBlocked,
@@ -160,7 +150,7 @@ const usePostSseListeners = (
           },
         },
         {
-          event: `user_muted_${user.id}`,
+          event: `user_muted_${userId}`,
           handler: (ev: MessageEvent) => {
             const args: {
               isMuted: boolean;
@@ -171,8 +161,8 @@ const usePostSseListeners = (
               muterId: string;
             } = JSON.parse(ev.data);
             console.log("user_muted_event ", args)
-            if (args.muterId === user.id) {
-              mutations.mutateMuteUser({
+            if (args.muterId === userId) {
+              latest.current.mutations.mutateMuteUser({
                 mutedId: args.mutedId,
                 isMuted: args.isMuted,
                 isFilter: isProfile ? false : args.isMuted,
@@ -182,12 +172,12 @@ const usePostSseListeners = (
         },
 
         {
-          event: `post_pin_${user.id}`,
+          event: `post_pin_${userId}`,
           handler: (ev: MessageEvent) => {
             const args: { id: string; userId: string; isPinned: boolean } =
               JSON.parse(ev.data);
-            if (args.userId === user.id) {
-              mutations.mutatePostPinAndHighlight({
+            if (args.userId === userId) {
+              latest.current.mutations.mutatePostPinAndHighlight({
                 id: args.id,
                 hasPinned: args.isPinned,
               });
@@ -195,12 +185,12 @@ const usePostSseListeners = (
           },
         },
         {
-          event: `post_highlight_${user.id}`,
+          event: `post_highlight_${userId}`,
           handler: (ev: MessageEvent) => {
             const args: { id: string; userId: string; isHighlighted: boolean } =
               JSON.parse(ev.data);
-            if (args.userId === user.id) {
-              mutations.mutatePostPinAndHighlight({
+            if (args.userId === userId) {
+              latest.current.mutations.mutatePostPinAndHighlight({
                 id: args.id,
                 hasHighlighted: args.isHighlighted,
               });
@@ -211,10 +201,10 @@ const usePostSseListeners = (
           event: "post_delete",
           handler: (ev: MessageEvent) => {
             const arg: SseEventArgs = JSON.parse(ev.data);
-            if (arg.userId === user.id) {
-              mutations.mutatePostFilter(arg.id!);
+            if (arg.userId === userId) {
+              latest.current.mutations.mutatePostFilter(arg.id!);
             } else {
-              mutations.mutateDeletedPost({
+              latest.current.mutations.mutateDeletedPost({
                 id: arg.id!,
                 userId: arg.userId!,
                 deletedAt: arg.deletedAt,
@@ -226,10 +216,10 @@ const usePostSseListeners = (
           event: "post_restore",
           handler: (ev: MessageEvent) => {
             const arg: SseEventArgs = JSON.parse(ev.data);
-            if (arg.userId === user.id) {
-              mutations.mutatePostFilter(arg.id!);
+            if (arg.userId === userId) {
+              latest.current.mutations.mutatePostFilter(arg.id!);
             } else {
-              mutations.mutateDeletedPost({
+              latest.current.mutations.mutateDeletedPost({
                 id: arg.id!,
                 userId: arg.userId!,
                 deletedAt: arg.deletedAt,
@@ -241,7 +231,7 @@ const usePostSseListeners = (
           event: "post_impression",
           handler: (ev: MessageEvent) => {
             const arg: SseEventArgs = JSON.parse(ev.data);
-            mutations.mutatePostImpressions(arg.id!);
+            latest.current.mutations.mutatePostImpressions(arg.id!);
           },
         },
 
@@ -249,22 +239,22 @@ const usePostSseListeners = (
           event: "post_tip",
           handler: (ev: MessageEvent) => {
             const arg: SseEventArgs = JSON.parse(ev.data);
-            mutations.mutatePostTips(arg.id!);
+            latest.current.mutations.mutatePostTips(arg.id!);
           },
         },
         {
           event: "post_view",
           handler: (ev: MessageEvent) => {
             const arg: SseEventArgs = JSON.parse(ev.data);
-            mutations.mutatePostViews(arg.id!);
+            latest.current.mutations.mutatePostViews(arg.id!);
           },
         },
         {
           event: "post_hidden",
           handler: (ev: MessageEvent) => {
             const arg: SseEventArgs = JSON.parse(ev.data);
-            if (arg.userId === user.id) {
-              mutations.mutatePostFilter(arg.id!);
+            if (arg.userId === userId) {
+              latest.current.mutations.mutatePostFilter(arg.id!);
             }
           },
         },
@@ -275,11 +265,13 @@ const usePostSseListeners = (
     });
 
     return () => {
+      clearTimeout(refreshTimer);
+      sseSource.removeEventListener("open", onOpen);
       listeners.forEach(({ event, handler }) => {
         sseSource.removeEventListener(event, handler);
       });
     };
-  }, [sseSource, user, mutations, mutate, isProfile]);
+  }, [sseSource, userId, isProfile]);
 };
 
 export default usePostSseListeners;

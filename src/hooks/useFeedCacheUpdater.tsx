@@ -5,6 +5,7 @@ import { FollowAction, FollowStatus } from "@/types/user";
 import { getFollowStatus } from "@/utils/connections";
 import { User } from "next-auth";
 import { useCallback } from "react";
+import { updateReaction } from "@/utils/post-reactions";
 
 type UpdateFeedData = (feed: FeedPost[]) => FeedPost[];
 
@@ -45,30 +46,8 @@ const useFeedMutations = (
     args: { id: string; liked: boolean },
     local: boolean = true
   ): FeedPost[] => {
-    return feed.map((d) => {
-      if (d.id === args.id) {
-        return {
-          ...d,
-          ...(local && { actions: { ...d.actions, hasLiked: args.liked } }),
-          totalLikes: args.liked ? d.totalLikes + 1 : d.totalLikes - 1,
-        };
-      }
-      if (d.parent && d.parentId === args.id) {
-        return {
-          ...d,
-          parent: {
-            ...d.parent,
-            ...(local && {
-              actions: { ...d.parent.actions, hasLiked: args.liked },
-            }),
-            totalLikes: args.liked
-              ? d.parent.totalLikes + 1
-              : d.parent.totalLikes - 1,
-          },
-        };
-      }
-      return d;
-    });
+    const updated = (feed ?? []).map(post => updateReaction(post, args.id, "like", args.liked, local));
+    return updated;
   };
 
   /**
@@ -80,11 +59,7 @@ const useFeedMutations = (
       mutateData(update);
       if (!setState) return;
       setState((prev: any) => {
-        let feedPost = prev.feedPost;
-        if (args?.id === feedPost?.id) {
-          const _feedPost = updatePostLikes([feedPost], args, local);
-          feedPost = { ...feedPost, ..._feedPost[0] };
-        }
+        const feedPost = updatePostLikes([prev.feedPost], args, local)[0] as FeedPostDetail;
         const thread = updatePostLikes(feedPost?.thread, args, local);
         const replies = updatePostLikes(feedPost?.replies, args, local);
         const parentChain = updatePostLikes(feedPost?.parentChain, args, local);
@@ -114,32 +89,8 @@ const useFeedMutations = (
     args: { id: string; saved: boolean },
     local: boolean = true
   ): FeedPost[] => {
-    return feed.map((d) => {
-      if (d.id === args.id) {
-        return {
-          ...d,
-          ...(local && { actions: { ...d.actions, hasSaved: args.saved } }),
-          totalBookmarks: args.saved
-            ? d.totalBookmarks + 1
-            : d.totalBookmarks - 1,
-        };
-      }
-      if (d.parent && d.parentId === args.id) {
-        return {
-          ...d,
-          parent: {
-            ...d.parent,
-            ...(local && {
-              actions: { ...d.parent.actions, hasSaved: args.saved },
-            }),
-            totalBookmarks: args.saved
-              ? d.parent.totalBookmarks + 1
-              : d.parent.totalBookmarks - 1,
-          },
-        };
-      }
-      return d;
-    });
+    const updated = (feed ?? []).map(post => updateReaction(post, args.id, "bookmark", args.saved, local));
+    return updated;
   };
 
   /**
@@ -152,11 +103,7 @@ const useFeedMutations = (
       mutateData(update);
       if (!setState) return;
       setState((prev: any) => {
-        let feedPost = prev.feedPost;
-        if (args?.id === feedPost?.id) {
-          const _feedPost = updatePostBookmarks([feedPost], args, local);
-          feedPost = { ...feedPost, ..._feedPost[0] };
-        }
+        const feedPost = updatePostBookmarks([prev.feedPost], args, local)[0] as FeedPostDetail;
         const thread = updatePostBookmarks(feedPost?.thread, args, local);
         const replies = updatePostBookmarks(feedPost?.replies, args, local);
         const parentChain = updatePostBookmarks(
@@ -188,7 +135,7 @@ const useFeedMutations = (
     feed: FeedPost[],
     args: { id: string; hasPinned?: boolean; hasHighlighted?: boolean }
   ): FeedPost[] => {
-    return feed.map((d) => {
+    return (feed ?? []).map((d) => {
       if (d.id === args.id) {
         return {
           ...d,
@@ -255,39 +202,8 @@ const useFeedMutations = (
     args: { childId?: string; postId: string; reposted: boolean },
     local: boolean = true
   ): FeedPost[] => {
-    const calc = (val: number) => (val < 1 ? 0 : val);
-    let updated = feed.map((d) => {
-      if (d.id === args.postId) {
-        return {
-          ...d,
-          ...(local && {
-            actions: { ...d.actions, hasReposted: args.reposted },
-          }),
-          totalReposts: args.reposted
-            ? d.totalReposts + 1
-            : calc(d.totalReposts - 1),
-        };
-      }
-      if (d.parent && d.parentId === args.postId) {
-        return {
-          ...d,
-          parent: {
-            ...d.parent,
-            ...(local && {
-              actions: { ...d.parent.actions, hasReposted: args.reposted },
-            }),
-            totalReposts: args.reposted
-              ? d.parent.totalReposts + 1
-              : calc(d.parent.totalReposts - 1),
-          },
-        };
-      }
-      return d;
-    });
-    if (args.childId && !args.reposted) {
-      updated = updated.filter((p) => p.id !== args.childId);
-    }
-    return updated;
+    const updated = (feed ?? []).map(post => updateReaction(post, args.postId, "repost", args.reposted, local));
+    return args.childId && !args.reposted ? updated.filter(post => post.id !== args.childId) : updated;
   };
 
   /**
@@ -300,11 +216,7 @@ const useFeedMutations = (
     ) => {
       if (setState) {
         setState((prev: any) => {
-          let feedPost = prev.feedPost;
-          if (args?.postId === feedPost?.id) {
-            const _feedPost = updatePostReposts([feedPost], args, local);
-            feedPost = { ...feedPost, ..._feedPost[0] };
-          }
+          const feedPost = updatePostReposts([prev.feedPost], args, local)[0] as FeedPostDetail;
           const thread = updatePostReposts(feedPost?.thread, args, local);
           const replies = updatePostReposts(feedPost?.replies, args, local);
           const parentChain = updatePostReposts(
@@ -341,7 +253,7 @@ const useFeedMutations = (
     feed: FeedPost[],
     args: { id: string; quoted: boolean }
   ): FeedPost[] => {
-    return feed.map((d) => {
+    return (feed ?? []).map((d) => {
       if (d.id === args.id) {
         return {
           ...d,
@@ -411,7 +323,7 @@ const useFeedMutations = (
     },
     user?: User
   ): FeedPost[] => {
-    let updated = feed.map((d) => {
+    let updated = (feed ?? []).map((d) => {
       if (d.id === args.id) {
         return {
           ...d,
@@ -512,7 +424,7 @@ const useFeedMutations = (
     feed: FeedPost[],
     args: { id: string; userId: string; deletedAt?: string | Date }
   ): FeedPost[] => {
-    return feed.map((d) => {
+    return (feed ?? []).map((d) => {
       if (d.id === args.id) {
         return { ...d, deletedAt: args.deletedAt };
       }
@@ -620,7 +532,7 @@ const useFeedMutations = (
         (d) => d.author.id !== args.blockedId && d?.parent?.author.id !== args.blockedId
       );
     }else{
-      return feed.map(d => d?.author?.id === args.blockedId ? {...d, actions: {...d?.actions, isBlockedByUser: args.isBlocked}}: d)
+      return (feed ?? []).map(d => d?.author?.id === args.blockedId ? {...d, actions: {...d?.actions, isBlockedByUser: args.isBlocked}}: d)
     }
   };
 
@@ -681,7 +593,7 @@ const useFeedMutations = (
         (d) => d.author.id !== args.mutedId && d?.parent?.author.id !== args.mutedId
       );
     }else{
-      return feed.map(d => d?.author?.id === args.mutedId ? {...d, actions: {...d?.actions, isMutedByUser: args.isMuted}}: d)
+      return (feed ?? []).map(d => d?.author?.id === args.mutedId ? {...d, actions: {...d?.actions, isMutedByUser: args.isMuted}}: d)
     }
   };
 
@@ -734,7 +646,7 @@ const useFeedMutations = (
    * @returns FeedPost[]
    */
   const updatePostShares = (feed: FeedPost[], id: string): FeedPost[] => {
-    return feed.map((d) => {
+    return (feed ?? []).map((d) => {
       if (d.id === id) {
         return { ...d, totalShares: d.totalShares + 1 };
       }
@@ -787,7 +699,7 @@ const useFeedMutations = (
    * @returns FeedPost[]
    */
   const updatePostImpressions = (feed: FeedPost[], id: string): FeedPost[] => {
-    return feed.map((d) => {
+    return (feed ?? []).map((d) => {
       if (d.id === id) {
         return { ...d, totalImpressions: d.totalImpressions + 1 };
       }
@@ -843,7 +755,7 @@ const useFeedMutations = (
    * @returns FeedPost[]
    */
   const updatePostTips = (feed: FeedPost[], id: string): FeedPost[] => {
-    return feed.map((d) => {
+    return (feed ?? []).map((d) => {
       if (d.id === id) {
         return { ...d, totalTips: d.totalTips + 1 };
       }
@@ -899,7 +811,7 @@ const useFeedMutations = (
    * @returns FeedPost[]
    */
   const updatePostViews = (feed: FeedPost[], id: string): FeedPost[] => {
-    return feed.map((d) => {
+    return (feed ?? []).map((d) => {
       if (d.id === id) {
         return { ...d, totalViews: d.totalViews + 1 };
       }
@@ -958,7 +870,7 @@ const useFeedMutations = (
     userId: string,
     action: FollowAction
   ): FeedPost[] => {
-    return feed.map((d) => {
+    return (feed ?? []).map((d) => {
       const conn = getFollowStatus(d.author.conn, d.author.meta, action);
       if (d.userId === userId) {
         return {

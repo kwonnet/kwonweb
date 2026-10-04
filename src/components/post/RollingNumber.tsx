@@ -1,31 +1,12 @@
 import { formatFeedNumber } from '@/utils';
 import { Typography } from '@mui/material';
-import { AnimatePresence, motion } from 'framer-motion';
-import React from 'react'
+import { memo } from 'react';
 
-
-    
-const RollingNumber = ({ number }: { number: number }) => {
-    return (
-      <Typography variant="caption" style={{ display: "block" }}>
-        <AnimatePresence initial={false} mode="wait">
-          <motion.span
-            key={number}
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -20, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            style={{
-              display: "inline-block",
-              position: "absolute",
-              top: 8,
-            }}
-          >
-            {formatFeedNumber(number)}
-          </motion.span>
-        </AnimatePresence>
-      </Typography>
-    );
-}
-
-export default RollingNumber
+// Counts must update in the same paint as the selected state, without waiting
+// for an exit animation or being absolutely positioned over another control.
+const RollingNumber = ({ number }: { number: number }) => (
+  <Typography component="span" variant="caption" sx={{ display: 'inline-block', fontVariantNumeric: 'tabular-nums' }}>
+    {formatFeedNumber(number)}
+  </Typography>
+);
+export default memo(RollingNumber);
