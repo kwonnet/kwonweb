@@ -4,6 +4,7 @@ import { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
 import { useAuthSession } from "@/hooks";
 import { FeedTypeEnum } from "@/types/post";
+import FeedSkeleton from "@/components/post/FeedSkeleton";
 import FeedsDisplay from "@/components/post/FeedsDisplay";
 import { newsfeedKey } from "@/utils/newsfeed-key";
 
@@ -16,5 +17,5 @@ export default function Loading() {
   const feed = Object.values(FeedTypeEnum).includes(segment as FeedTypeEnum) ? segment as FeedTypeEnum : FeedTypeEnum.FORYOU;
   const pages = user?.id ? cache.get(unstable_serialize(index => newsfeedKey(user.id, feed, index)))?.data : undefined;
   if (pages?.length) return <FeedsDisplay posts={pages[0]} feed={feed} />;
-  return <div role="status" aria-label="Loading feed" style={{ padding: 24, opacity: 0.65 }}>Loading your feed…</div>;
+  return <div role="status" aria-label="Loading feed" aria-busy="true"><FeedSkeleton rows={2} height={100} /></div>;
 }

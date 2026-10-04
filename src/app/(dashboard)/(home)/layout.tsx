@@ -1,5 +1,4 @@
 import StickySidebar from "@/components/common/StickySidebar";
-import TopUserStories from "@/components/common/TopUserStories";
 import SidebarTrendServer from "@/components/common/SidebarTrendServer";
 import ConnectionServer from "@/components/sections/ConnectionServer";
 import { Box } from "@mui/material";
@@ -15,7 +14,9 @@ const Layout = (props: any) => {
           flexDirection: "row",
           display: "flex",
           alignItems: "flex-start",
-          gap: 2,
+          gap: { xs: 0, md: 2 },
+          width: "100%",
+          minWidth: 0,
         }}
         className="page_wrapper"
       >

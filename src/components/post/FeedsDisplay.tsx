@@ -3,7 +3,7 @@ import { useNotifications } from "@toolpad/core";
 import usePostInteractions from "@/hooks/usePostInteractions";
 import useFeedCacheMutate from "@/hooks/useFeedCacheMutate";
 import { newsfeedKey } from "@/utils/newsfeed-key";
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Box from "@mui/material/Box";
 import { Button, CircularProgress, Typography } from "@mui/material";
 import {
@@ -21,7 +21,9 @@ import FeedCardItem from "./FeedCardItem";
 import { useAuthSession, useFeedCacheUpdater, useLoadMore, usePostSseListeners } from "@/hooks";
 import { FeedTypeEnum } from "@/types/post";
 import { updateUserFollower } from "@/lib/users";
-import useSWRInfinite from "swr/infinite";
+import useSWRInfinite, { unstable_serialize as serializeInfinite } from "swr/infinite";
+import { useSWRConfig, unstable_serialize } from "swr";
+import { missingFeedEntries } from "@/utils/seed-feed-cache";
 import { FollowAction } from "@/types/user";
 
 type LocalState = {
@@ -39,6 +41,7 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
 
   const { token, user } = useAuthSession();
   const notifications = useNotifications();
+  const { cache, mutate: mutateCache } = useSWRConfig();
 
   const [state, setState] = useState<LocalState>({
     open: false,
@@ -56,17 +59,27 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
     return newsfeedKey(user.id, feed, pageIndex);
   };
 
-  const { data, error, isLoading, isValidating, size, mutate: mutatePages, setSize } =
+  const { data, error, isValidating, size, mutate: mutatePages, setSize } =
     useSWRInfinite(getKey, (args) => getNewsfeed(args, token), {
       keepPreviousData: false,
       refreshWhenOffline: false,
       revalidateOnReconnect: true,
       fallbackData: [posts],
-      revalidateOnMount: true,
+      // The server already fetched this page. Avoid a second recommendation request.
+      revalidateOnMount: false,
       revalidateFirstPage: false,
       revalidateOnFocus: false,
       shouldRetryOnError: false,
     });
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const pageKey = unstable_serialize(newsfeedKey(user.id, feed, 0));
+    const listKey = serializeInfinite(index => newsfeedKey(user.id, feed, index));
+    for (const [key, value] of missingFeedEntries(cache, pageKey, listKey, posts)) {
+      void mutateCache(key, value, { revalidate: false });
+    }
+  }, [cache, mutateCache, user?.id, feed, posts]);
 
   const mutate = useFeedCacheMutate(mutatePages, data);
 
@@ -74,7 +87,7 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
 
   const isReachingEnd = data?.[data.length - 1]?.length === 0;
   // A background refresh must not replace existing cards with a loading state.
-  const loadingPage = !error && (isLoading || !!(data && size > data.length));
+  const loadingPage = !error && !!(data && size > data.length);
   const requestingPage = useRef(false);
   const loadMore = useCallback(async () => {
     if (requestingPage.current || isValidating || loadingPage || isReachingEnd || error) return;

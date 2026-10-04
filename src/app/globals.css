@@ -48,10 +48,12 @@ body {
 /* page layout */
 @media screen and (min-width: 600px) {
   .page_content {
-    width: 65%;
+    flex: 1 1 0;
+    min-width: 0;
   }
   .page__content_sidebar{
-    width: 35%;
+    flex: 0 0 32%;
+    min-width: 0;
     display: block;
   }
   header h6{
@@ -305,4 +307,10 @@ body {
 .newsfeed-card,
 .newsfeed-card * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Keep the feed readable on tablets; sidebars become useful at desktop widths. */
+@media (min-width: 600px) and (max-width: 899px) {
+  .page_content { width: 100%; }
+  .page__content_sidebar { display: none; }
 }

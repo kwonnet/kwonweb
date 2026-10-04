@@ -17,6 +17,8 @@ const StickySidebar = ({pathname, TrendingSection, ConnectionSection}:{pathname?
           <CardMedia
             image="/post.jpg"
             component={"img"}
+            loading="lazy"
+            decoding="async"
             sx={{
               maxHeight: 150,
               borderTopRightRadius: 3,

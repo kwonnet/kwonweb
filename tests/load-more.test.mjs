@@ -47,3 +47,38 @@ test('loads ahead of the bottom, pauses while fetching, and resumes if the senti
     assert.equal(requests, 2);
   } finally { await React.act(async () => root.unmount()); }
 });
+
+const { default: useSWRInfinite, unstable_serialize: serializeInfinite } = await import('swr/infinite');
+const { SWRConfig, useSWRConfig, unstable_serialize } = await import('swr');
+const { missingFeedEntries } = await import('../src/utils/seed-feed-cache.ts');
+
+test('server feed hydration skips a duplicate request and load more fetches only page two', async () => {
+  const root = createRoot(document.getElementById('root'));
+  const cache = new Map();
+  const posts = [{ id: 'server-post' }];
+  const fetched = [];
+  const key = index => ({ viewerId: 'viewer', feed: 'foryou', page: index + 1 });
+  let grow;
+  function Feed() {
+    const { mutate } = useSWRConfig();
+    const { data, setSize } = useSWRInfinite(key, async ({ page }) => {
+      fetched.push(page);
+      return [{ id: `page-${page}` }];
+    }, { fallbackData: [posts], revalidateOnMount: false, revalidateFirstPage: false });
+    grow = setSize;
+    React.useEffect(() => {
+      for (const [cacheKey, value] of missingFeedEntries(cache, unstable_serialize(key(0)), serializeInfinite(key), posts)) {
+        void mutate(cacheKey, value, { revalidate: false });
+      }
+    }, [mutate]);
+    return React.createElement('div', null, data.flat().map(post => post.id).join(','));
+  }
+  try {
+    await React.act(async () => root.render(React.createElement(SWRConfig, { value: { provider: () => cache } }, React.createElement(Feed))));
+    assert.deepEqual(fetched, []);
+    assert.equal(document.getElementById('root').textContent, 'server-post');
+    await React.act(async () => { await grow(2); });
+    assert.deepEqual(fetched, [2]);
+    assert.equal(document.getElementById('root').textContent, 'server-post,page-2');
+  } finally { await React.act(async () => root.unmount()); }
+});
