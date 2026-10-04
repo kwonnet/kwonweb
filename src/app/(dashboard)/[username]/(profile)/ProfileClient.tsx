@@ -413,7 +413,9 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
           </Stack>
         }
       />
-      <Paper sx={{ minHeight: { lg: 200, md: 200, sm: 150, xs: 150 } }}></Paper>
+      <Paper sx={{ height: { lg: 200, md: 200, sm: 150, xs: 150 }, overflow: "hidden" }}>
+        {canView && visitedUser.banner && <Box component="img" src={visitedUser.banner} alt="Profile banner" sx={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+      </Paper>
       <Box sx={{ position: "relative", height: 50 }}>
         <Avatar
           sx={{
@@ -630,13 +632,8 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
         </Stack>
         {!canView || isBlocked ? null : (
           <React.Fragment>
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
               {visitedUser.bio}
-              GrowCRM is a comprehensive management system designed to
-              streamline the processes of real estate agencies. It provides a
-              centralized platform for managing various aspects of real estate
-              operations, including lead management, analytics, project and
-              inventory management, task management
             </Typography>
             <Stack
               direction={{ lg: "row", md: "row", sm: "row", xs: "column" }}
@@ -644,6 +641,11 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
                 gap: { lg: 2, md: 2, sm: 0.5, xs: 0.5 }
               }}
             >
+              {visitedUser.website && /^https?:\/\//i.test(visitedUser.website) && (
+                <Typography component="a" href={visitedUser.website} target="_blank" rel="noopener noreferrer" variant="caption" color="primary" sx={{ overflowWrap: "anywhere" }}>
+                  {visitedUser.website}
+                </Typography>
+              )}
               {visitedUser?.country && (
                 <Stack
                   direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}

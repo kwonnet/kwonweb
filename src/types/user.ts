@@ -55,6 +55,8 @@ export enum FollowStatus {
 export interface UserPublic {
   id: string;
   avatar?: string | null;
+    banner?: string | null;
+    website?: string | null;
   username: string;
   name: string;
   bio: string;

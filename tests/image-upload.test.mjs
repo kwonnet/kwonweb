@@ -60,3 +60,15 @@ test('slow request bodies release their upload slot by timing out', async () => 
   const body = new ReadableStream({ start() {} });
   await assert.rejects(readLimitedBody(new Request('http://localhost', {method:'POST',body,duplex:'half'}), 5), {status:408});
 });
+
+test('routes profile, banner and post uploads to allowed folders only', async () => {
+  const { createImageUploadHandler } = await import('../src/lib/storage/image-upload.ts');
+  const png = await sharp({create:{width:2,height:2,channels:3,background:'blue'}}).png().toBuffer();
+  const seen = [];
+  const handler = createImageUploadHandler({appUrl:()=> 'https://kwonnet.com',userId:async()=> 'owner',store:async(id, image, folder)=> { seen.push([id, folder]); return {folder}; }});
+  const request = query => new Request(`https://kwonnet.com/api/uploads/images${query}`, {method:'POST',headers:{origin:'https://kwonnet.com'},body:png});
+  for (const query of ['', '?folder=media', '?folder=profiles', '?folder=banners']) assert.equal((await handler(request(query))).status, 200);
+  assert.deepEqual(seen, [['owner','media'], ['owner','media'], ['owner','profiles'], ['owner','banners']]);
+  for (const folder of ['', '../banners', 'profiles/other', 'arbitrary']) assert.equal((await handler(request(`?folder=${encodeURIComponent(folder)}`))).status, 400);
+  assert.equal(seen.length, 4);
+});

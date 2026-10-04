@@ -1,3 +1,4 @@
+import type { ImageUploadFolder } from "@/types/uploads";
 import sharp from "sharp";
 
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -63,7 +64,7 @@ export async function normalizeImage(bytes: Buffer) {
 export function createImageUploadHandler(dependencies: {
   appUrl: () => string | undefined;
   userId: () => Promise<string | undefined>;
-  store: (userId: string, image: Awaited<ReturnType<typeof normalizeImage>>) => Promise<unknown>;
+  store: (userId: string, image: Awaited<ReturnType<typeof normalizeImage>>, folder: ImageUploadFolder) => Promise<unknown>;
 }) {
 // Bound decoding memory per server process. No unauthenticated body is consumed.
 let active = 0;
@@ -74,6 +75,9 @@ return async function POST(request: Request) {
     assertUploadOrigin(request, dependencies.appUrl());
     const userId = await dependencies.userId();
     if (!userId) throw new UploadError("Please sign in to upload images.", 401);
+    const requestedFolder = new URL(request.url).searchParams.get("folder");
+    if (requestedFolder !== null && !["media", "profiles", "banners"].includes(requestedFolder)) throw new UploadError("Invalid image upload folder.");
+    const folder = (requestedFolder ?? "media") as ImageUploadFolder;
     const now = Date.now();
     for (const [id, entry] of usage) if (entry.until <= now) usage.delete(id);
     const entry = usage.get(userId) || { count: 0, until: now + 600_000 };
@@ -83,7 +87,7 @@ return async function POST(request: Request) {
     active++;
     acquired = true;
     const image = await normalizeImage(await readLimitedBody(request));
-    const uploaded = await dependencies.store(userId, image);
+    const uploaded = await dependencies.store(userId, image, folder);
     return Response.json(uploaded, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     // Never log SDK/auth error objects: they can contain credentials or signed URLs.

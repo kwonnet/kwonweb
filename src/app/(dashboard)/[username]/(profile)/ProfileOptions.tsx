@@ -119,7 +119,7 @@ const ProfileOptions = ({
     ev.preventDefault();
     ev.stopPropagation();
     handleClose(ev);
-    router.push(`/@${visitedUser?.username}/profile`);
+    router.push(`/@${visitedUser?.username}/edit`);
   };
 
   const handleBlockUser = async (

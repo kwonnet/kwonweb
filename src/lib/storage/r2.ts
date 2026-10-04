@@ -1,3 +1,4 @@
+import type { ImageUploadFolder } from "@/types/uploads";
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
@@ -19,13 +20,13 @@ function config() {
   return { endpoint: endpoint.origin, accessKeyId, secretAccessKey, bucket, publicUrl: base.href.replace(/\/$/, "") };
 }
 let client: S3Client | undefined;
-export async function storeImage(userId: string, image: { data: Buffer; width: number; height: number }) {
+export async function storeImage(userId: string, image: { data: Buffer; width: number; height: number }, folder: ImageUploadFolder = "media") {
   const c = config();
   client ??= new S3Client({ region: "auto", endpoint: c.endpoint, credentials: { accessKeyId: c.accessKeyId, secretAccessKey: c.secretAccessKey }, maxAttempts: 2 });
   const fileId = randomUUID();
   const name = `${fileId}.webp`;
   const owner = createHash("sha256").update(userId).digest("hex");
-  const filePath = `media/${owner}/${name}`;
+  const filePath = `${folder}/${owner}/${name}`;
   await client.send(new PutObjectCommand({ Bucket: c.bucket, Key: filePath, Body: image.data, ContentType: "image/webp", ContentLength: image.data.length, ContentDisposition: "inline", CacheControl: "public, max-age=31536000, immutable" }), { abortSignal: AbortSignal.timeout(30_000) });
   const url = `${c.publicUrl}/${filePath}`;
   return { fileId, name, filePath, url, thumbnailUrl: url, fileType: "image/webp", size: image.data.length, width: image.width, height: image.height };
