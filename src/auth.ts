@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
-import { ACTIVE_SESSION_COOKIE, ACCOUNT_MAX_AGE, cookieValue, logoutTime, sessionLoginTime, sessionWasLoggedOut } from "./lib/account-session-policy";
+import { ACTIVE_SESSION_COOKIE, ACCOUNT_LIMIT, ACCOUNT_MAX_AGE, activeSessionCookieName, authCookieNames, cookieValue, logoutTime, sessionCookieBase, sessionLoginTime, sessionWasLoggedOut } from "./lib/account-session-policy";
 import { getToken } from "next-auth/jwt";
-import { readSavedAccounts } from "./lib/saved-accounts";
+import { accountCookieName, encodeAccount, readSavedAccounts } from "./lib/saved-accounts";
 import { shouldRefreshAccessToken } from "./lib/auth-refresh-policy";
 import NextAuth, { CredentialsSignin, type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
@@ -59,8 +59,11 @@ const authRuntime = NextAuth(async request => {
   const loggedOutAt = logoutTime(requestHeaders.get("cookie"));
   const activeGeneration = cookieValue(requestHeaders.get("cookie"), ACTIVE_SESSION_COOKIE);
   const secure = new URL(process.env.AUTH_URL || request?.url || "http://localhost").protocol === "https:";
+  const loginGeneration = request?.method === "POST" && new URL(request.url).pathname.startsWith("/api/auth/callback/") ? crypto.randomUUID() : null;
+  const sessionCookie = loginGeneration ? `${sessionCookieBase(secure)}-${loginGeneration}` : activeSessionCookieName(requestHeaders.get("cookie"), secure);
   return {
   useSecureCookies: secure,
+  cookies: { sessionToken: { name: sessionCookie, options: { httpOnly: true, sameSite: "lax", path: "/", secure } } },
   session: {
     strategy: "jwt",
     // maxAge: 5 * 60
@@ -186,8 +189,8 @@ const authRuntime = NextAuth(async request => {
     },
     async jwt({ token, user, trigger }) {
       if (token && user) {
-        token.sessionIssuedAt = Date.now();
-        token.sessionGeneration = crypto.randomUUID();
+        token.sessionIssuedAt = Math.max(Date.now(), loggedOutAt + 1);
+        token.sessionGeneration = loginGeneration ?? crypto.randomUUID();
         token.user = user;
         token.accessTokenRefreshedAt = Date.now();
       }
@@ -238,11 +241,38 @@ export const handlers = {
     const response = await authRuntime.handlers.POST(request);
     if (new URL(request.url).pathname.startsWith("/api/auth/callback/")) {
       // A late refresh from the previous account cannot become the active identity.
-      const cookieName = new URL(authOrigin(request.url)).protocol === "https:" ? "__Secure-authjs.session-token" : "authjs.session-token";
+      const secure = new URL(authOrigin(request.url)).protocol === "https:";
+      const base = sessionCookieBase(secure);
+      const cookieName = response.headers.getSetCookie().map(cookie => cookie.split("=")[0]).find(name =>
+        name.startsWith(`${base}-`) && /^[0-9a-f-]{36}$/i.test(name.slice(base.length + 1).replace(/\.\d+$/, ""))
+      )?.replace(/\.\d+$/, "");
+      if (!cookieName) return response; // Failed authentication must preserve the current account.
       const cookieHeader = response.headers.getSetCookie().map(cookie => cookie.split(";")[0]).join("; ");
       const token = await getToken({ req: new Request(request.url, { headers: { cookie: cookieHeader } }), secret: process.env.AUTH_SECRET, cookieName, salt: cookieName });
       if (typeof token?.sessionGeneration === "string") {
         response.headers.append("Set-Cookie", `${ACTIVE_SESSION_COOKIE}=${token.sessionGeneration}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${ACCOUNT_MAX_AGE}${cookieName.startsWith("__Secure-") ? "; Secure" : ""}`);
+        // Refresh responses from an older identity can only write that identity's
+        // cookie, never overwrite this generation's session. Retire unused cookies.
+        for (const name of authCookieNames(request.cookies.getAll().map(cookie => cookie.name))) {
+          if (name !== cookieName && !name.startsWith(`${cookieName}.`) && name.includes("session-token")) {
+            response.headers.append("Set-Cookie", `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? "; Secure" : ""}`);
+          }
+        }
+        const user = token.user as { id?: string; name?: string; username?: string; avatar?: string; image?: string; accessToken?: string };
+        if (user?.id && user.name && user.username && user.accessToken) {
+          // Save on the successful callback itself, before the client session read.
+          // Optional device storage must never undo successful authentication.
+          try {
+            const saved = await readSavedAccounts(request.cookies, secure);
+            const account = { id: user.id, name: user.name, username: user.username, avatar: user.avatar || user.image, accessToken: user.accessToken, savedAt: Date.now() };
+            const value = await encodeAccount(account, secure);
+            const suffix = `; Path=/; HttpOnly; SameSite=Lax; Max-Age=${ACCOUNT_MAX_AGE}${secure ? "; Secure" : ""}`;
+            response.headers.append("Set-Cookie", `${accountCookieName(user.id, secure)}=${value}${suffix}`);
+            for (const removed of saved.filter(account => account.id !== user.id).slice(ACCOUNT_LIMIT - 1)) {
+              response.headers.append("Set-Cookie", `${accountCookieName(removed.id, secure)}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? "; Secure" : ""}`);
+            }
+          } catch { /* Device account storage is optional. */ }
+        }
       }
     }
     return response;

@@ -10,7 +10,6 @@ export async function rememberCurrentAccount() {
 export async function switchAccount(accountId: string) {
   const result = await signIn("saved-account", { accountId, redirect: false, redirectTo: "/" });
   if (!result || result.error) return false;
-  try { await rememberCurrentAccount(); } catch {}
   // Discard sockets, private React/SWR data and the server-rendered previous identity.
   axiosAPI.accessToken = undefined;
   window.location.replace("/");

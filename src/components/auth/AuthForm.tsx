@@ -3,7 +3,6 @@ import { useState, type FormEvent } from "react";
 import { Alert, Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { signIn } from "next-auth/react";
 import { safeAuthRedirect } from "@/lib/auth-redirect";
-import { rememberCurrentAccount } from "@/lib/account-actions";
 
 export default function AuthForm({ initialMode = "signin", initialEmail = "" }: { initialMode?: "signin" | "signup"; initialEmail?: string }) {
   const [mode, setMode] = useState(initialMode);
@@ -30,8 +29,7 @@ export default function AuthForm({ initialMode = "signin", initialEmail = "" }: 
         setMessage(result?.code || "Unable to sign in. Please check your details and try again.");
         return;
       }
-      // Account storage is optional; a storage failure must not undo a valid login.
-      try { await rememberCurrentAccount(); } catch {}
+      // The successful auth callback already saves and activates this account.
       // Refresh server-rendered session and personalized data together after authentication.
       window.location.assign(redirectTo);
     } catch {

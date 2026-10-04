@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { auth } from "@/auth";
 import { authOrigin } from "@/lib/auth-redirect";
-import { ACCOUNT_LIMIT, ACCOUNT_MAX_AGE, LOGOUT_COOKIE, authCookieNames, sameOriginMutation } from "@/lib/account-session-policy";
+import { ACCOUNT_LIMIT, ACCOUNT_MAX_AGE, LOGOUT_COOKIE, activeSessionCookieName, authCookieNames, sameOriginMutation } from "@/lib/account-session-policy";
 import { accountCookieName, accountCookiePrefix, accountProfile, encodeAccount, readSavedAccounts } from "@/lib/saved-accounts";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
   if (body.action === "logout") {
     // Decode only: logout must work even when the backend or token refresh is down.
-    const cookieName = secure ? "__Secure-authjs.session-token" : "authjs.session-token";
+    const cookieName = activeSessionCookieName(request.headers.get("cookie"), secure);
     const token = await getToken({ req: request, secret: process.env.AUTH_SECRET, cookieName, salt: cookieName });
     const id = (token?.user as { id?: string } | undefined)?.id;
     const response = json({ ok: true });

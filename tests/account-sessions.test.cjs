@@ -63,12 +63,14 @@ test('logout clears chunked and legacy cookies, removes only the selected saved 
   const route = load('src/app/api/accounts/route.ts');
   const makeAccount = id => ({ id, name: id, username: id, accessToken: `${id}-token`, savedAt: Date.now() });
   const aName = vault.accountCookieName('ada', true), bName = vault.accountCookieName('ben', true);
-  const sessionName = '__Secure-authjs.session-token';
+  const generation = '00000000-0000-4000-8000-000000000001';
+  const sessionName = `__Secure-authjs.session-token-${generation}`;
   const jwt = await encode({ token: { user: { id: 'ada' }, sessionIssuedAt: Date.now() }, secret: process.env.AUTH_SECRET, salt: sessionName });
-  const request = new NextRequest('https://kwonnet.test/api/accounts', { method: 'POST', headers: { origin: 'https://kwonnet.test', 'content-type': 'application/json', cookie: `${sessionName}=${jwt}; authjs.session-token.0=legacy; ${aName}=${await vault.encodeAccount(makeAccount('ada'), true)}; ${bName}=${await vault.encodeAccount(makeAccount('ben'), true)}` }, body: JSON.stringify({ action: 'logout' }) });
+  const request = new NextRequest('https://kwonnet.test/api/accounts', { method: 'POST', headers: { origin: 'https://kwonnet.test', 'content-type': 'application/json', cookie: `kwonnet.active-session=${generation}; ${sessionName}=${jwt}; authjs.session-token.0=legacy; ${aName}=${await vault.encodeAccount(makeAccount('ada'), true)}; ${bName}=${await vault.encodeAccount(makeAccount('ben'), true)}` }, body: JSON.stringify({ action: 'logout' }) });
   const response = await route.POST(request);
   assert.equal(response.status, 200);
   const cookies = response.headers.getSetCookie();
+  assert.ok(cookies.some(cookie => cookie.startsWith(`${sessionName}=`) && cookie.includes('Max-Age=0')), 'logout removes the active generation cookie');
   assert.ok(cookies.some(cookie => cookie.startsWith('kwonnet.logout-at=') && cookie.includes('HttpOnly') && cookie.includes('Secure')));
   assert.ok(cookies.some(cookie => cookie.startsWith(`${aName}=`) && cookie.includes('Max-Age=0')));
   assert.ok(!cookies.some(cookie => cookie.startsWith(`${bName}=`)), 'other accounts require explicit selection and remain saved');
@@ -154,5 +156,55 @@ test('saved-account sign-in validates the server identity and refuses missing or
     await assert.rejects(() => provider.authorize({ accountId: 'ada' }, request), /log in.*again/);
     global.fetch = async () => new Response(JSON.stringify({ user: { id: 'other' }, accessToken: 'wrong-identity' }));
     await assert.rejects(() => provider.authorize({ accountId: 'ada' }, request), /log in.*again/);
+  } finally { global.fetch = oldFetch; }
+});
+
+test('real Auth.js callbacks replace the active account cookie and the next session request stays authenticated', async () => {
+  process.env.AUTH_SECRET = 'local-tests-only-encryption-secret';
+  process.env.AUTH_URL = 'https://kwonnet.test';
+  process.env.NEXT_PUBLIC_APP_URL = 'https://kwonnet.test';
+  process.env.AUTH_TRUST_HOST = 'true';
+  const { Auth } = require('@auth/core');
+  const load = modules({
+    './schema': { SignInSchema: { parse: value => value }, SignUpSchema: { parse: value => value } },
+    'next-auth': { __esModule: true, CredentialsSignin: require('@auth/core/errors').CredentialsSignin, default: configure => {
+      const handle = async request => Auth(request, { ...await configure(request), basePath: '/api/auth', trustHost: true });
+      return { handlers: { GET: handle, POST: handle } };
+    } },
+  });
+  const { handlers } = load('src/auth.ts');
+  const jar = new Map([['kwonnet.active-session', 'previous-generation']]);
+  const cookie = () => [...jar].map(([name, value]) => `${name}=${value}`).join('; ');
+  const apply = response => { for (const item of response.headers.getSetCookie()) {
+    const pair = item.split(';')[0], index = pair.indexOf('=');
+    if (/Max-Age=0/i.test(item)) jar.delete(pair.slice(0, index));
+    else jar.set(pair.slice(0, index), pair.slice(index + 1));
+  } };
+  const oldFetch = global.fetch;
+  let identity = 'new';
+  const accessToken = `header.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600, iat: Math.floor(Date.now() / 1000) })).toString('base64url')}.signature`;
+  global.fetch = async () => new Response(JSON.stringify({ user: { id: identity, name: identity, username: identity, bio: 'x'.repeat(6000) }, accessToken }));
+  try {
+    for (const provider of ['credentials-up', 'credentials-in', 'saved-account']) {
+      // A response generated for the previous account may arrive after sign-in.
+      const lateSession = await handlers.GET(new NextRequest('https://kwonnet.test/api/auth/session', { headers: { cookie: cookie() } }));
+      const csrf = await handlers.GET(new NextRequest('https://kwonnet.test/api/auth/csrf', { headers: { cookie: cookie() } }));
+      apply(csrf);
+      const { csrfToken } = await csrf.json();
+      const response = await handlers.POST(new NextRequest(`https://kwonnet.test/api/auth/callback/${provider}`, {
+        method: 'POST', headers: { cookie: cookie(), 'content-type': 'application/x-www-form-urlencoded', 'X-Auth-Return-Redirect': '1' },
+        body: new URLSearchParams({ csrfToken, email: 'test@example.invalid', password: 'test-only-password', name: identity, accountId: identity, callbackUrl: 'https://kwonnet.test/' }),
+      }));
+      apply(response);
+      assert.notEqual(jar.get('kwonnet.active-session'), 'previous-generation', 'callback must atomically activate the new JWT generation');
+      assert.ok(response.headers.getSetCookie().some(cookie => cookie.startsWith('__Secure-authjs.session-token-') && cookie.split('=')[0].endsWith('.0')), 'large user profiles use chunked session cookies');
+      const vault = load('src/lib/saved-accounts.ts');
+      const saved = await vault.readSavedAccounts({ getAll: () => [...jar].map(([name, value]) => ({ name, value })) }, true);
+      assert.ok(saved.some(account => account.id === identity), 'new registration/switch is saved during the callback, without a menu visit or refresh');
+      apply(lateSession);
+      const session = await handlers.GET(new NextRequest('https://kwonnet.test/api/auth/session', { headers: { cookie: cookie() } }));
+      assert.equal((await session.json())?.user?.id, identity, 'client session read immediately after sign-in must retain the new identity');
+      identity = provider === 'credentials-up' ? 'second' : 'new';
+    }
   } finally { global.fetch = oldFetch; }
 });
