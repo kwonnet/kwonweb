@@ -38,10 +38,11 @@ test('local results retain their country and token; legacy 404 is empty while re
 });
 test('server sidebar fetches public trends for guests and uses authenticated country IDs instead of ISO2', async () => {
   let session = null;
+  let unavailable = false;
   const requests = [];
   const Sidebar = load('src/components/common/SidebarTrendServer.tsx', {
     '@/lib/server-session': { getServerSession: async () => session },
-    '@/lib/discover': { getSidebarTrends: async (...args) => { requests.push(args); return [{ trend: 'Solar' }]; } },
+    '@/lib/discover': { getSidebarTrends: async (...args) => { requests.push(args); if (unavailable) throw new Error('API unavailable'); return [{ trend: 'Solar' }]; } },
     './SidebarTrendClient': { __esModule: true, default: () => null },
   }).default;
   assert.deepEqual((await Sidebar()).props.trends, [{ trend: 'Solar' }]);
@@ -49,4 +50,8 @@ test('server sidebar fetches public trends for guests and uses authenticated cou
   session = { user: { country: { id: 'country-ng', iso2: 'NG' }, accessToken: 'test-token' } };
   await Sidebar();
   assert.deepEqual(requests[1], [{ country: 'country-ng', limit: 3 }, 'test-token']);
+  unavailable = true;
+  const failed = await Sidebar();
+  assert.deepEqual(failed.props.trends, []);
+  assert.equal(failed.props.initialError, true, 'fetch failures still render the retryable sidebar error state');
 });
