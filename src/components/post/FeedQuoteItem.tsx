@@ -87,7 +87,7 @@ const FeedQuoteItem = ({
           ...theme.applyStyles("dark", {
             border: `0.1px solid #46454d`,
           }),
-          px: 1,
+          px: 0,
           cursor: "pointer",
         }),
       ]}
@@ -95,13 +95,10 @@ const FeedQuoteItem = ({
     >
       <CardContent
         sx={{
-          pt: 0.3,
-          mt: 0,
-          ml: 0,
-          mr: 0,
-          p: 0,
+          p: 1.5,
+          minWidth: 0,
           maxWidth: "100%",
-          // "&:last-child": { pb: 0 },
+          "&:last-child": { pb: 1.5 },
         }}
       >
         {!showPost && state.muted && (
@@ -145,7 +142,7 @@ const FeedQuoteItem = ({
         )}
 
         {(showPost || (!state.muted && item.actions.isMutedByUser)) && (
-          <Grid container>
+          <Grid container sx={{ minWidth: 0, rowGap: 1 }}>
             <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <Stack>
                 <Stack direction={"row"} sx={{ alignItems: "center" }}>

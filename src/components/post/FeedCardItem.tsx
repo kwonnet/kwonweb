@@ -306,6 +306,10 @@ const FeedCardItem = ({
       <CardContent
         sx={{
           p: 2,
+          display: "grid",
+          gridTemplateColumns: "45px minmax(0, 1fr)",
+          columnGap: 1,
+          rowGap: 0.5,
           maxWidth: "100%",
           minWidth: 0,
           "&:last-child": { pb: 2 },
@@ -313,7 +317,7 @@ const FeedCardItem = ({
         suppressHydrationWarning
       >
         {post.kind === PostKind.REPOST && (
-          <Stack direction={"row"} sx={{ alignItems: "center", gap: 0.5, mb: 1 }}>
+          <Stack direction={"row"} sx={{ gridColumn: "1 / -1", alignItems: "center", gap: 0.5, mb: 0.5 }}>
             <RepeatOutlinedIcon
               sx={{
                 height: 14,
@@ -338,7 +342,7 @@ const FeedCardItem = ({
             </Typography>
           </Stack>
         )}
-        <Stack direction={"row"} sx={{ maxWidth: "100%", gap: 1, minWidth: 0, mb: 1 }}>
+        <Stack direction={"row"} sx={{ display: "contents" }}>
           <Box>
             <Badge
               overlap="circular"
@@ -471,6 +475,8 @@ const FeedCardItem = ({
             pb: 0,
             mb: 0,
             px: 0,
+            gridColumn: 2,
+            minWidth: 0,
             width: "100%",
             position: "relative",
           }}
@@ -599,6 +605,10 @@ const FeedCardItem = ({
               position: "relative",
               alignItems: "center",
               justifyContent: "space-between",
+              flexWrap: "wrap",
+              mt: 1,
+              rowGap: 0.5,
+              "& .MuiIconButton-root": { px: { xs: 0.5, sm: 1 } },
               px: 0,
               mx: 0,
               maxWidth: "100%",
