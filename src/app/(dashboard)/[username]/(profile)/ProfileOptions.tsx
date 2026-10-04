@@ -16,6 +16,7 @@ import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
 import OutlinedFlagOutlinedIcon from "@mui/icons-material/OutlinedFlagOutlined";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { getErrorMessage } from "@/utils";
 import { useNotifications } from "@/providers/NotificationsProvider";
 import { useRouter } from "next/navigation";
@@ -114,6 +115,13 @@ const ProfileOptions = ({
     router.push(`/@${visitedUser?.username}/analytics`);
   };
 
+  const handleUpdateProfile = (ev: React.MouseEvent<HTMLLIElement, MouseEvent>) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    handleClose(ev);
+    router.push(`/@${visitedUser?.username}/profile`);
+  };
+
   const handleBlockUser = async (
     ev: React.MouseEvent<HTMLLIElement, MouseEvent>
   ) => {
@@ -192,6 +200,15 @@ const ProfileOptions = ({
                       Promote
                     </MenuItem>
                   )} */}
+
+                  {isCurrentUser && (
+                    <MenuItem onClick={(ev) => handleUpdateProfile(ev)}>
+                      <ListItemIcon>
+                        <EditOutlinedIcon fontSize="small" />
+                      </ListItemIcon>
+                      Edit Profile
+                    </MenuItem>
+                  )}
 
                   {isCurrentUser && (
                     <MenuItem onClick={(ev) => handleAnalytics(ev)}>

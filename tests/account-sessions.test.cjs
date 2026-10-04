@@ -31,6 +31,50 @@ function modules(overrides = {}) {
 }
 const policy = modules()('src/lib/account-session-policy.ts');
 
+test('logout reloads guest home without broadcasting a session change into the mounted dashboard', async () => {
+  const oldFetch = global.fetch, oldWindow = global.window;
+  const client = { accessToken: 'current-token' };
+  let navigations = 0;
+  const actions = modules({
+    'next-auth/react': { signOut: () => { throw new Error('must not broadcast a client logout'); } },
+    '@/config/axios': { axiosAPI: client },
+    '@/config': { apiUrl: 'https://api.example.invalid/api/v1' },
+  })('src/lib/account-actions.ts');
+  global.window = { location: { replace: url => {
+    assert.equal(url, '/');
+    assert.equal(client.accessToken, undefined);
+    navigations++;
+  } } };
+  try {
+    for (const backendFails of [false, true]) {
+      client.accessToken = 'current-token';
+      const requests = [];
+      global.fetch = async (url, options) => {
+        requests.push(url);
+        assert.equal(client.accessToken, 'current-token', 'keep the mounted dashboard stable until navigation');
+        if (url === '/api/accounts') {
+          assert.equal(JSON.parse(options.body).action, 'logout');
+          return new Response('{}', { status: 200 });
+        }
+        assert.equal(options.credentials, 'include');
+        if (backendFails) throw new Error('backend unavailable');
+        return new Response('{}');
+      };
+      await actions.logoutCurrentAccount();
+      assert.deepEqual(requests, ['/api/accounts', 'https://api.example.invalid/api/v1/auth/logout']);
+    }
+    assert.equal(navigations, 2, 'backend cleanup failure must still reload into guest mode');
+    client.accessToken = 'current-token';
+    global.fetch = async () => new Response('{}', { status: 500 });
+    await assert.rejects(actions.logoutCurrentAccount(), /Unable to sign out/);
+    assert.equal(client.accessToken, 'current-token');
+    assert.equal(navigations, 2, 'do not claim logout when local cookie revocation fails');
+  } finally {
+    global.fetch = oldFetch;
+    if (oldWindow === undefined) delete global.window; else global.window = oldWindow;
+  }
+});
+
 test('logout invalidates the original login across later token refreshes, while explicit fresh login works', () => {
   const token = { iat: 10, sessionIssuedAt: 10000 };
   assert.equal(policy.sessionWasLoggedOut(token, 11000), true);

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Alert, Avatar, Box, Button, Dialog, DialogContent, DialogTitle, Divider, IconButton, ListItemIcon, ListItemText, MenuItem, MenuList, Stack, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
@@ -9,28 +9,15 @@ import { useAuthSession } from "@/hooks";
 import AuthForm from "@/components/auth/AuthForm";
 import { logoutCurrentAccount, rememberCurrentAccount, switchAccount } from "@/lib/account-actions";
 import type { AccountProfile } from "@/lib/saved-accounts";
+import useSavedAccounts from "@/hooks/useSavedAccounts";
 
 export default function AccountToolbar() {
   const { user } = useAuthSession();
-  const [accounts, setAccounts] = useState<AccountProfile[]>([]);
-  const [busy, setBusy] = useState(true);
+  const { data: accounts = [], error, isLoading, mutate } = useSavedAccounts(user?.id);
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [login, setLogin] = useState<{ username: string } | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        await rememberCurrentAccount();
-        const response = await fetch("/api/accounts", { cache: "no-store" });
-        if (!response.ok) throw new Error("Unable to load saved accounts.");
-        const data = await response.json();
-        if (!cancelled) setAccounts(data);
-      } catch (error) { if (!cancelled) setMessage(error instanceof Error ? error.message : "Unable to load accounts."); }
-      finally { if (!cancelled) setBusy(false); }
-    }
-    void load();
-    return () => { cancelled = true; };
-  }, [user?.id]);
+  // Auth callbacks already save the account. Opening a menu must not write cookies.
 
   async function selectAccount(account: AccountProfile) {
     if (busy || account.id === user?.id) return;
@@ -57,6 +44,7 @@ export default function AccountToolbar() {
     </Stack>
     <Divider />
     <Typography variant="subtitle2" sx={{ px: 2 }}>Accounts on this device</Typography>
+    {isLoading && <Typography variant="caption" role="status" sx={{ px: 2 }}>Loading accounts…</Typography>}
     <MenuList aria-label="Saved accounts">
       {accounts.map(account => <MenuItem key={account.id} disabled={busy || account.id === user?.id} onClick={() => void selectAccount(account)}>
         <ListItemIcon><Avatar src={account.avatar} alt={account.name} sx={{ width: 32, height: 32 }}>{account.name[0]}</Avatar></ListItemIcon>
@@ -68,6 +56,7 @@ export default function AccountToolbar() {
       </MenuItem>
     </MenuList>
     {message && <Alert severity="error" sx={{ mx: 1 }} role="alert">{message}</Alert>}
+    {error && <Alert severity="error" sx={{ mx: 1 }} action={<Button color="inherit" size="small" disabled={isLoading} onClick={() => void mutate().catch(() => {})}>Retry</Button>}>Unable to load saved accounts.</Alert>}
     <Divider />
     <Box sx={{ p: 2 }}><Button fullWidth variant="outlined" disabled={busy} onClick={() => void logout()}>Sign out of this account</Button></Box>
     <Dialog open={login !== null} onClose={() => setLogin(null)} maxWidth="xs" fullWidth aria-label="Log in to another account">

@@ -2,9 +2,9 @@
 import { Box, Card, Skeleton, Stack, IconButton } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 
-const FeedSkeleton = ({rows = 3, items = 6, height = 200}: {rows?:number; height?: number; items?: number}) => {
+const FeedSkeleton = ({rows = 8, items = 6, height = 200}: {rows?:number; height?: number; items?: number}) => {
   return (
-    <Box sx={{ mt: 1, maxHeight: "100vh", overflow: "hidden", }}>
+    <Box sx={{ mt: 1, maxHeight: "100dvh", overflow: "hidden", }}>
       {[...Array(rows)].map((_, index) => (
         <Card
           key={index}

@@ -17,5 +17,5 @@ export default function Loading() {
   const feed = Object.values(FeedTypeEnum).includes(segment as FeedTypeEnum) ? segment as FeedTypeEnum : FeedTypeEnum.FORYOU;
   const pages = user?.id ? cache.get(unstable_serialize(index => newsfeedKey(user.id, feed, index)))?.data : undefined;
   if (pages?.length) return <FeedsDisplay posts={pages[0]} feed={feed} />;
-  return <div role="status" aria-label="Loading feed" aria-busy="true"><FeedSkeleton rows={2} height={100} /></div>;
+  return <div role="status" aria-label="Loading feed" aria-busy="true"><FeedSkeleton height={100} /></div>;
 }

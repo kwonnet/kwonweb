@@ -1,5 +1,5 @@
 import React from "react";
-import PageClient from "../profile/PageClient";
+import PageClient from "./PageClient";
 import DisplayError from "@/components/common/DisplayError";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from "@/config";
