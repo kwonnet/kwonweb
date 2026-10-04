@@ -23,15 +23,13 @@ import IosShareOutlinedIcon from "@mui/icons-material/IosShareOutlined";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { useRouter } from "next/navigation";
-import {
-  AnimateLikeButton,
-  AuthorHoverPreview,
-  DisplayFeedMedia,
-  DisplayQuizItem,
-  FeedQuoteItem,
-  RepostPopover,
-  RollingNumber,
-} from "@/components/post";
+import AnimateLikeButton from "@/components/post/AnimateLikeButton";
+import AuthorHoverPreview from "@/components/post/AuthorHoverPreview";
+import DisplayFeedMedia from "@/components/post/DisplayFeedMedia";
+import DisplayQuizItem from "@/components/post/DisplayQuizItem";
+import FeedQuoteItem from "@/components/post/FeedQuoteItem";
+import RepostPopover from "@/components/post/RepostPopover";
+import RollingNumber from "@/components/post/RollingNumber";
 import AddCircleOutlinedIcon from "@mui/icons-material/AddCircleOutlined";
 import { FeedPost, PostAuthor, PostKind, PostType } from "@/types";
 import DisplayPollItem from "@/components/post/DisplayPollItem";

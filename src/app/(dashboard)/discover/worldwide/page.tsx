@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/server-session";
 import { apiUrl } from "@/config";
 import { TrendingTopics } from "@/types";
 import React from "react";
@@ -14,7 +14,7 @@ const getQuery = (session: Session | null) => {
 return `limit=50`
 }
 const Page = async () => {
-  const session = await auth();
+  const session = await getServerSession();
   const query = getQuery(session)
   const result = await fetch(`${apiUrl}/discover/trend?limit=50`, {
     cache: "no-store",

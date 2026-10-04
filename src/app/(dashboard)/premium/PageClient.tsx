@@ -8,7 +8,7 @@ import PlanSkeleton from "./PlanSkeleton";
 import DisplayItem from "./DisplayItem";
 import { useAuthSession } from "@/hooks";
 import Link from "next/link";
-import { PageHeader } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
 import { Subscription } from "@/types";
 
 const DisplayPage = ({ subscription }: { subscription?: Subscription }) => {

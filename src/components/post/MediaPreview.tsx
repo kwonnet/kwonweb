@@ -14,7 +14,7 @@ import { FeedPost, PostMedia } from "@/types";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import { toast } from "react-toastify";
 import Slider from "react-slick";
-import { VideoPlayer } from "../common";
+import VideoPlayer from "@/components/common/VideoPlayer";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { getSessionId, shouldSendLog } from "@/utils";
 import { PostMediaAction, PostMediaKind, PostMediaLog } from "@/types/post";

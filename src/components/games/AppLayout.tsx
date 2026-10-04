@@ -1,5 +1,5 @@
 'use client'
-import { AppBottomNav } from '../common'
+import AppBottomNav from "@/components/common/AppBottomNav";
 import { Box } from '@mui/material'
 import { usePathname } from 'next/navigation'
 import React from 'react'

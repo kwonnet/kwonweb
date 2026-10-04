@@ -3,7 +3,7 @@ import { Box, IconButton, Chip, CardMedia } from "@mui/material";
 import { Close, BrushOutlined } from "@mui/icons-material";
 import React, { useState, memo } from "react";
 import EditImageDrawer from "./EditImageDrawer";
-import { MiniVideoPlayer } from "../common";
+import MiniVideoPlayer from "@/components/common/MiniVideoPlayer";
 
 type PostFile = { file: File; id: string; altText: string; flags: string[] };
 

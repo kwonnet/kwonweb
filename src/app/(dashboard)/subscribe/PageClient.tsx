@@ -1,6 +1,6 @@
 "use client";
 import { CryptoAddress, SubscriptionPlan, UserTypeEnum } from "@/types";
-import { PageHeader } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
 import { Box, Button, Container, Typography } from "@mui/material";
 import React, { useState } from "react";
 import DisplayCarouselItems from "./DisplayCarouselItems";

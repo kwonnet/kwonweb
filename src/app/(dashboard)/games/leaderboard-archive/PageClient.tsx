@@ -18,7 +18,8 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
-import { PageHeader, SkeletonTable } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
+import SkeletonTable from "@/components/common/SkeletonTable";
 import {
   getGameRankingArchiveStats,
   getGameCategoryRankingArchive,

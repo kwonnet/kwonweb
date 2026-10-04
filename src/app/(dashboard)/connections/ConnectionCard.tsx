@@ -23,7 +23,7 @@ import {
 } from "@/utils/connections";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import { useBadgeColor } from "@/hooks";
-import { RequestPopover } from "@/components/common";
+import RequestPopover from "@/components/common/RequestPopover";
 
 const ConnectionCard = ({
   item,

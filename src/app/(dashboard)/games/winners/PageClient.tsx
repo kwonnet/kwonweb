@@ -13,7 +13,8 @@ import {
 import { GameWinnersStats } from "@/types";
 import InputLabel from "@mui/material/InputLabel";
 import FormControl from "@mui/material/FormControl";
-import { PageHeader, SkeletonTable } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
+import SkeletonTable from "@/components/common/SkeletonTable";
 import { getGameWinners, getGameWinnersStats } from "@/lib/games";
 import useSWR from "swr";
 import { getErrorMessage, monthNames } from "@/utils";

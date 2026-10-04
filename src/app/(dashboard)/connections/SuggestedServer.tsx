@@ -1,5 +1,5 @@
-import { auth } from "@/auth";
-import { ErrorMessage } from "@/components/common";
+import { getServerSession } from "@/lib/server-session";
+import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from "@/config";
 import React from "react";
 import DisplayClient from "./DisplayClient";
@@ -9,7 +9,7 @@ import { ConnTypeEnum } from "@/types";
 const SuggestedServer = async () => {
   const date = new Date();
 
-  const session = await auth();
+  const session = await getServerSession();
 
   if (!session) return <ErrorMessage message="Error: Can't serve request" />;
 

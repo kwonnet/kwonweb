@@ -1,3 +1,4 @@
+"use client";
 import { Box, Card, Skeleton, Stack, IconButton } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 

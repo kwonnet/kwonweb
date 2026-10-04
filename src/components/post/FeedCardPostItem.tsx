@@ -26,11 +26,9 @@ import BookmarkOutlinedIcon from "@mui/icons-material/BookmarkOutlined";
 import IosShareOutlinedIcon from "@mui/icons-material/IosShareOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { useRouter } from "next/navigation";
-import {
-  DisplayFeedMedia,
-  DisplayQuizItem,
-  DisplayTagMentionDrawer,
-} from "@/components/post";
+import DisplayFeedMedia from "@/components/post/DisplayFeedMedia";
+import DisplayQuizItem from "@/components/post/DisplayQuizItem";
+import DisplayTagMentionDrawer from "@/components/post/DisplayTagMentionDrawer";
 import AddCircleOutlinedIcon from "@mui/icons-material/AddCircleOutlined";
 import { FeedPost, PostAuthor, PostKind, PostType } from "@/types";
 import FeedQuoteItem from "./FeedQuoteItem";
@@ -51,7 +49,8 @@ import {
   PostMetricSource,
   PostTagMention,
 } from "@/types/post";
-import PostTipDrawer from "./PostTipDrawer";
+import dynamic from "next/dynamic";
+const PostTipDrawer = dynamic(() => import("./PostTipDrawer"), { ssr: false });
 import { FollowAction, UserConnection } from "@/types/user";
 import { getFollowAction, getUserConnInfo } from "@/utils/connections";
 import LoyaltyOutlinedIcon from "@mui/icons-material/LoyaltyOutlined";
@@ -874,11 +873,11 @@ const FeedCardPostItem = ({
         }}
       />
       {/* post tip drawer */}
-      <PostTipDrawer
+      {state.isOpen && <PostTipDrawer
         post={item}
         isOpen={state.isOpen}
         toggleDrawer={toggleTipDrawer}
-      />
+      />}
       {/* tag users drawer */}
       {state.openTagUserDrawer && (
         <DisplayTagMentionDrawer

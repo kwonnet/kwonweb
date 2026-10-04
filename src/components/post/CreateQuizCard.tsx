@@ -16,10 +16,8 @@ import {
 } from "@mui/material";
 // import { useAuth } from "@/hooks";
 import { useRouter } from "next/navigation";
-import {
-  QuizDurationDrawer,
-  QuizSettingsDrawer,
-} from "@/components/post";
+import QuizDurationDrawer from "@/components/post/QuizDurationDrawer";
+import QuizSettingsDrawer from "@/components/post/QuizSettingsDrawer";
 import { nanoid } from "nanoid";
 import {
   AddOutlined,

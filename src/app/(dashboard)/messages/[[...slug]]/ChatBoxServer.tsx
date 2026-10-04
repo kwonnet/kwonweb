@@ -1,10 +1,10 @@
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/server-session";
 import { apiUrl } from "@/config";
 import React from "react";
 import ChatBoxClient from "./ChatBoxClient";
 import ChatBoxClientAnon from "./ChatBoxClientAnon"
 import { UserPublic } from "@/types/user";
-import { DisplayError } from "@/components/common";
+import DisplayError from "@/components/common/DisplayError";
 import { ChatDevice } from "@/types/sodium";
 import { Conversation, EncryptedChatMessage } from "@/types/conversation";
 
@@ -15,7 +15,7 @@ const ChatBoxServer = async ({
   recipientId: string;
   slug: string;
 }) => {
-  const session = await auth();
+  const session = await getServerSession();
   const user = session?.user;
   if (slug === "anonymous") {
     const result = await fetch(

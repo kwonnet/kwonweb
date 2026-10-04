@@ -1,8 +1,8 @@
 import React from "react";
 import PageClient from "./PageClient";
-import { ErrorMessage } from "@/components/common";
+import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from "@/config";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/server-session";
 import { UserConnection, UserMiniProfile } from "@/types/user";
 import { IconButton, Stack, Typography } from "@mui/material";
 import { Lock, WarningOutlined } from "@mui/icons-material";
@@ -16,7 +16,7 @@ type URLParams = {
 const page = async ({ params }: { params: Promise<URLParams> }) => {
   const _params = await params;
 
-  const session = await auth();
+  const session = await getServerSession();
 
   const identifier = _params?.username?.replace("%40", "");
 

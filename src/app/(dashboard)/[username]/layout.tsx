@@ -1,4 +1,4 @@
-import { StickySidebar } from '@/components/common'
+import StickySidebar from "@/components/common/StickySidebar";
 import { Box } from '@mui/material'
 import React from 'react'
 

@@ -33,17 +33,15 @@ import BookmarkOutlinedIcon from "@mui/icons-material/BookmarkOutlined";
 import IosShareOutlinedIcon from "@mui/icons-material/IosShareOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { useRouter } from "next/navigation";
-import {
-  AnimateLikeButton,
-  AuthorHoverPreview,
-  DisplayFeedMedia,
-  DisplayQuizItem,
-  FeedQuoteItem,
-  PostOptions,
-  PostTipDrawer,
-  RepostPopover,
-  RollingNumber,
-} from "@/components/post";
+import AnimateLikeButton from "@/components/post/AnimateLikeButton";
+import AuthorHoverPreview from "@/components/post/AuthorHoverPreview";
+import DisplayFeedMedia from "@/components/post/DisplayFeedMedia";
+import DisplayQuizItem from "@/components/post/DisplayQuizItem";
+import FeedQuoteItem from "@/components/post/FeedQuoteItem";
+import PostOptions from "@/components/post/PostOptions";
+import PostTipDrawer from "@/components/post/PostTipDrawer";
+import RepostPopover from "@/components/post/RepostPopover";
+import RollingNumber from "@/components/post/RollingNumber";
 import AddCircleOutlinedIcon from "@mui/icons-material/AddCircleOutlined";
 import { FeedPost, PostAuthor, PostKind, PostType } from "@/types";
 import ContentEditor from "@/components/post/ContentEditor";

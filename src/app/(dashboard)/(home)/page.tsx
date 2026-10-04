@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/server-session";
 import { DisplayError, FeedSection } from "@/components/common";
 import { apiUrl } from "@/config";
 import { FeedPost } from "@/types";
@@ -6,7 +6,7 @@ import { FeedTypeEnum } from "@/types/post";
 import React from "react";
 
 const Page = async () => {
-  const session = await auth();
+  const session = await getServerSession();
   const result = await fetch(
     `${apiUrl}/posts/feed/${FeedTypeEnum.FORYOU}?feed=${FeedTypeEnum.FORYOU}&limit=21&page=1`,
     {

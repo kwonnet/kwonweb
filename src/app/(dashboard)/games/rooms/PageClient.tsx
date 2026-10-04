@@ -2,7 +2,7 @@
 import { Box, CircularProgress, Container, Grid, Paper, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { PageHeader } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
 import { Fade } from "react-awesome-reveal";
 import { GameEventEnum, GameRoom } from "@/types";
 import { toast } from "react-toastify";

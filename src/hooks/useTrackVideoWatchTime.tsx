@@ -26,13 +26,14 @@ const useTrackVideoWatchTime = (
   const { token } = useAuthSession();
   const watchTimeRef = useRef(0); // Accumulated session duration in seconds
   const triggeredMilestones = useRef<Set<number>>(new Set());
-  const sessionId = useRef(getSessionId()).current;
+
   const hasEndedLogged = useRef(false);
 
   // Common video watch milestones
   useEffect(() => {
     if (!inView || args.isCurrentUser) return;
 
+    const sessionId = getSessionId();
     const player = playerRef.current;
     if (!player) return;
 
@@ -121,7 +122,7 @@ const useTrackVideoWatchTime = (
       player.removeEventListener("ended", onEnded);
       clearInterval(intervalId);
     };
-  }, [inView, playerRef, args.isCurrentUser, args.mediaId, args.postId, sessionId, token]);
+  }, [inView, playerRef, args.isCurrentUser, args.mediaId, args.postId, token]);
 
   return ref;
 };

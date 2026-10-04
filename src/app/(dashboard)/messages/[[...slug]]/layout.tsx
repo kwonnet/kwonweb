@@ -3,7 +3,7 @@ import { Box, Grid, Paper } from "@mui/material";
 import React, { use } from "react";
 import ChatListServer from "./ChatListServer";
 import ChatListHeader from "./ChatListHeader";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/server-session";
 import StartConvo from "./StartConvo";
 
 const Layout = async ({
@@ -13,7 +13,7 @@ const Layout = async ({
   children: React.ReactNode;
   params: Promise<{ slug?: string[] }>;
 }) => {
-  const session = await auth()
+  const session = await getServerSession()
   
   const _params = await params;
 

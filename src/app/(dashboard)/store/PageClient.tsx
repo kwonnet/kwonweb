@@ -1,6 +1,6 @@
 "use client";
 import { CoinPackage, CryptoAddress } from "@/types";
-import { PageHeader } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
 import { Box, Container, IconButton } from "@mui/material";
 import React from "react";
 import { BuyCoinsContainer } from "@/components/store";

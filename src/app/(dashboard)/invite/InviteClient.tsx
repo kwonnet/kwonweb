@@ -15,7 +15,7 @@ import {
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import { getInviteLink, formatNumber } from "@/utils";
-import { PageHeader } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
 // import { init, shareStory, shareURL } from '@telegram-apps/sdk';
 import IosShareOutlinedIcon from '@mui/icons-material/IosShareOutlined';
 // import { useAuthContext } from "@/context/AuthContext";
@@ -292,7 +292,7 @@ export default InviteClient;
 // import { toast } from "react-toastify";
 // import { getInviteLink } from "@/utils";
 // import Reveal, { Bounce, Fade, Slide } from "react-awesome-reveal";
-// import { PageHeader } from "@/components/common";
+// import PageHeader from "@/components/common/PageHeader";
 
 // const InviteClient = () => {
 //   const currentUserId = "1234567890"; // Replace with the actual user ID from the user's profile

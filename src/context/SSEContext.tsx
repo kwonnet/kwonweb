@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { useAuthSession } from "@/hooks";
 import { apiUrl } from "@/config";
 import { useSWRConfig } from "swr";
@@ -23,6 +23,7 @@ const SSEContextProvider = (props: any) => {
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
 
   useEffect(() => {
+    if (!user?.id) return;
     const sseSource = new EventSource(`${apiUrl}/stream`, {
       withCredentials: true,
     });
@@ -41,7 +42,7 @@ const SSEContextProvider = (props: any) => {
     return () => {
       sseSource?.close();
     };
-  }, []);
+  }, [user?.id]);
 
   //   listen to different server events
 
@@ -104,10 +105,11 @@ const SSEContextProvider = (props: any) => {
         eventSource?.removeEventListener("user_follower", followerListener);
     };
     // eslint-disable-next-line
-  }, [eventSource]);
+  }, [eventSource, user?.id, mutate]);
 
+  const value = useMemo(() => ({ sseSource: eventSource }), [eventSource]);
   return (
-    <SSEContext.Provider value={{ sseSource: eventSource }}>
+    <SSEContext.Provider value={value}>
       {props.children}
     </SSEContext.Provider>
   );

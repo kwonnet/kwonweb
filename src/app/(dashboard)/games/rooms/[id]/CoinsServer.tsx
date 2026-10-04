@@ -3,14 +3,14 @@ import CoinsClient from "./CoinsClient";
 import { CoinPackage, CryptoAddress } from "@/types";
 import { getCurrent_ton_usd_rate } from "@/utils";
 import { apiUrl } from "@/config";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/server-session";
 
 type IData = { packages: CoinPackage[]; addresses: CryptoAddress[] };
 
 const url = apiUrl + "/coins";
 
 const CoinsServer = async () => {
-  const session = await auth();
+  const session = await getServerSession();
 
   if (!session) return null;
 

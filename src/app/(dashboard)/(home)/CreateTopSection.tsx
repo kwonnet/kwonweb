@@ -1,5 +1,6 @@
 "use client";
-import { CreatePostDrawer } from "@/components/post";
+import dynamic from "next/dynamic";
+const CreatePostDrawer = dynamic(() => import("@/components/post/CreatePostDrawer"), { ssr: false });
 import { useAuthSession } from "@/hooks";
 import { FeedTypeEnum } from "@/types/post";
 import { Avatar, Box, Card, Stack, TextField } from "@mui/material";
@@ -11,12 +12,13 @@ const CreateTopSection = () => {
 
   const [state, setState] = useState({
     isOpen: false,
+    hasOpened: false,
     feedType: FeedTypeEnum.FORYOU,
   });
 
   const toggleDrawer = (ev: any, open: boolean) => {
     ev.preventDefault();
-    setState((prev) => ({ ...prev, isOpen: open }));
+    setState((prev) => ({ ...prev, isOpen: open, hasOpened: true }));
   };
 
   return (
@@ -65,7 +67,7 @@ const CreateTopSection = () => {
           </Stack>
         </Card>
       </Box>
-      <CreatePostDrawer isOpen={state.isOpen} toggleDrawer={toggleDrawer} />
+      {state.hasOpened && <CreatePostDrawer isOpen={state.isOpen} toggleDrawer={toggleDrawer} />}
     </React.Fragment>
   );
 };

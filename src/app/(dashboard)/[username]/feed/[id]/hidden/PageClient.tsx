@@ -16,13 +16,12 @@ import { useAuthSession, useFeedCacheUpdater, usePostSseListeners } from "@/hook
 import { updateUserFollower } from "@/lib/users";
 import useSWRInfinite from "swr/infinite";
 import { debounce } from "lodash";
-import {
-  CreateQuoteDrawer,
-  FeedCardItem,
-  FeedSkeleton,
-  FeedSocialShare,
-} from "@/components/post";
-import { DisplayError, StickyWrapper } from "@/components/common";
+import CreateQuoteDrawer from "@/components/post/CreateQuoteDrawer";
+import FeedCardItem from "@/components/post/FeedCardItem";
+import FeedSkeleton from "@/components/post/FeedSkeleton";
+import FeedSocialShare from "@/components/post/FeedSocialShare";
+import DisplayError from "@/components/common/DisplayError";
+import StickyWrapper from "@/components/common/StickyWrapper";
 import { FollowAction } from "@/types/user";
 
 type LocalState = {

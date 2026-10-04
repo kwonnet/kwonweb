@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Box from "@mui/material/Box";
 import {
   Avatar,
@@ -38,16 +38,18 @@ const AuthorHoverPreview = ({
   ) => void;
 }) => {
   const { user, token } = useAuthSession();
-  const swrKey = `${author.id}_overview`;
-  const { data } = useSWR(swrKey, () => getUserOverview(author.id, token));
+  const [showInfo, setShowInfo] = useState(false);
+  const swrKey = `${user?.id}_${author.id}_overview`;
+  const { data } = useSWR(showInfo && token ? swrKey : null, () => getUserOverview(author.id, token));
 
   const { mutate } = useSWRConfig();
 
-  const [showInfo, setShowInfo] = useState(false);
+
 
   const [btnHover, setBtnHover] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   const handleMouseEnter = (
     e: React.MouseEvent<HTMLAnchorElement | HTMLDivElement>
@@ -55,8 +57,8 @@ const AuthorHoverPreview = ({
     if (timerRef.current) clearTimeout(timerRef.current);
     const rect = e.currentTarget.getBoundingClientRect();
     setPosition({
-      top: rect.bottom + window.scrollY + 8,
-      left: rect.left + window.scrollX,
+      top: rect.bottom + 8,
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - 316)),
     });
     timerRef.current = setTimeout(() => setShowInfo(true), 500);
   };
@@ -136,7 +138,7 @@ const AuthorHoverPreview = ({
         handleFollow(author.id, action)
       };
 
-    if(!data) return null
+
 
     const { isFriends } = getUserConnInfo(author?.conn);
   
@@ -188,7 +190,7 @@ const AuthorHoverPreview = ({
         </Link>
       )}
 
-      {showInfo && (
+      {showInfo && data && (
         <Box
           position="fixed"
           sx={{

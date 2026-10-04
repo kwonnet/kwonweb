@@ -16,7 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useState } from "react";
-import { RequestPopover } from "../common";
+import RequestPopover from "@/components/common/RequestPopover";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import Link from "next/link";
 import { formatNumber, shortenText } from "@/utils";

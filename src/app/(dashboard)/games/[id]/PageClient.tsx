@@ -2,7 +2,7 @@
 import { Box, Container, Grid, Paper, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
-import { PageHeader } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
 import { Fade } from "react-awesome-reveal";
 import { Game, GameCategory, GameMode } from "@/types";
 

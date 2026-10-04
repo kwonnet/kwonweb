@@ -20,7 +20,7 @@ import {
   getFollowAction,
   getUserConnInfo,
 } from "@/utils/connections";
-import { RequestPopover } from "@/components/common";
+import RequestPopover from "@/components/common/RequestPopover";
 
 const BlockMuteCard = ({
   item,

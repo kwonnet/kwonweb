@@ -2,7 +2,7 @@ import React from "react";
 import { CryptoAddress, SubscriptionPlan } from "@/types";
 import { getCurrent_ton_usd_rate } from "@/utils";
 import { apiUrl } from "@/config";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/server-session";
 import { redirect } from "next/navigation";
 import PageClient from "./PageClient";
 // import dynamic from "next/dynamic";
@@ -17,7 +17,7 @@ const url = apiUrl + "/subscriptions/plans";
 const cryptourl = apiUrl + "/crypto/addresses";
 
 const Page = async () => {
-  const session = await auth()
+  const session = await getServerSession()
   if(!session) redirect("/")
   const result = await fetch(url, { method: "GET", next: { revalidate: 0 } });
 

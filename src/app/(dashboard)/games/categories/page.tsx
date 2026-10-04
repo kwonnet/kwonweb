@@ -1,7 +1,7 @@
 
 import { Game } from "@/types";
 import PageClient from "./PageClient";
-import { ErrorMessage } from "@/components/common";
+import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from "@/config";
 
 const url = apiUrl + "/games"

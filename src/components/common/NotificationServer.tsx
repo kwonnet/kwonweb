@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/server-session";
 import React, { cache } from "react";
 import NotificationContainer from "./NotificationContainer";
 import { apiUrl } from "@/config";
@@ -38,7 +38,7 @@ const getNotificationStatsCached = cache(async (userId: string, token?: string) 
 });
 
 const NotificationServer = async () => {
-  const session = await auth();
+  const session = await getServerSession();
   if (!session) return null;
   const userId = String(session?.user?.id);
   const [stats, data] = await Promise.all([

@@ -11,11 +11,9 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  CreateQuoteDrawer,
-  CreateReplyDrawer,
-  FeedSocialShare,
-} from "@/components/post";
+import CreateQuoteDrawer from "@/components/post/CreateQuoteDrawer";
+import CreateReplyDrawer from "@/components/post/CreateReplyDrawer";
+import FeedSocialShare from "@/components/post/FeedSocialShare";
 import {
   useAuthSession,
   useFeedCacheUpdater,
@@ -41,7 +39,7 @@ import { debounce } from "lodash";
 import SpeakerNotesOffOutlinedIcon from "@mui/icons-material/SpeakerNotesOffOutlined";
 import Link from "next/link";
 import { FollowAction } from "@/types/user";
-import { StickyWrapper } from "@/components/common";
+import StickyWrapper from "@/components/common/StickyWrapper";
 import { getSessionId } from "@/utils";
 const ReplyBox = ({
   handleReply,

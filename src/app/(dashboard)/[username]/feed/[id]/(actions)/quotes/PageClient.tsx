@@ -21,14 +21,12 @@ import { useSSEContext } from "@/context/SSEContext";
 import { updateUserFollower } from "@/lib/users";
 import useSWRInfinite from "swr/infinite";
 import { debounce } from "lodash";
-import {
-  CreateQuoteDrawer,
-  FeedCardItem,
-  FeedSkeleton,
-  FeedSocialShare,
-} from "@/components/post";
+import CreateQuoteDrawer from "@/components/post/CreateQuoteDrawer";
+import FeedCardItem from "@/components/post/FeedCardItem";
+import FeedSkeleton from "@/components/post/FeedSkeleton";
+import FeedSocialShare from "@/components/post/FeedSocialShare";
 import { FollowAction } from "@/types/user";
-import { DisplayError } from "@/components/common";
+import DisplayError from "@/components/common/DisplayError";
 
 type LocalState = {
   open: boolean;

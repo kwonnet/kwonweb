@@ -6,7 +6,6 @@ import {
   IconButton,
   Stack,
   Tooltip,
-  useMediaQuery,
 } from "@mui/material";
 import { Account } from "@toolpad/core";
 import React from "react";
@@ -25,7 +24,7 @@ const CustomToolbarActions = (props: {
   AccountNode?: React.ReactNode;
 }) => {
 
-  const isSmallDevice = useMediaQuery("(max-width:600px)", { noSsr: true });
+
 
   const { user, token } = useAuthSession();
 
@@ -47,22 +46,21 @@ const CustomToolbarActions = (props: {
       >
         <SearchToolbar />
         <Tooltip title="Store" suppressHydrationWarning>
-          {isSmallDevice ? (
-            <IconButton size="small" LinkComponent={Link} href="/store">
+          <Box sx={{ display: "contents" }}>
+            <IconButton sx={{ display: { xs: "inline-flex", sm: "none" } }} size="small" LinkComponent={Link} href="/store">
               <LocalMallOutlinedIcon />
             </IconButton>
-          ) : (
             <Button
               size="small"
               href="/store"
               LinkComponent={Link}
               variant="outlined"
-              sx={{ borderRadius: 30 }}
+              sx={{ borderRadius: 30, display: { xs: "none", sm: "inline-flex" } }}
               startIcon={<LocalMallOutlinedIcon />}
             >
               Store
             </Button>
-          )}
+          </Box>
         </Tooltip>
           <Tooltip title="Messages" suppressHydrationWarning>
             <IconButton onClick={() => updateMsgUnseen()} size="small" LinkComponent={Link} href="/messages">

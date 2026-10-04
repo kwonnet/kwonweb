@@ -1,6 +1,8 @@
 import React from "react";
 import CustomLayout from "./CustomLayout";
-import { AppBottomNav, CustomToolbarActions, NotificationServer } from "@/components/common";
+import AppBottomNav from "@/components/common/AppBottomNav";
+import CustomToolbarActions from "@/components/common/CustomToolbarActions";
+import NotificationServer from "@/components/common/NotificationServer";
 import { Metadata } from "next";
 import { constant } from "@/config";
 
@@ -14,7 +16,7 @@ const layout = async (props: any) => {
     <CustomLayout
       CustomToolbar={
         // <CustomToolbarActions />
-        <CustomToolbarActions NotificationNode={<NotificationServer />} />
+        <CustomToolbarActions NotificationNode={<React.Suspense fallback={null}><NotificationServer /></React.Suspense>} />
 
       }
     >

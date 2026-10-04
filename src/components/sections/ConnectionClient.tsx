@@ -19,6 +19,7 @@ const ConnectionSection = ({ users, connType }: { users: UserConnection[], connT
     () => getSuggestedConnections({ limit: 3, type: connType }, token),
     {
       fallbackData: users,
+      revalidateOnMount: false,
       keepPreviousData: true,
       refreshWhenOffline: false,
       errorRetryCount: 2

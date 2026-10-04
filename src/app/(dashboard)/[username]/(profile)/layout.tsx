@@ -1,6 +1,6 @@
 import React from "react";
-import { auth } from "@/auth";
-import { ErrorMessage } from "@/components/common";
+import { getServerSession } from "@/lib/server-session";
+import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from "@/config";
 import { UserMiniProfile } from "@/types/user";
 import ProfileClient from "./ProfileClient";
@@ -19,7 +19,7 @@ const Layout = async ({
 }) => {
   const _params = await params;
 
-  const session = await auth();
+  const session = await getServerSession();
 
   const identifier = _params?.username?.replace("%40", "");
 

@@ -52,7 +52,7 @@ import ExpandCircleDownOutlinedIcon from "@mui/icons-material/ExpandCircleDownOu
 import WalletOutlinedIcon from "@mui/icons-material/WalletOutlined";
 import Person3OutlinedIcon from "@mui/icons-material/Person3Outlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import { CustomThemeSwitcher } from "@/components/common";
+import CustomThemeSwitcher from "@/components/common/CustomThemeSwitcher";
 import { Session } from "next-auth";
 import theme from "./theme";
 import PsychologyOutlinedIcon from "@mui/icons-material/PsychologyOutlined";

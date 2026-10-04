@@ -81,7 +81,7 @@ const SocketIoProvider = (props: any) => {
   }, [token]);
 
   return (
-    <SocketIoContext.Provider value={{ ...state }}>
+    <SocketIoContext.Provider value={state}>
       {props.children}
     </SocketIoContext.Provider>
   );

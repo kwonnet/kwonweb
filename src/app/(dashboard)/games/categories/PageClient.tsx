@@ -1,5 +1,5 @@
 "use client";
-import { PageHeader } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
 import { Game } from "@/types";
 import {
   Box,

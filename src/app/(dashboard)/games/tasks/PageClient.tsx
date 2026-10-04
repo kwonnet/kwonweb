@@ -1,5 +1,5 @@
 'use client'
-import { PageHeader } from '@/components/common'
+import PageHeader from "@/components/common/PageHeader";
 import { Box, Container } from '@mui/material'
 import React from 'react'
 import WatchAds from './WatchAds'

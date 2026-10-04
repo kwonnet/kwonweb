@@ -43,7 +43,7 @@ export const getSwrPlayers = cache(
 
 export const useUserCoinsWallet = (token?: string) => {
   const result = useSWR(
-    ["/v1/wallets", token],
+    token ? ["/v1/wallets", token] : null,
     ([_, token]) => getUserCoinsWallet(token),
     { keepPreviousData: true }
   );
@@ -71,7 +71,7 @@ export const useUserStats = ({
 }) => {
   const fallback: UserStats = fallbackData ? fallbackData : {totalAwards: 0, totalEarned: 0, totalInvites: 0, totalTaskDone: 0, totalTaskNotDone: 0, totalTxns: 0, totalUnreadCount: 0, totalUnreadMsg: 0, totalUnseenCount: 0, totalUnseenMsg: 0}
   const result = useSWR(
-    [`/v1/users/${userId}/stats`, token],
+    userId && token ? [`/v1/users/${userId}/stats`, token] : null,
     ([url, token]) => getUserStats(url, token),
     { keepPreviousData: true,  fallbackData: fallback }
   );

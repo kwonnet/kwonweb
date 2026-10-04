@@ -27,7 +27,9 @@ import TaskAltOutlinedIcon from "@mui/icons-material/TaskAltOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 
 import { useRouter } from "next/navigation";
-import { BadgeAvatar, GetVerified, JoinRoom } from "@/components/common";
+import BadgeAvatar from "@/components/common/BadgeAvatar";
+import GetVerified from "@/components/common/GetVerified";
+import JoinRoom from "@/components/common/JoinRoom";
 import Link from "next/link";
 import { WalletOutlined } from "@mui/icons-material";
 import { useAuthSession } from "@/hooks";

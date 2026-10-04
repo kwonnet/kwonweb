@@ -1,5 +1,7 @@
-import { SidebarTrendServer, StickySidebar, TopUserStories } from "@/components/common";
-import { ConnectionServer } from "@/components/sections";
+import StickySidebar from "@/components/common/StickySidebar";
+import TopUserStories from "@/components/common/TopUserStories";
+import SidebarTrendServer from "@/components/common/SidebarTrendServer";
+import ConnectionServer from "@/components/sections/ConnectionServer";
 import { Box } from "@mui/material";
 import React from "react";
 import CreateTopSection from "./CreateTopSection";
@@ -24,7 +26,7 @@ const Layout = (props: any) => {
           <CreateTopSection />
           {props.children}
         </Box>
-        <StickySidebar TrendingSection={<SidebarTrendServer />} ConnectionSection={<ConnectionServer />} />
+        <StickySidebar TrendingSection={<React.Suspense fallback={null}><SidebarTrendServer /></React.Suspense>} ConnectionSection={<React.Suspense fallback={null}><ConnectionServer /></React.Suspense>} />
       </Box>
     </React.Fragment>
   );

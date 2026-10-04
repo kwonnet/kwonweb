@@ -1,4 +1,4 @@
-import { ErrorMessage } from '@/components/common';
+import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from '@/config';
 import React from 'react'
 import FeedCardItem from './FeedCardItem';

@@ -1,21 +1,14 @@
 "use client";
-
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useInView } from "react-intersection-observer";
-import { debounce } from "lodash";
 
-export default function useLoadMore(loadMore: () => void) {
-  const { ref, inView } = useInView({ threshold: 0.01, fallbackInView: true });
-
+export default function useLoadMore(loadMore: () => void, enabled = true) {
+  const { ref, inView } = useInView({ threshold: 0.01, fallbackInView: false });
+  const callback = useRef(loadMore);
+  callback.current = loadMore;
+  // Callback identity changes must not keep queuing requests while the marker is visible.
   useEffect(() => {
-    const debounced = debounce(loadMore, 10)
-    if (inView) {
-        console.log("load more called in useLoadMore hook")
-        debounced()
-    }
-    return () => debounced.cancel();
-  }, [inView, loadMore]);
-
+    if (inView && enabled) callback.current();
+  }, [inView, enabled]);
   return ref;
 }
-

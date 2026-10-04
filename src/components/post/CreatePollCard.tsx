@@ -14,10 +14,8 @@ import {
 } from "@mui/material";
 // import { useAuth } from "@/hooks";
 import { useRouter } from "next/navigation";
-import {
-  PollDurationDrawer,
-  PollSettingsDrawer,
-} from "@/components/post";
+import PollDurationDrawer from "@/components/post/PollDurationDrawer";
+import PollSettingsDrawer from "@/components/post/PollSettingsDrawer";
 import { nanoid } from "nanoid";
 import {
   AddOutlined,

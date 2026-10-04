@@ -1,7 +1,7 @@
 import { axiosAPI } from "@/config/axios"
 import { Conversation, ConvoKind, DecryptedChatMessage, DecryptedConversation, EncryptedChatMessage, EncryptedConversation } from "@/types/conversation"
 import { ChatDevice, DeviceBundle } from "@/types/sodium"
-import { decryptIncomingMessage } from "../sodium"
+
 import { UserStats } from "@/types/user"
 import { composeUrlQuery } from "@/utils"
 
@@ -28,6 +28,7 @@ export const getUserChatDevices = async(userId: string, accessToken?: string)=> 
 }
 
 export const decryptChatMessages = async(localUserId: string, localDeviceId: string, messages: EncryptedChatMessage[]) => {
+    const { decryptIncomingMessage } = await import("../sodium");
     return await Promise.all(messages.map(async(body) => {
         let content = null
         try {

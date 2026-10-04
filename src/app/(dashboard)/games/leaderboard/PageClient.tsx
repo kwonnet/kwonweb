@@ -15,7 +15,8 @@ import {
 import { GameCategoryRanking, GameMode, GameRoomRankingEnum } from "@/types";
 import InputLabel from "@mui/material/InputLabel";
 import FormControl from "@mui/material/FormControl";
-import { PageHeader, SkeletonTable } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
+import SkeletonTable from "@/components/common/SkeletonTable";
 import useSWR from "swr";
 import { getGameCategoriesRankings } from "@/lib/games";
 import Link from "next/link";

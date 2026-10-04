@@ -1,10 +1,10 @@
 import { publicEnvScript } from "@/config/public-env";
 import type { Metadata } from "next";
-import LinearProgress from "@mui/material/LinearProgress";
+import AppLoadingShell from "@/components/common/AppLoadingShell";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import { SessionProvider } from "next-auth/react";
 import React from "react";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/server-session";
 import NextjsAppProvider from "@/providers/NextjsAppProvider";
 // slick slider
 import "slick-carousel/slick/slick.css";
@@ -31,7 +31,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
+  const session = await getServerSession();
   return (
     <html lang="en" data-toolpad-color-scheme="system" suppressHydrationWarning>
       <head>
@@ -40,7 +40,7 @@ export default async function RootLayout({
       <body>
         <SessionProvider session={session}>
           <AppRouterCacheProvider>
-            <React.Suspense fallback={<LinearProgress />}>
+            <React.Suspense fallback={<AppLoadingShell />}>
               <NextjsAppProvider session={session}>
                 <RegisterDeviceProvider>
                 <SocketIoProvider>

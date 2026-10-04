@@ -15,7 +15,7 @@ import { getUserAchievements } from "@/lib/users";
 import { RewardSkeleton } from "../skeleton";
 import { getErrorMessage } from "@/utils";
 import { useAuthSession } from "@/hooks";
-import { DisplayError } from "../common";
+import DisplayError from "@/components/common/DisplayError";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import debounce from "lodash/debounce";
 

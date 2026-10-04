@@ -1,5 +1,5 @@
 "use client";
-import { PageHeader } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
 import { TransferModal, WithdrawalModal } from "@/components/modal";
 import { WalletSkeleton } from "@/components/skeleton";
 import { CoinsSvgIcon } from "@/components/svg";

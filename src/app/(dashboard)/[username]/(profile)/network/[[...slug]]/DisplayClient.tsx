@@ -13,7 +13,8 @@ import useSWRInfinite from "swr/infinite";
 import { blockUser, getUserConnections, muteUser, updateUserFollower } from "@/lib/users";
 import { FollowAction, UserConn, UserConnection } from "@/types/user";
 import ConnectionCard from "./ConnectionCard";
-import { DisplayError, SkeletonTable } from "@/components/common";
+import DisplayError from "@/components/common/DisplayError";
+import SkeletonTable from "@/components/common/SkeletonTable";
 import { getFollowStatus } from "@/utils/connections";
 
 

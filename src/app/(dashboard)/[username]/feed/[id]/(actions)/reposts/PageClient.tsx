@@ -23,7 +23,7 @@ import { updateUserFollower } from "@/lib/users";
 import { getConnBtnColor, getConnBtnText } from "@/utils/post";
 import { FollowAction, UserConn, UserConnection } from "@/types/user";
 import { getConnBtnInfo, getFollowAction, getFollowStatus } from "@/utils/connections";
-import { DisplayError } from "@/components/common";
+import DisplayError from "@/components/common/DisplayError";
 import ConnectionCard from "@/components/sections/ConnectionCard";
 
 const ReposterCard = ({

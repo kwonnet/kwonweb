@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import Box from "@mui/material/Box";
 import { CircularProgress, Typography } from "@mui/material";
 import {
@@ -10,10 +10,12 @@ import {
   updateRePost,
 } from "@/lib/posts";
 import { getErrorMessage, getSessionId } from "@/utils";
-import FeedSocialShare from "./FeedSocialShare";
+
 import { FeedPost } from "@/types";
 import { siteUrl } from "@/config";
-import CreateQuoteDrawer from "./CreateQuoteDrawer";
+import dynamic from "next/dynamic";
+const FeedSocialShare = dynamic(() => import("./FeedSocialShare"), { ssr: false });
+const CreateQuoteDrawer = dynamic(() => import("./CreateQuoteDrawer"), { ssr: false });
 import FeedCardItem from "./FeedCardItem";
 import { useAuthSession, useFeedCacheUpdater, useLoadMore, usePostSseListeners } from "@/hooks";
 import { FeedTypeEnum } from "@/types/post";
@@ -28,6 +30,7 @@ type LocalState = {
   isOpen: boolean;
   url: string;
   postId: string;
+  quoteMounted?: boolean;
   post?: FeedPost;
 };
 
@@ -47,34 +50,37 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
   });
 
   const getKey = (pageIndex: number, previousPageData?: FeedPost[]) => {
+    if (!user?.id || !token) return null;
     if (pageIndex !== 0 && previousPageData && !previousPageData.length)
       return null; // Stop when no more data
     return {
       // type: "foryou",
+      userId: user.id,
       feed,
       limit: PAGE_SIZE,
       page: pageIndex + 1,
     };
   };
 
-  const { data, error, isLoading, mutate, setSize } =
+  const { data, error, isLoading, isValidating, size, mutate, setSize } =
     useSWRInfinite(getKey, (args) => getNewsfeed(args, token), {
       keepPreviousData: true,
       refreshWhenOffline: false,
       revalidateOnReconnect: true,
       fallbackData: [posts],
+      revalidateOnMount: false,
+      revalidateFirstPage: false,
     });
 
-  const flattened = data ? data?.flat() : [];
-
-  const flatData = [...new Map(flattened.map(item => [item.id, item])).values()];
+  const flatData = useMemo(() => [...new Map((data ?? [posts]).flat().map(item => [item.id, item])).values()], [data, posts]);
 
   const isReachingEnd =
     (data && data[data.length - 1]?.length === 0) || !!error;
 
-  const loadMore = () => {
-    setSize((num) => num + 1);
-  }
+  const loadingPage = isLoading || isValidating || !!(data && size > data.length);
+  const loadMore = useCallback(() => {
+    if (!loadingPage && !isReachingEnd) void setSize(num => num + 1);
+  }, [loadingPage, isReachingEnd, setSize]);
   // feed cache update
   const { mutatePostLikes, mutatePostBookmarks, mutatePostQuotes, mutatePostShares, mutatePostReposts, mutatePostAuthor } = useFeedCacheUpdater(mutate)
 
@@ -82,7 +88,7 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
   usePostSseListeners(user, mutate)
 
 
-  const handleReaction = async (
+  const handleReaction = useCallback(async (
     ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
     id: string,
     hasLiked: boolean
@@ -92,9 +98,9 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
     // handle local update
     mutatePostLikes({ id, liked: hasLiked });
     await postReaction(id, token);
-  };
+  }, [mutatePostLikes, token]);
 
-  const handleBookmark = async (
+  const handleBookmark = useCallback(async (
     ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
     id: string,
     hasSaved: boolean
@@ -105,63 +111,63 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
     mutatePostBookmarks({ id, saved: hasSaved });
     // api update
     await bookmarkPost(id, token);
-  };
+  }, [mutatePostBookmarks, token]);
 
-  const handleRepost = async (ev: any, id: string, reposted: boolean) => {
+  const handleRepost = useCallback(async (ev: any, id: string, reposted: boolean) => {
     ev.preventDefault();
     ev.stopPropagation();
     // handle local update
     mutatePostReposts({ postId: id, reposted });
     await updateRePost(id, token);
-  };
+  }, [mutatePostReposts, token]);
 
-  const onQuoteCallback = (id: string, quoted: boolean) => {
+  const onQuoteCallback = useCallback((id: string, quoted: boolean) => {
     mutatePostQuotes({ id, quoted });
-  };
+  }, [mutatePostQuotes]);
 
-  const onQuoteClick = async (id: string) => {
+  const onQuoteClick = useCallback(async (id: string) => {
     const post = flatData?.find((d) => d.id === id);
-    setState((prev) => ({ ...prev, post, isOpen: true }));
-  };
+    setState((prev) => ({ ...prev, post, isOpen: true, quoteMounted: true }));
+  }, [flatData]);
 
-  const toggleDrawer = (ev: any, open: boolean) => {
+  const toggleDrawer = useCallback((ev: any, open: boolean) => {
     ev.preventDefault();
     setState((prev) => ({ ...prev, isOpen: open }));
-  };
+  }, []);
 
   // sharing
-  const toggleShareDrawer = (ev: any, open: boolean) => {
+  const toggleShareDrawer = useCallback((ev: any, open: boolean) => {
     ev.preventDefault();
     ev.stopPropagation();
     setState((prev) => ({ ...prev, open }));
-  };
+  }, []);
 
-  const handleShare = (ev: any, item: FeedPost) => {
+  const handleShare = useCallback((ev: any, item: FeedPost) => {
     setState((prev) => ({
       ...prev,
       url: `${siteUrl}/feed/${item.id}`,
       postId: item.id,
     }));
     toggleShareDrawer(ev, true);
-  };
+  }, [toggleShareDrawer]);
 
-  const onSocialClick = async (id: string, kind?: string) => {
+  const onSocialClick = useCallback(async (id: string, kind?: string) => {
     console.log("share post ID ", id);
     mutatePostShares(id);
     const sessionId = getSessionId();
     const payload = {id, kind, sessionId, timestamp: new Date().toISOString()}
     await shareFeedPost(payload, token);
-  };
+  }, [mutatePostShares, token]);
   // follow user
-  const onFollowUserCallback = (
+  const onFollowUserCallback = useCallback((
     args: { senderId: string; recipientId: string; action: FollowAction }
   ) => {
     mutatePostAuthor(args.recipientId, args.action);
     // send to api
     updateUserFollower(args, token);
-  };
+  }, [mutatePostAuthor, token]);
   // track load more posts
-  const ref = useLoadMore(loadMore)
+  const ref = useLoadMore(loadMore, !loadingPage && !isReachingEnd)
 
   return (
     <Box sx={{ mt: 1 }}>
@@ -187,24 +193,24 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
         );
       })}
       {/* share post */}
-      <FeedSocialShare
+      {state.open && <FeedSocialShare
         isOpen={state.open}
         url={state.url}
         postId={state.postId}
         toggleDrawer={toggleShareDrawer}
         onSocialClick={onSocialClick}
-      />
+      />}
       {/* create post quote */}
-      <CreateQuoteDrawer
+      {state.quoteMounted && <CreateQuoteDrawer
         post={state.post}
         isOpen={state.isOpen}
         toggleDrawer={toggleDrawer}
         onQuoteCallback={onQuoteCallback}
         onFollowUserCallback={onFollowUserCallback}
-      />
+      />}
       {!isReachingEnd ? <div ref={ref} style={{padding: "10px 0px 10px 0px"}} /> : <Typography variant="caption" textAlign={"center"} sx={{display: "block"}} color="textDisabled">No More Feed</Typography>}
       <Box sx={{display: 'block', textAlign: 'center'}}>
-        {isLoading && <CircularProgress size={24} color="warning" />}
+        {loadingPage && <CircularProgress size={24} color="warning" />}
       </Box>
     </Box>
   );

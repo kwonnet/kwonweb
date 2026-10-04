@@ -1,8 +1,9 @@
 import React from "react";
 import PageClient from "./PageClient";
-import { DisplayError, ErrorMessage } from "@/components/common";
+import DisplayError from "@/components/common/DisplayError";
+import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from "@/config";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/server-session";
 import { redirect } from "next/navigation";
 import { AccountAnalytics } from "@/types/user";
 
@@ -32,7 +33,7 @@ const page = async ({ params }: { params: Promise<URLParams> }) => {
   
   const _params = await params;
 
-  const session = await auth();
+  const session = await getServerSession();
 
   const identifier = _params?.username?.replace("%40", "");
 

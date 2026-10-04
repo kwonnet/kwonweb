@@ -4,7 +4,7 @@ import {
   Container,
 } from "@mui/material";
 import React, {  } from "react";
-import { PageHeader } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
 import useSWR from "swr";
 import { getUserTaskSettings } from "@/lib/swrHooks";
 import PageSkeleton from "./PageSkeleton";

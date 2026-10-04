@@ -2,7 +2,8 @@
 import { FeedPost, PostMedia } from "@/types";
 import { Box, CardMedia, useMediaQuery, useTheme } from "@mui/material";
 import React, { memo, useState } from "react";
-import MediaPreview from "./MediaPreview";
+import dynamic from "next/dynamic";
+const MediaPreview = dynamic(() => import("./MediaPreview"), { ssr: false });
 import { getSessionId, isMobileScreenshot, shouldSendLog } from "@/utils";
 import { PostMediaAction, PostMediaKind, PostMediaLog } from "@/types/post";
 import { sendPostLog } from "@/lib/posts";
@@ -107,12 +108,12 @@ const FeedMediaItem = memo(
           item={item}
           toggle={(ev) => preview ? toggleDrawer(ev, true) : {}}
         />
-        <MediaPreview
+        {state.open && <MediaPreview
           item={item}
           post={post}
           isOpen={state.open}
           toggleDrawer={toggleDrawer}
-        />
+        />}
       </React.Fragment>
     );
   }

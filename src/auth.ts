@@ -1,3 +1,4 @@
+import { shouldRefreshAccessToken } from "./lib/auth-refresh-policy";
 import NextAuth, { CredentialsSignin, type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { SignInSchema, SignUpSchema } from "./schema";
@@ -111,7 +112,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             headers: {
               "Content-Type": "application/json",
             },
-          });          
+          });
           if (!res.ok) {
             throw new NextAuthError(await res.text());
           }
@@ -152,15 +153,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (token && user) {
         token.user = user;
+        token.accessTokenRefreshedAt = Date.now();
       }
-      if (token && !user) {
+      if (token && !user && (trigger === "update" || shouldRefreshAccessToken(
+        (token.user as { accessToken?: string } | undefined)?.accessToken, token.accessTokenRefreshedAt
+      ))) {
         // console.log("token & no user ")
         // refresh access token
-        const currAccessToken = (token.user as { accessToken: string }).accessToken;
+        const currAccessToken = (token.user as { accessToken?: string } | undefined)?.accessToken;
         const res = await fetch(`${apiUrl}/auth/refresh-token`, {
+          signal: AbortSignal.timeout(8000),
           method: "POST",
           credentials: "include",
           body: JSON.stringify({token: currAccessToken}),
@@ -171,10 +176,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!res.ok) {
           throw new NextAuthError(await res.text());
         }
-        
+
         const data = await res.json();
         const { user, accessToken } = data;
-        token.user = {...user, image: user?.avatar, accessToken };        
+        token.user = {...user, image: user?.avatar, accessToken };
+        token.accessTokenRefreshedAt = Date.now();
       }
       return token;
     },

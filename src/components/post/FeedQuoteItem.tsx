@@ -14,7 +14,8 @@ import {
 } from "@mui/material";
 import { formatRelativeTime } from "@/utils";
 import { useRouter } from "next/navigation";
-import { AuthorHoverPreview, DisplayFeedMedia } from "@/components/post";
+import AuthorHoverPreview from "@/components/post/AuthorHoverPreview";
+import DisplayFeedMedia from "@/components/post/DisplayFeedMedia";
 import { FeedPost, PostAuthor, PostKind, User } from "@/types";
 import { useAuthSession } from "@/hooks";
 import ContentEditor from "./ContentEditor";

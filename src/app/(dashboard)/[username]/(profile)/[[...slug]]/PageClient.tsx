@@ -8,14 +8,12 @@ import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
 import { UserMiniProfile } from "@/types/user";
-import {
-  UserBookmarksFeed,
-  UserHighlightsFeed,
-  UserLikesFeed,
-  UserMediaFeed,
-  UserPostsFeed,
-  UserRepliesFeed,
-} from "@/components/post";
+import UserBookmarksFeed from "@/components/post/UserBookmarksFeed";
+import UserHighlightsFeed from "@/components/post/UserHighlightsFeed";
+import UserLikesFeed from "@/components/post/UserLikesFeed";
+import UserMediaFeed from "@/components/post/UserMediaFeed";
+import UserPostsFeed from "@/components/post/UserPostsFeed";
+import UserRepliesFeed from "@/components/post/UserRepliesFeed";
 import { usePathname } from "next/navigation";
 import { getCurrentSegment, updateUrl } from "@/utils";
 import StickyBox from "react-sticky-box";

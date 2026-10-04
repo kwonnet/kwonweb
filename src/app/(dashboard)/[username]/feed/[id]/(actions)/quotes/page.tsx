@@ -1,5 +1,5 @@
-import { auth } from "@/auth";
-import { ErrorMessage } from "@/components/common";
+import { getServerSession } from "@/lib/server-session";
+import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from "@/config";
 import { FeedPost } from "@/types";
 import React from "react";
@@ -13,7 +13,7 @@ type URLParams = {
 const Page = async ({ params }: { params: Promise<URLParams> }) => {
   const date = new Date();
 
-  const session = await auth();
+  const session = await getServerSession();
 
   const args = await params
 

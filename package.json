@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test:wallet": "node --experimental-strip-types --test tests/wallet-intents.test.mjs",
     "test:uploads": "node --experimental-strip-types --test tests/image-upload.test.mjs",
-    "test:stream": "node --experimental-strip-types --test tests/stream*.test.mjs"
+    "test:stream": "node --experimental-strip-types --test tests/stream*.test.mjs",
+    "test:performance": "node --experimental-strip-types --test tests/rendering-performance.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1146.0",

@@ -1,5 +1,6 @@
-import { SidebarTrendServer, StickySidebar } from "@/components/common";
-import { ConnectionServer } from "@/components/sections";
+import StickySidebar from "@/components/common/StickySidebar";
+import SidebarTrendServer from "@/components/common/SidebarTrendServer";
+import ConnectionServer from "@/components/sections/ConnectionServer";
 import { Box } from "@mui/material";
 import React from "react";
 

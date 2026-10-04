@@ -2,7 +2,7 @@
 import { Box, Container, IconButton, Tab, Tabs } from "@mui/material";
 import Link from "next/link";
 import React, { useState } from "react";
-import { PageHeader } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
 import { Fade } from "react-awesome-reveal";
 import AddTaskOutlinedIcon from "@mui/icons-material/AddTaskOutlined";
 import DisplayTasks from "./DisplayTasks";

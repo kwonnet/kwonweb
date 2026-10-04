@@ -1,8 +1,8 @@
 import React from "react";
 import TabNavigation from "./TabNavigation";
 import { Box } from "@mui/material";
-import { ConnectionServer } from "@/components/sections";
-import { StickySidebar } from "@/components/common";
+import ConnectionServer from "@/components/sections/ConnectionServer";
+import StickySidebar from "@/components/common/StickySidebar";
 
 const Layout = (props: any) => {
   return (

@@ -1,6 +1,6 @@
 import React from "react";
-import { auth } from "@/auth";
-import { ErrorMessage } from "@/components/common";
+import { getServerSession } from "@/lib/server-session";
+import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from "@/config";
 import { FeedPost } from "@/types";
 import PageClient from "./PageClient";
@@ -23,7 +23,7 @@ const page = async ({
   const args = await params;
   const date = new Date();
 
-  const session = await auth();
+  const session = await getServerSession();
 
   if (!args.id) return <ErrorMessage message="Error: post not found" />;
 

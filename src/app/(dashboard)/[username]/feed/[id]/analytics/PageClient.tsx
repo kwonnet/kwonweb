@@ -24,7 +24,7 @@ import TrendingDownOutlinedIcon from "@mui/icons-material/TrendingDownOutlined";
 import SwapVertOutlinedIcon from "@mui/icons-material/SwapVertOutlined";
 import Link from "next/link";
 import { FeedPost, FeedPostDetail } from "@/types";
-import { PageHeader } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 

@@ -2,7 +2,7 @@ import { Game, GameCategory } from "@/types";
 import { redirect } from "next/navigation";
 import React from "react";
 import PageClient from "./PageClient";
-import { ErrorMessage } from "@/components/common";
+import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from "@/config";
 
 type URLParams = {

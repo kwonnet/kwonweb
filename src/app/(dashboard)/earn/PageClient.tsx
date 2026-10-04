@@ -8,7 +8,7 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import { PageHeader } from "@/components/common";
+import PageHeader from "@/components/common/PageHeader";
 import { nanoid } from "nanoid";
 import { Slide } from "react-awesome-reveal";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";

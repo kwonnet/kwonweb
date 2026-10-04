@@ -1,4 +1,4 @@
-import { StickyWrapper } from "@/components/common";
+import StickyWrapper from "@/components/common/StickyWrapper";
 import React from "react";
 import TopTabNavigation from "./TopTabNavigation";
 
