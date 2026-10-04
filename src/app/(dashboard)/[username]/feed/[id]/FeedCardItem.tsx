@@ -42,11 +42,9 @@ import RollingNumber from "@/components/post/RollingNumber";
 import AddCircleOutlinedIcon from "@mui/icons-material/AddCircleOutlined";
 import { FeedPost, PostAuthor, PostKind, PostType } from "@/types";
 import DisplayPollItem from "@/components/post/DisplayPollItem";
-// import ContentEditor from "@/components/post/ContentEditor";
 import { useNotifications } from "@toolpad/core";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { trackUserProfileVisit } from "@/lib/users";
 import {
@@ -60,10 +58,7 @@ import { getFollowAction, getUserConnInfo } from "@/utils/connections";
 import LoyaltyOutlinedIcon from "@mui/icons-material/LoyaltyOutlined";
 import AlternateEmailOutlinedIcon from "@mui/icons-material/AlternateEmailOutlined";
 
-const ContentEditor = dynamic(
-  () => import("@/components/post/ContentEditor"), // Your ContentEditor component path
-  { ssr: false }
-);
+import PostText from "@/components/post/PostText";
 
 type LocalState = {
   isOpen: boolean;
@@ -511,9 +506,8 @@ const FeedCardItem = ({
                 )}
                 {!isDeleted && (
                   <React.Fragment>
-                    <ContentEditor
+                    <PostText
                       disablePadding={true}
-                      readOnly={true}
                       content={item?.content?.trim()}
                     />
                     {/* tagged users */}

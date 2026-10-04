@@ -44,7 +44,7 @@ import RepostPopover from "@/components/post/RepostPopover";
 import RollingNumber from "@/components/post/RollingNumber";
 import AddCircleOutlinedIcon from "@mui/icons-material/AddCircleOutlined";
 import { FeedPost, PostAuthor, PostKind, PostType } from "@/types";
-import ContentEditor from "@/components/post/ContentEditor";
+import PostText from "@/components/post/PostText";
 import DisplayPollItem from "@/components/post/DisplayPollItem";
 import { useNotifications } from "@toolpad/core";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
@@ -537,9 +537,8 @@ const FeedCardReplyItem = ({
                     </Typography>
                   </Stack>
                 )}
-                <ContentEditor
+                <PostText
                   disablePadding={true}
-                  readOnly={true}
                   content={item?.content?.trim()}
                 />
 

@@ -5,20 +5,19 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  memo,
 } from "react";
-import { convertFromRaw, EditorState } from "draft-js";
+import { ContentState, EditorState } from "draft-js";
+import { extractPostReferences } from "@/utils/post-text";
 import Editor from "@draft-js-plugins/editor";
 import editorStyles from "./ContentEditor.module.css";
 
 // custom hashtag plugin
 import customCreateHashtagPlugin, {
-  HashTagItem,
   HashTagItemProps,
 } from "./hashtag";
 
 // custom mention plugin
-import createMentionPlugin, { MentionItem, MentionItemProps } from "./mention";
+import createMentionPlugin, { MentionItemProps } from "./mention";
 
 // linkify plugin
 import createLinkifyPlugin from "@draft-js-plugins/linkify";
@@ -93,16 +92,6 @@ const ContentEditor = ({
 }) => {
   const { token } = useAuthSession();
 
-  const tagRef = useRef<string[]>([]);
-  const mentionRef = useRef<string[]>([]);
-
-  const [state, setState] = useState<{
-    counter: number;
-    limit: number;
-    tags: string[];
-    mentions: string[];
-  }>({ counter: 0, limit: 500, tags: [], mentions: [] });
-
   const linkifyPlugin = useMemo(
     () =>
       createLinkifyPlugin({
@@ -118,15 +107,6 @@ const ContentEditor = ({
     return customCreateHashtagPlugin({
       hashtagList: [],
       HashtagComponent,
-      fetchSuggestions: async (keyword) => {
-        // const res = await fetch(`/api/search-users?q=${encodeURIComponent(keyword)}`);
-        // const data = await res.json();
-        // return data.users; // assuming API returns users with `name`, `username`, `avatar`, etc.
-        return [];
-      },
-      onTagsChange(tags) {
-        tagRef.current = tags;
-      },
     });
   }, []);
   const tokenRef = useRef(token);
@@ -148,9 +128,6 @@ const ContentEditor = ({
           return [];
         }
       },
-      onMentionsChange(mentions) {
-        mentionRef.current = mentions;
-      },
     });
   }, []);
   // emoji plugin
@@ -165,46 +142,23 @@ const ContentEditor = ({
     [mentionPlugin, linkifyPlugin, hashtagPlugin, emojiPlugin]
   );
   const ref = useRef<Editor>(null);
-  // const [editorState, setEditorState] = useState(
-  //   content ? createEditorStateWithText(content) : EditorState.createEmpty()
-  // );
-    // const [editorState, setEditorState] = useState(createEditorStateWithText(content));
+  // Create the immutable Draft state once, not on every keystroke/parent render.
+  const [editorState, setEditorState] = useState(() =>
+    EditorState.createWithContent(ContentState.createFromText(content))
+  );
+  const lastText = useRef(content);
+  const counter = editorState.getCurrentContent().getPlainText().length;
 
-
-  const _editorState = EditorState.createWithContent(convertFromRaw({
-    entityMap: {},
-    blocks: [
-      {
-        text: content,
-        key: 'foo',
-        type: 'unstyled',
-        entityRanges: [],
-        depth: 0,
-        inlineStyleRanges: [],
-      },
-    ],
-  }));
-
-
-const [editorState, setEditorState] = useState(_editorState);
-
-
-
-  const onChange = useCallback((_editorState: EditorState) => {
-    const textContent = _editorState.getCurrentContent().getPlainText();
-    onContentChange &&
-      onContentChange({
-        content: textContent,
-        tags: tagRef.current,
-        mentions: mentionRef.current,
-      });
-    // onTagsChange(getCurrentTags())
-    setState((prev) => ({ ...prev, counter: textContent.length }));
-    setEditorState(_editorState);
+  const onChange = useCallback((nextState: EditorState) => {
+    setEditorState(nextState);
+    const text = nextState.getCurrentContent().getPlainText();
+    // Focus/caret/plugin updates must not re-render the entire composer/thread list.
+    if (text === lastText.current) return;
+    lastText.current = text;
+    onContentChange?.({ content: text, ...extractPostReferences(text) });
   }, [onContentChange]);
 
   useEffect(() => {
-    // setEditorState(() => createEditorStateWithText(content))
     const timeout = setTimeout(() => {
       !readOnly && ref.current?.focus();
     }, 500);
@@ -220,7 +174,7 @@ const [editorState, setEditorState] = useState(_editorState);
       >
         <Editor
           editorState={editorState}
-          onChange={(ev) => onChange(ev)}
+          onChange={onChange}
           plugins={plugins}
           ref={ref}
           placeholder={placeholder || "What's happening?"}
@@ -240,12 +194,12 @@ const [editorState, setEditorState] = useState(_editorState);
             <Box
               sx={{ position: "absolute", right: -12, top: 2, fontSize: 10 }}
             >
-              {state.counter > 0 && (
+              {counter > 0 && (
                 <Typography
                   variant="caption"
-                  color={state.counter > state.limit ? "error" : "textDisabled"}
+                  color={counter > 500 ? "error" : "textDisabled"}
                 >
-                  {state.counter}
+                  {counter}
                 </Typography>
               )}
             </Box>

@@ -10,10 +10,11 @@ import {
   DraftEditorCommand,
   SelectionState,
 } from "draft-js";
-import { EditorPlugin } from "@draft-js-plugins/editor";
+import type { EditorPlugin } from "@draft-js-plugins/editor";
 import { createPortal } from "react-dom";
 import { Avatar, Stack, Typography } from "@mui/material";
 import Fuse from "fuse.js";
+import { postReferences, extractPostReferences } from "@/utils/post-text";
 
 export interface MentionItem {
   name: string;
@@ -32,17 +33,7 @@ const fuseOptions = {
   threshold: 0.3, // Lower means stricter matching
 };
 // 
-const fuse = new Fuse([] as MentionItem[] , fuseOptions);
 
-const randomId = (length: number = 8): string => {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-};
 
 
 interface CreateMentionPluginOptions {
@@ -120,7 +111,7 @@ const SuggestionPortal: React.FC<{
     >
       {suggestions.map((item, i) => (
         <div
-          key={item?.id ? item.id : randomId()}
+          key={item.id ?? item.username}
           onMouseDown={(e) => {
             e.preventDefault();
             onSelect(item);
@@ -168,7 +159,10 @@ const createMentionPlugin = ({
   onMentionsChange,
   MentionComponent = DefaultMentionComponent,
 }: CreateMentionPluginOptions) => {
+  const fuse = new Fuse([] as MentionItem[], fuseOptions);
+  let searchVersion = 0;
   const pluginInstance = {
+    notify: () => {},
     editorRef: null as any,
     suggestions: [] as MentionItem[],
     position: null as { top: number; left: number } | null,
@@ -210,11 +204,8 @@ const createMentionPlugin = ({
       }
     });
 
-    // Match single-word mentions like @javascript or @beautiful
-    const regex = /@(\w+)/g;
-    let matchArr;
-    while ((matchArr = regex.exec(text)) !== null) {
-      callback(matchArr.index, matchArr.index + matchArr[0].length);
+    for (const ref of postReferences(text)) {
+      if (ref.kind === "mention") callback(ref.start, ref.end);
     }
   };
 
@@ -249,7 +240,6 @@ const createMentionPlugin = ({
       {
         strategy: mentionStrategy,
         component: (props) => {
-          console.log("component strategy", props);
           // This will be something like "@John Doe"
           const decoratedText = props.decoratedText.trim();
 
@@ -264,6 +254,12 @@ const createMentionPlugin = ({
       },
     ],
 
+    willUnmount: () => {
+      searchVersion++;
+      if (pluginInstance.searchTimer) clearTimeout(pluginInstance.searchTimer);
+      pluginInstance.notify = () => {};
+    },
+
     initialize: ({ getEditorRef, setEditorState, getEditorState }) => {
       pluginInstance.editorRef = getEditorRef();
       pluginInstance.setEditorStateFn = setEditorState;
@@ -271,6 +267,9 @@ const createMentionPlugin = ({
     },
 
     onChange: (editorState: EditorState) => {
+      const version = ++searchVersion;
+      if (pluginInstance.searchTimer) clearTimeout(pluginInstance.searchTimer);
+      pluginInstance.suggestions = [];
       const selection = editorState.getSelection();
       const anchorKey = selection.getAnchorKey();
       const contentState = editorState.getCurrentContent();
@@ -279,7 +278,7 @@ const createMentionPlugin = ({
       const offset = selection.getAnchorOffset();
       const textUntilCursor = text.slice(0, offset);
 
-      const mentionMatch = textUntilCursor.match(/(?:^|\s)@([a-zA-Z0-9_]+)$/);
+      const mentionMatch = textUntilCursor.match(/(?:^|\s)@([\p{L}\p{M}\p{N}_.-]+)$/u);
 
       if (mentionMatch) {
         const keyword = mentionMatch[1].toLowerCase();
@@ -289,7 +288,6 @@ const createMentionPlugin = ({
         // search locally list using fuse.js
         fuse.setCollection(pluginInstance.mentionList)
         const filteredLocal = fuse.search(keyword).map((result) => result.item);
-        console.log("filteredLocal mentions ", filteredLocal);
         if (filteredLocal.length > 0) {
           pluginInstance.suggestions = filteredLocal;
         } else {
@@ -301,6 +299,7 @@ const createMentionPlugin = ({
             pluginInstance.searchTimer = setTimeout(async () => {
               try {
                 const results = await pluginInstance.fetchSuggestions!(keyword);
+                if (version !== searchVersion) return;
                 // Merge and deduplicate
                 const combined = [...pluginInstance.mentionList, ...results];
                 const uniqueMap = new Map();
@@ -321,6 +320,7 @@ const createMentionPlugin = ({
                 pluginInstance.suggestions = fuse
                   .search(pluginInstance.lastKeyword)
                   .map((r) => r.item);
+                pluginInstance.notify();
               } catch (err) {
                 console.error("Error fetching suggestions:", err);
               }
@@ -359,13 +359,7 @@ const createMentionPlugin = ({
         pluginInstance.position = null;
       }
 
-      // get tags
-      const plainText = editorState.getCurrentContent().getPlainText()
-      if(plainText.length > 0){
-        const extract =  [...plainText.matchAll(/@(\w+)/g)].map((m) => m[1]);
-        const mentions = Array.from(new Set(extract))
-        pluginInstance.onMentionsChange && pluginInstance.onMentionsChange(mentions);
-      }
+      pluginInstance.onMentionsChange?.(extractPostReferences(contentState.getPlainText()).mentions);
 
       return editorState;
     },
@@ -380,7 +374,7 @@ const createMentionPlugin = ({
           const block = content?.getBlockForKey(anchorKey);
           const offset = selection.getAnchorOffset();
           const text = block?.getText().slice(0, offset);
-          const match = text?.match(/@([a-zA-Z0-9_]+)$/);
+          const match = text?.match(/@([\p{L}\p{M}\p{N}_.-]+)$/u);
     
           if (match && pluginInstance.suggestions.length > 0) {
             return "insert-mention";
@@ -405,7 +399,7 @@ const createMentionPlugin = ({
         const block = content.getBlockForKey(anchorKey);
         const offset = selection.getAnchorOffset();
         const text = block.getText().slice(0, offset);
-        const match = text.match(/@([a-zA-Z0-9_]+)$/);
+        const match = text.match(/@([\p{L}\p{M}\p{N}_.-]+)$/u);
     
         if (match && pluginInstance.suggestions.length > 0) {
           // Insert the first suggestion as a mention
@@ -429,7 +423,13 @@ const createMentionPlugin = ({
   };
   
 
-  const MentionSuggestions = () => (
+  const MentionSuggestions = () => {
+    const [, render] = useState(0);
+    useEffect(() => {
+      pluginInstance.notify = () => render(value => value + 1);
+      return () => { pluginInstance.notify = () => {}; };
+    }, []);
+    return (
     <SuggestionPortal
       suggestions={pluginInstance.suggestions}
       onSelect={(item) => {
@@ -441,13 +441,15 @@ const createMentionPlugin = ({
           pluginInstance.setEditorStateFn(
             insertMention(pluginInstance.getEditorStateFn(), item)
           );
-          pluginInstance.suggestions = [];
-          pluginInstance.position = null;
         }
+        pluginInstance.suggestions = [];
+        pluginInstance.position = null;
+        pluginInstance.notify();
       }}
       position={pluginInstance.position}
     />
-  );
+    );
+  };
 
   return {
     mentionPlugin,
@@ -456,65 +458,3 @@ const createMentionPlugin = ({
 };
 
 export default createMentionPlugin;
-
-// onChange: (editorState: EditorState) => {
-//   const selection = editorState.getSelection();
-//   const anchorKey = selection.getAnchorKey();
-//   const contentState = editorState.getCurrentContent();
-//   const block = contentState.getBlockForKey(anchorKey);
-//   const text = block.getText();
-//   const offset = selection.getAnchorOffset();
-//   const textUntilCursor = text.slice(0, offset);
-
-//   const mentionMatch = textUntilCursor.match(/@([a-zA-Z0-9_ ]*)$/);
-//   if (mentionMatch) {
-//     const keyword = mentionMatch[1].toLowerCase();
-
-//     pluginInstance.lastKeyword = keyword;
-
-//     if (pluginInstance.fetchSuggestions) {
-//       if (pluginInstance.searchTimer) {
-//         clearTimeout(pluginInstance.searchTimer);
-//       }
-
-//       pluginInstance.searchTimer = setTimeout(async () => {
-//         const results = await pluginInstance.fetchSuggestions!(keyword);
-//         pluginInstance.suggestions = results;
-
-//         const selectionRange = window.getSelection()?.getRangeAt(0);
-//         if (selectionRange) {
-//           const rect = selectionRange.getBoundingClientRect();
-//           pluginInstance.position = {
-//             top: rect.bottom + window.scrollY,
-//             left: rect.left + window.scrollX,
-//           };
-//         }
-
-//         // Force re-render
-//         if (
-//           pluginInstance.setEditorStateFn &&
-//           pluginInstance.getEditorStateFn
-//         ) {
-//           pluginInstance.setEditorStateFn(
-//             EditorState.set(pluginInstance.getEditorStateFn(), {
-//               ...editorState,
-//               nativelyRenderedContent: false,
-//             })
-//           );
-//         }
-//       }, 300); // debounce for 300ms
-//     } else {
-//       // fallback to local filtering
-//       pluginInstance.suggestions = pluginInstance.mentionList.filter(
-//         (user) =>
-//           user.name.toLowerCase().includes(keyword) ||
-//           user.username.toLowerCase().includes(keyword)
-//       );
-//     }
-//   } else {
-//     pluginInstance.suggestions = [];
-//     pluginInstance.position = null;
-//   }
-
-//   return editorState;
-// },

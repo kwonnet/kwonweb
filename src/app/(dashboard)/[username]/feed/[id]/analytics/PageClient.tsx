@@ -26,12 +26,8 @@ import Link from "next/link";
 import { FeedPost, FeedPostDetail } from "@/types";
 import PageHeader from "@/components/common/PageHeader";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 
-const ContentEditor = dynamic(
-  () => import("@/components/post/ContentEditor"), // Your ContentEditor component path
-  { ssr: false }
-);
+import PostText from "@/components/post/PostText";
 
 const DisplayTabs = ({
   items,
@@ -213,10 +209,9 @@ const PageClient = ({
             }}
             onClick={(ev) => onViewPost(ev)}
           >
-            <ContentEditor
+            <PostText
               content={post?.content}
               disablePadding={true}
-              readOnly={true}
             />
           </Box>
         </Paper>

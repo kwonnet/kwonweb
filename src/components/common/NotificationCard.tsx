@@ -16,12 +16,8 @@ import FavoriteOutlinedIcon from '@mui/icons-material/FavoriteOutlined';
 import RepeatOutlinedIcon from '@mui/icons-material/RepeatOutlined';
 import { useRouter } from "next/navigation";
 import { useAuthSession } from "@/hooks";
-import dynamic from "next/dynamic";
 
-const ContentEditor = dynamic(
-  () => import("@/components/post/ContentEditor"), // Your ContentEditor component path
-  { ssr: false }
-);
+import PostText from "@/components/post/PostText";
 
 const NotificationCard = ({
   item,
@@ -107,7 +103,7 @@ const NotificationCard = ({
                     overflow: "hidden",
                     maxWidth: "100%", // Ensures it adapts to container width
                   }}>
-                    {<ContentEditor disablePadding={true} readOnly={true} content={item?.post.content} />}
+                    {<PostText disablePadding={true} content={item?.post.content} />}
                   </Box>}
                   <Stack spacing={0.5} direction={"row"}>
                     <Typography style={{fontStyle: "italic"}} variant="caption" color="textDisabled">{formatRelativeTime(item.createdAt)}</Typography>

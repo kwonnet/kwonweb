@@ -33,7 +33,7 @@ import RollingNumber from "@/components/post/RollingNumber";
 import AddCircleOutlinedIcon from "@mui/icons-material/AddCircleOutlined";
 import { FeedPost, PostAuthor, PostKind, PostType } from "@/types";
 import DisplayPollItem from "@/components/post/DisplayPollItem";
-import ContentEditor from "@/components/post/ContentEditor";
+import PostText from "@/components/post/PostText";
 import { useNotifications } from "@toolpad/core";
 import { appUrl } from "@/config";
 import Link from "next/link";
@@ -247,9 +247,8 @@ const FeedCardItem = ({
                 }}
               >
                 <Link href={postUrl} target="_blank" style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}>
-                <ContentEditor
+                <PostText
                   disablePadding={true}
-                  readOnly={true}
                   content={item?.content?.trim()}
                 />
                 </Link>

@@ -10,20 +10,12 @@ import {
   DraftEditorCommand,
   SelectionState,
 } from "draft-js";
-import { EditorPlugin } from "@draft-js-plugins/editor";
+import type { EditorPlugin } from "@draft-js-plugins/editor";
 import { createPortal } from "react-dom";
 import { formatNumber } from "@/utils";
 import Fuse from "fuse.js";
+import { postReferences, extractPostReferences } from "@/utils/post-text";
 
-const randomId = (length: number = 8): string => {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-};
 
 
 export interface HashTagItem {
@@ -51,10 +43,9 @@ const fuseOptions = {
   threshold: 0.3, // Lower means stricter matching
 };
 //
-const fuse = new Fuse([] as HashTagItem[], fuseOptions);
 
 const extractTagsFromContent = (content: string, tagList: HashTagItem[] ): string[] => {
-  const singleTags = [...content.matchAll(/#(\w+)/g)].map(m => m[1]);
+  const singleTags = extractPostReferences(content).tags;
 
   const multiWordTags = tagList
     .filter(tag => tag.name.includes(" "))
@@ -134,7 +125,7 @@ const SuggestionPortal: React.FC<{
     >
       {suggestions.map((tag, i) => (
         <div
-          key={tag?.id ? tag.id : randomId()}
+          key={tag.id ?? tag.name}
           onMouseDown={(e) => {
             e.preventDefault();
             onSelect(tag);
@@ -175,7 +166,10 @@ const createHashtagPlugin = ({
   hashtagPlugin: EditorPlugin;
   HashtagSuggestions: React.FC;
 } => {
+  const fuse = new Fuse([] as HashTagItem[], fuseOptions);
+  let searchVersion = 0;
   const pluginInstance = {
+    notify: () => {},
     editorRef: null as any,
     suggestions: [] as HashTagItem[],
     position: null as { top: number; left: number } | null,
@@ -217,11 +211,8 @@ const createHashtagPlugin = ({
       }
     });
 
-    // Match single-word hashtags like #javascript or #beautiful
-    const regex = /#(\w+)/g;
-    let matchArr;
-    while ((matchArr = regex.exec(text)) !== null) {
-      callback(matchArr.index, matchArr.index + matchArr[0].length);
+    for (const ref of postReferences(text)) {
+      if (ref.kind === "hashtag") callback(ref.start, ref.end);
     }
   };
 
@@ -282,6 +273,12 @@ const createHashtagPlugin = ({
       },
     ],
 
+    willUnmount: () => {
+      searchVersion++;
+      if (pluginInstance.searchTimer) clearTimeout(pluginInstance.searchTimer);
+      pluginInstance.notify = () => {};
+    },
+
     initialize: ({ getEditorRef, setEditorState, getEditorState }) => {
       pluginInstance.editorRef = getEditorRef();
       pluginInstance.setEditorStateFn = setEditorState;
@@ -289,6 +286,9 @@ const createHashtagPlugin = ({
     },
 
     onChange: (editorState: EditorState): EditorState => {
+      const version = ++searchVersion;
+      if (pluginInstance.searchTimer) clearTimeout(pluginInstance.searchTimer);
+      pluginInstance.suggestions = [];
       const selection = editorState.getSelection();
       if (!selection.isCollapsed()) return editorState;
 
@@ -307,7 +307,6 @@ const createHashtagPlugin = ({
         // search locally list using fuse.js
         fuse.setCollection(pluginInstance.hashtagList);
         const filteredLocal = fuse.search(keyword).map((result) => result.item);
-        console.log("filteredLocal mentions ", filteredLocal);
         if (filteredLocal.length > 0) {
           pluginInstance.suggestions = filteredLocal;
         } else {
@@ -319,13 +318,13 @@ const createHashtagPlugin = ({
             pluginInstance.searchTimer = setTimeout(async () => {
               try {
                 const results = await pluginInstance.fetchSuggestions!(query);
-                console.log("server api hashtags ", query, results)
+                if (version !== searchVersion) return;
                 // Merge and deduplicate
                 const combined = [...pluginInstance.hashtagList, ...results];
                 const uniqueMap = new Map();
                 combined.forEach((user) => {
-                  if (!uniqueMap.has(user.id)) {
-                    uniqueMap.set(user.id, user);
+                  if (!uniqueMap.has(user.id ?? user.name)) {
+                    uniqueMap.set(user.id ?? user.name, user);
                   }
                 });
                 const uniqueList: HashTagItem[] = Array.from(
@@ -340,6 +339,7 @@ const createHashtagPlugin = ({
                 pluginInstance.suggestions = fuse
                   .search(pluginInstance.lastKeyword)
                   .map((r) => r.item);
+                pluginInstance.notify();
               } catch (err) {
                 console.error("Error fetching suggestions:", err);
               }
@@ -367,10 +367,7 @@ const createHashtagPlugin = ({
       }
       // get tags
       const plainText = editorState.getCurrentContent().getPlainText()
-      if(plainText.length > 0){
-        const tags = extractTagsFromContent(plainText, pluginInstance.hashtagList ?? []);
-        pluginInstance.onTagsChange && pluginInstance.onTagsChange(tags);
-      }
+      pluginInstance.onTagsChange?.(extractTagsFromContent(plainText, pluginInstance.hashtagList ?? []));
       // return state
       return editorState;
     },
@@ -445,7 +442,13 @@ const createHashtagPlugin = ({
   };
   
 
-  const HashtagSuggestions = () => (
+  const HashtagSuggestions = () => {
+    const [, render] = useState(0);
+    useEffect(() => {
+      pluginInstance.notify = () => render(value => value + 1);
+      return () => { pluginInstance.notify = () => {}; };
+    }, []);
+    return (
     <SuggestionPortal
       suggestions={pluginInstance.suggestions}
       onSelect={(tag) => {
@@ -457,13 +460,15 @@ const createHashtagPlugin = ({
           pluginInstance.setEditorStateFn(
             insertHashtag(pluginInstance.getEditorStateFn(), tag.name)
           );
-          pluginInstance.suggestions = [];
-          pluginInstance.position = null;
         }
+        pluginInstance.suggestions = [];
+        pluginInstance.position = null;
+        pluginInstance.notify();
       }}
       position={pluginInstance.position}
     />
-  );
+    );
+  };
 
   return {
     hashtagPlugin,

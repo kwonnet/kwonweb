@@ -18,7 +18,7 @@ import AuthorHoverPreview from "@/components/post/AuthorHoverPreview";
 import DisplayFeedMedia from "@/components/post/DisplayFeedMedia";
 import { FeedPost, PostAuthor, PostKind, User } from "@/types";
 import { useAuthSession } from "@/hooks";
-import ContentEditor from "./ContentEditor";
+import PostText from "./PostText";
 import { FollowAction } from "@/types/user";
 
 const FeedQuoteItem = ({
@@ -210,10 +210,9 @@ const FeedQuoteItem = ({
                   position: "relative",
                 }}
               >
-                <ContentEditor
+                <PostText
                   content={item?.content?.trim()}
                   disablePadding={true}
-                  readOnly={true}
                 />
                 {/* <Typography sx={{ 
                   display: "-webkit-box",

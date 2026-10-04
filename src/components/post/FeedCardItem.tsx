@@ -42,7 +42,7 @@ import PostOptions from "./PostOptions";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 import { trackUserProfileVisit } from "@/lib/users";
 import Link from "next/link";
-import ContentEditor from "./ContentEditor";
+import PostText from "./PostText";
 import { sendPostClick } from "@/lib/posts";
 import { PostMetricAction, PostMetricSource, PostTagMention } from "@/types/post";
 import dynamic from "next/dynamic";
@@ -471,9 +471,8 @@ const FeedCardItem = ({
             position: "relative",
           }}
         >
-          <ContentEditor
+          <PostText
             disablePadding={true}
-            readOnly={true}
             content={item?.content?.trim()}
             key={item.id}
           />

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { shouldRefreshAccessToken } from '../src/lib/auth-refresh-policy.ts';
-import { tokenizePostText } from '../src/utils/post-text.ts';
+import { tokenizePostText, extractPostReferences, postReferences } from '../src/utils/post-text.ts';
 const now = 1_800_000_000_000;
 const jwt = claims => `header.${Buffer.from(JSON.stringify(claims)).toString('base64url')}.signature`;
 
@@ -29,4 +29,22 @@ test('feed links do not turn scripts, HTML, or email addresses into unsafe links
   const parts = tokenizePostText(text);
   assert.equal(parts.map(p => p.text).join(''), text);
   assert.deepEqual(parts.filter(p => p.href), [{ text: 'www.example.com', href: 'https://www.example.com', external: true }]);
+});
+
+test('reading and composing preserve full usernames, Unicode tags, and exclude email/URL fragments', () => {
+  const text = 'Hi @Darien.Koch51 and @mary-jane! #naïve #cafe\u0301 #你好\n@Darien.Koch51 user.name@example.com https://example.com/@fake#fragment';
+  assert.deepEqual(extractPostReferences(text), {
+    mentions: ['Darien.Koch51', 'mary-jane'], tags: ['naïve', 'cafe\u0301', '你好'],
+  });
+  for (const ref of postReferences(text)) assert.equal(text.slice(ref.start, ref.end), ref.text);
+  const parts = tokenizePostText(text);
+  assert.equal(parts.map(part => part.text).join(''), text);
+  assert.equal(parts[1].href, '/@Darien.Koch51');
+  assert.deepEqual(extractPostReferences(''), { mentions: [], tags: [] });
+});
+
+test('sentence punctuation is not part of a username or hashtag', () => {
+  assert.deepEqual(extractPostReferences('(@alice), @Bob.Smith. #hello!'), {
+    mentions: ['alice', 'Bob.Smith'], tags: ['hello'],
+  });
 });
