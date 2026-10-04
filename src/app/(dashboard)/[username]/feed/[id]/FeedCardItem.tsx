@@ -42,7 +42,7 @@ import RollingNumber from "@/components/post/RollingNumber";
 import AddCircleOutlinedIcon from "@mui/icons-material/AddCircleOutlined";
 import { FeedPost, PostAuthor, PostKind, PostType } from "@/types";
 import DisplayPollItem from "@/components/post/DisplayPollItem";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 
 import Link from "next/link";
@@ -497,10 +497,11 @@ const FeedCardItem = ({
               >
                 {isDeleted && (
                   <Typography
-                    sx={{ py: 4 }}
-                    textAlign={"center"}
                     color="textDisabled"
-                  >
+                    sx={{
+                      textAlign: "center",
+                      py: 4
+                    }}>
                     This content is not available.
                   </Typography>
                 )}
@@ -513,15 +514,15 @@ const FeedCardItem = ({
                     {/* tagged users */}
                     <Stack
                       direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
-                      justifyContent={"space-between"}
                       spacing={1}
+                      sx={{
+                        justifyContent: "space-between"
+                      }}
                     >
                       {item?.tagUsers?.length > 0 && (
                         <Stack
                           direction={"row"}
-                          alignItems={"center"}
                           spacing={0.5}
-                          sx={{ pt: 0.5, cursor: "pointer" }}
                           onClick={(ev) => {
                             ev.stopPropagation();
                             ev.preventDefault();
@@ -533,7 +534,11 @@ const FeedCardItem = ({
                               title: "Tagged Users",
                             }));
                           }}
-                        >
+                          sx={{
+                            alignItems: "center",
+                            pt: 0.5,
+                            cursor: "pointer"
+                          }}>
                           <LoyaltyOutlinedIcon
                             sx={{
                               color: "text.disabled",
@@ -560,9 +565,7 @@ const FeedCardItem = ({
                       {item?.mentions?.length > 0 && (
                         <Stack
                           direction={"row"}
-                          alignItems={"center"}
                           spacing={0.5}
-                          sx={{ pt: 0.5, cursor: "pointer" }}
                           onClick={(ev) => {
                             ev.stopPropagation();
                             ev.preventDefault();
@@ -574,7 +577,11 @@ const FeedCardItem = ({
                               title: "Mentions",
                             }));
                           }}
-                        >
+                          sx={{
+                            alignItems: "center",
+                            pt: 0.5,
+                            cursor: "pointer"
+                          }}>
                           <AlternateEmailOutlinedIcon
                             sx={{
                               color: "text.disabled",

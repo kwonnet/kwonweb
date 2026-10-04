@@ -11,7 +11,7 @@ import {
   Avatar,
   Stack,
 } from "@mui/material";
-import { SignOutButton, AccountPopoverFooter } from "@toolpad/core/Account";
+import { signOut } from "next-auth/react";
 import AddIcon from "@mui/icons-material/Add";
 import Link from "next/link";
 import { useAuthSession } from "@/hooks";
@@ -37,7 +37,14 @@ export default function AccountToolbar() {
   const { user } = useAuthSession();
   return (
     <Stack direction="column" spacing={1} sx={{ width: 240 }}>
-      <Stack direction={"row"} alignItems="center" spacing={1} px={2} py={1}>
+      <Stack
+        direction={"row"}
+        spacing={1}
+        sx={{
+          alignItems: "center",
+          px: 2,
+          py: 1
+        }}>
         <Avatar
           sx={{
             width: 44,
@@ -46,7 +53,7 @@ export default function AccountToolbar() {
           src={user?.avatar ?? ""}
           alt={user?.name ?? ""}
         >
-          {user?.name[0]}
+          {user?.name?.[0]}
         </Avatar>
         <Stack
           sx={{ textDecoration: "none", color: "inherit", overflow: "hidden" }}
@@ -94,7 +101,13 @@ export default function AccountToolbar() {
         </Stack>
       </Stack>
       <Divider />
-      <Typography pl={1} variant="subtitle1" mx={2} mt={1}>
+      <Typography
+        variant="subtitle1"
+        sx={{
+          pl: 1,
+          mx: 2,
+          mt: 1
+        }}>
         My Profiles
       </Typography>
       <Divider />
@@ -154,9 +167,9 @@ export default function AccountToolbar() {
         </Button>
       </MenuList>
       <Divider />
-      <AccountPopoverFooter>
-        <SignOutButton />
-      </AccountPopoverFooter>
+      <Stack sx={{ p: 2 }}>
+        <Button variant="outlined" onClick={() => signOut({ callbackUrl: "/auth/signin" })}>Sign out</Button>
+      </Stack>
     </Stack>
   );
 }

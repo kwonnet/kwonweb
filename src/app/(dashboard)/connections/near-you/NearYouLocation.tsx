@@ -2,7 +2,7 @@
 import { useAuthSession } from '@/hooks'
 import { logUserLocation } from '@/lib/users'
 import { getUserLocation } from '@/utils/location'
-import { useNotifications } from '@toolpad/core'
+import { useNotifications } from "@/providers/NotificationsProvider"
 import React, { useEffect, useState } from 'react'
 
 const NearYouLocation = () => {

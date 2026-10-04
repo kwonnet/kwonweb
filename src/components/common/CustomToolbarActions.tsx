@@ -7,7 +7,7 @@ import {
   Stack,
   Tooltip,
 } from "@mui/material";
-import { Account } from "@toolpad/core";
+import AccountMenu from "./AccountMenu";
 import React from "react";
 import SearchToolbar from "./SearchToolbar";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
@@ -41,8 +41,10 @@ const CustomToolbarActions = (props: {
       <Stack
         suppressHydrationWarning
         direction="row"
-        alignItems={"center"}
         spacing={{lg: 2, md: 2, sm: 1, xs: 1}}
+        sx={{
+          alignItems: "center"
+        }}
       >
         <SearchToolbar />
         <Tooltip title="Store" suppressHydrationWarning>
@@ -75,7 +77,7 @@ const CustomToolbarActions = (props: {
           </Tooltip>
         {props.NotificationNode}
 
-        <Account slots={{ popoverContent: AccountToolbar }} />
+        <AccountMenu />
       </Stack>
     </React.Fragment>
   );

@@ -30,7 +30,9 @@ function ActivityBadge({ count = 3, text = "posted", avatars = [] }: { avatars: 
           <Avatar key={item.id} src={item.src} sx={{ width: 28, height: 28, border: '2px solid white' }} />
         ))}
       </AvatarGroup>
-      <Typography variant="body2" fontWeight="600">
+      <Typography variant="body2" sx={{
+        fontWeight: "600"
+      }}>
         {text}
       </Typography>
 

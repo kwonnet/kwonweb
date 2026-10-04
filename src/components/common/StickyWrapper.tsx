@@ -77,7 +77,9 @@ const StickyWrapper = (props: { children?: React.ReactNode, showTitle?: boolean;
               direction={"row"}
               sx={{ justifyContent: "space-between", alignItems: "center" }}
             >
-              <Stack onClick={(ev) => handleGoBack(ev)} alignItems={"center"} direction={"row"} spacing={1}>
+              <Stack onClick={(ev) => handleGoBack(ev)} direction={"row"} spacing={1} sx={{
+                alignItems: "center"
+              }}>
                 <IconButton  size="small">
                 <ArrowBackIosNewOutlined />
               </IconButton>

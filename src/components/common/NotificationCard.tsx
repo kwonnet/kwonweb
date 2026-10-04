@@ -74,10 +74,14 @@ const NotificationCard = ({
               </Grid>
               <Grid size={{ lg: 10, md: 10, sm: 10, xs: 10 }}>
                 <Box onClick={ev => isPost ? handleViewPost() : {}}>
-                  {!isPost && <Typography color="textPrimary" fontWeight={300}>
+                  {!isPost && <Typography color="textPrimary" sx={{
+                    fontWeight: 300
+                  }}>
                     {/* {item?.title} */} {item?.sender?.name}
                   </Typography>}
-                  <Stack direction={"row"}  alignItems={"center"} spacing={0.5}>
+                  <Stack direction={"row"}  spacing={0.5} sx={{
+                    alignItems: "center"
+                  }}>
                     <Typography
                     variant="body2"
                     color={item.isSeen ? "textDisabled" : "textPrimary"}

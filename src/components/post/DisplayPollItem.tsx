@@ -12,7 +12,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { FeedPost } from "@/types";
 import Link from "next/link";
 import Countdown from "react-countdown";
@@ -156,7 +156,9 @@ const DisplayPollItem = ({
                       }
                       tabIndex={-1}
                       disableRipple
-                      inputProps={{ "aria-labelledby": item.id }}
+                      slotProps={{
+                        input: { "aria-labelledby": item.id }
+                      }}
                     />
                   </ListItemIcon>
                 )}
@@ -166,7 +168,12 @@ const DisplayPollItem = ({
           ))}
           <Box sx={{ left: 0, position: "absolute" }}>
             {totalVotes > 0 && (
-              <Stack direction={"row"} sx={{ alignItems: "center" }} gap={1}>
+              <Stack
+                direction={"row"}
+                sx={{
+                  gap: 1,
+                  alignItems: "center"
+                }}>
                 <Typography
                   sx={{ fontSize: 10 }}
                   color="textDisabled"
@@ -186,7 +193,12 @@ const DisplayPollItem = ({
           </Box>
           <Box sx={{ right: 5, position: "absolute" }}>
             {!poll.isExpired ? (
-              <Stack direction={"row"} sx={{ alignItems: "center" }} gap={1}>
+              <Stack
+                direction={"row"}
+                sx={{
+                  gap: 1,
+                  alignItems: "center"
+                }}>
                 <Typography
                   color="textDisabled"
                   variant="caption"
@@ -323,7 +335,9 @@ const DisplayPollItem = ({
                   }
                   tabIndex={-1}
                   disableRipple
-                  inputProps={{ "aria-labelledby": item.id }}
+                  slotProps={{
+                    input: { "aria-labelledby": item.id }
+                  }}
                 />
               </ListItemIcon>
               <ListItemText id={item.id} primary={item.text} />
@@ -332,7 +346,12 @@ const DisplayPollItem = ({
         ))}
         <Box sx={{ left: 0, position: "absolute" }}>
           {totalVotes > 0 && (
-            <Stack direction={"row"} sx={{ alignItems: "center" }} gap={1}>
+            <Stack
+              direction={"row"}
+              sx={{
+                gap: 1,
+                alignItems: "center"
+              }}>
               <Typography
                 sx={{ fontSize: 10 }}
                 color="textDisabled"
@@ -352,7 +371,12 @@ const DisplayPollItem = ({
         </Box>
         <Box sx={{ right: 5, position: "absolute" }}>
           {!poll.isExpired ? (
-            <Stack direction={"row"} sx={{ alignItems: "center" }} gap={1}>
+            <Stack
+              direction={"row"}
+              sx={{
+                gap: 1,
+                alignItems: "center"
+              }}>
               <Typography
                 color="textDisabled"
                 variant="caption"

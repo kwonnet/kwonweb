@@ -1,5 +1,5 @@
 "use client";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import usePostInteractions from "@/hooks/usePostInteractions";
 import useFeedCacheMutate from "@/hooks/useFeedCacheMutate";
 import React, { useEffect, useState } from "react";

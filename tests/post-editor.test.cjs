@@ -22,8 +22,9 @@ const element = ({ children }) => React.createElement('div', null, children);
 function loader(overrides = {}) {
   const cache = new Map();
   const mocks = {
-    '@mui/material': { Box: element, Typography: element, Avatar: element, Stack: element },
+    '@mui/material': { Box: element, Typography: element, Avatar: element, Stack: element, IconButton: element, Popover: empty },
     '@/utils': { formatNumber: String },
+    '@mui/icons-material/EmojiEmotionsOutlined': empty,
     'next/link': ({ prefetch, ...props }) => React.createElement('a', props),
     ...overrides,
   };
@@ -70,8 +71,7 @@ test('composer initializes once; caret moves do not update posts; clearing text 
   const ContentEditor = loader({
     'draft-js': draft,
     '@draft-js-plugins/editor': props => { editorProps = props; return null; },
-    '@draft-js-plugins/linkify': () => ({}),
-    '@draft-js-plugins/emoji': () => ({ EmojiSelect: empty, EmojiSuggestions: empty }),
+    './linkify': () => ({}),
     './mention': () => ({ mentionPlugin: {}, MentionSuggestions: empty }),
     './hashtag': () => ({ hashtagPlugin: {}, HashtagSuggestions: empty }),
     '@/hooks': { useAuthSession: () => ({ token: 'test' }) },
@@ -146,4 +146,42 @@ test('async mention suggestions appear without another keystroke and stale searc
     window.getSelection = getSelection;
     await React.act(async () => root.unmount());
   }
+});
+
+test('composer links use the safe post tokenizer and exclude executable schemes', () => {
+  const { linkStrategy } = loader()('src/components/post/linkify.tsx');
+  const text = 'Hi @alice #news https://example.com/path?x=1 javascript:alert(1)';
+  const ranges = [];
+  linkStrategy(ContentState.createFromText(text).getFirstBlock(), (start, end) => ranges.push(text.slice(start, end)));
+  assert.deepEqual(ranges, ['https://example.com/path?x=1']);
+});
+
+test('emoji replaces the selection and preserves post metadata without restoring stale Draft text', async () => {
+  let editorProps, emojiProps;
+  const FakeEditor = React.forwardRef((props, ref) => {
+    editorProps = props;
+    React.useImperativeHandle(ref, () => ({ focus: () => props.onChange(props.editorState) }));
+    return null;
+  });
+  const ContentEditor = loader({
+    '@mui/material': { Box: element, Typography: element, Popover: element,
+      IconButton: props => React.createElement('button', { onClick: props.onClick }, 'emoji') },
+    'next/dynamic': () => props => { emojiProps = props; return null; },
+    '@draft-js-plugins/editor': FakeEditor,
+    './mention': () => ({ mentionPlugin: {}, MentionSuggestions: empty }),
+    './hashtag': () => ({ hashtagPlugin: {}, HashtagSuggestions: empty }),
+    '@/hooks': { useAuthSession: () => ({ token: 'test' }) },
+    '@/lib/users': { searchUsers: async () => [] },
+  })('src/components/post/EditableContentEditor.tsx').default;
+  const updates = [];
+  const root = createRoot(document.getElementById('root'));
+  try {
+    await React.act(async () => root.render(React.createElement(ContentEditor, { content: 'Hello @alice #news', onContentChange: value => updates.push(value) })));
+    const initial = editorProps.editorState;
+    await React.act(async () => editorProps.onChange(EditorState.forceSelection(initial, initial.getSelection().merge({ anchorOffset: 0, focusOffset: 5 }))));
+    await React.act(async () => document.querySelector('button').click());
+    await React.act(async () => emojiProps.onEmojiClick({ emoji: '😊' }));
+    assert.equal(editorProps.editorState.getCurrentContent().getPlainText(), '😊 @alice #news');
+    assert.deepEqual(updates, [{ content: '😊 @alice #news', mentions: ['alice'], tags: ['news'] }]);
+  } finally { await React.act(async () => root.unmount()); }
 });

@@ -81,7 +81,9 @@ const ConnectionCard = ({
   return (
     <React.Fragment>
       <Paper sx={{ pb: 2, height: "100%" }}>
-        <Stack direction={"row"} alignItems={"center"}>
+        <Stack direction={"row"} sx={{
+          alignItems: "center"
+        }}>
           <Box>
             <Badge
               overlap="circular"
@@ -202,7 +204,9 @@ const ConnectionCard = ({
           </Typography>
 
           <Box sx={{ pt: 0.5 }}>
-            <Stack direction={"row"} gap={2}>
+            <Stack direction={"row"} sx={{
+              gap: 2
+            }}>
               <Typography
                 color="textDisabled"
                 variant="caption"

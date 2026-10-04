@@ -48,7 +48,7 @@ import AddCircleOutlinedIcon from "@mui/icons-material/AddCircleOutlined";
 import { FeedPost, PostAuthor, PostKind, PostType } from "@/types";
 import PostText from "@/components/post/PostText";
 import DisplayPollItem from "@/components/post/DisplayPollItem";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 import {
   PostMetricAction,
@@ -509,10 +509,11 @@ const ThreadCardItem = ({
             {isDeleted && item.totalReplies > 0 && (
               <Box>
                 <Typography
-                  sx={{ pt: 4 }}
-                  textAlign={"center"}
                   color="textDisabled"
-                >
+                  sx={{
+                    textAlign: "center",
+                    pt: 4
+                  }}>
                   This content is not available.
                 </Typography>
                 <Box sx={{ textAlign: "center", display: "block" }}>
@@ -533,10 +534,11 @@ const ThreadCardItem = ({
                   <Stack
                     onClick={(ev) => ev.stopPropagation()}
                     direction={"row"}
-                    alignItems={"center"}
                     spacing={1}
-                    sx={{ mt: -0.5 }}
-                  >
+                    sx={{
+                      alignItems: "center",
+                      mt: -0.5
+                    }}>
                     <Typography color="textDisabled" variant="caption">
                       replying to{" "}
                     </Typography>
@@ -559,15 +561,15 @@ const ThreadCardItem = ({
                 {/* tagged users */}
                 <Stack
                   direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
-                  justifyContent={"space-between"}
                   spacing={1}
+                  sx={{
+                    justifyContent: "space-between"
+                  }}
                 >
                   {item?.tagUsers?.length > 0 && (
                     <Stack
                       direction={"row"}
-                      alignItems={"center"}
                       spacing={0.5}
-                      sx={{ pt: 0.5, cursor: "pointer" }}
                       onClick={(ev) => {
                         ev.stopPropagation();
                         ev.preventDefault();
@@ -579,7 +581,11 @@ const ThreadCardItem = ({
                           title: "Tagged Users",
                         }));
                       }}
-                    >
+                      sx={{
+                        alignItems: "center",
+                        pt: 0.5,
+                        cursor: "pointer"
+                      }}>
                       <LoyaltyOutlinedIcon
                         sx={{ color: "text.disabled", width: 12, height: 12 }}
                       />
@@ -602,9 +608,7 @@ const ThreadCardItem = ({
                   {item?.mentions?.length > 0 && (
                     <Stack
                       direction={"row"}
-                      alignItems={"center"}
                       spacing={0.5}
-                      sx={{ pt: 0.5, cursor: "pointer" }}
                       onClick={(ev) => {
                         ev.stopPropagation();
                         ev.preventDefault();
@@ -616,7 +620,11 @@ const ThreadCardItem = ({
                           title: "Mentions",
                         }));
                       }}
-                    >
+                      sx={{
+                        alignItems: "center",
+                        pt: 0.5,
+                        cursor: "pointer"
+                      }}>
                       <AlternateEmailOutlinedIcon
                         sx={{ color: "text.disabled", width: 12, height: 12 }}
                       />

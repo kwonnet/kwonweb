@@ -23,7 +23,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useAuthSession } from "@/hooks";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import {
   blockUser,
   muteUser,
@@ -112,7 +112,13 @@ export default function AccountSettingsModal({
           transition: Transition,
         }}
       >
-        <Stack direction={"row"} justifyContent={"space-between"}  alignItems={"center"} sx={{mr: 1}}>
+        <Stack
+          direction={"row"}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            mr: 1
+          }}>
           <DialogTitle>Account Settings</DialogTitle>
           <Box>
             <IconButton onClick={ev => toggle(false) }>
@@ -123,14 +129,21 @@ export default function AccountSettingsModal({
         <Divider variant="fullWidth" />
         <DialogContent>
           <Box>
-            <Typography sx={{ py: 1 }} variant="h5" color="text.secondary">
+            <Typography
+              variant="h5"
+              sx={{
+                color: "text.secondary",
+                py: 1
+              }}>
               Make your account private or public
             </Typography>
             <Stack direction={"row"} spacing={1}>
               <Typography variant="caption" color="warning">
                 Private:
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>
                 Only users you followed or followed you can view your profile.
                 Subsequent follow will be sent as requests and must be approved
                 by your before they will be accepted as your followers and can
@@ -141,7 +154,9 @@ export default function AccountSettingsModal({
               <Typography variant="caption" color="warning">
                 Public:
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>
                 Anyone can follow you or view your profile.
               </Typography>
             </Stack>
@@ -149,7 +164,9 @@ export default function AccountSettingsModal({
               <Typography variant="caption" color="warning">
                 Status:
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>
                 {/* {isPrivate ? "Private" : "Public"} */}
                 {state?.user?.meta?.accountStatus}
               </Typography>
@@ -179,7 +196,9 @@ export default function AccountSettingsModal({
               <Typography variant="caption" color="warning">
                 Note:
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>
                 No one can follow you or view your profile.
               </Typography>
             </Stack>
@@ -187,7 +206,9 @@ export default function AccountSettingsModal({
               <Typography variant="caption" color="warning">
                 Status:
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>
                 {state?.user?.meta?.accountStatus}
               </Typography>
             </Stack>

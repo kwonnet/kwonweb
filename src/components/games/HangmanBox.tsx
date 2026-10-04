@@ -5,7 +5,7 @@ import { useSocketIoContext } from "@/context/SocketIoContext";
 import { GameEventEnum } from "@/types";
 import { shuffleArray } from "@/utils";
 import { toast } from "react-toastify";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const HangmanBox = () => {

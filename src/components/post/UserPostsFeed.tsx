@@ -1,5 +1,5 @@
 "use client";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import usePostInteractions from "@/hooks/usePostInteractions";
 import useFeedCacheMutate from "@/hooks/useFeedCacheMutate";
 import React, { useState } from "react";
@@ -177,7 +177,13 @@ const UserPostsFeed = ({ posts, userId, kind }: { posts: FeedPost[], userId: str
         onQuoteCallback={onQuoteCallback}
         onFollowUserCallback={onFollowUserCallback}
       />
-      {isLoading ? null : !isReachingEnd ? <div ref={ref} style={{padding: "10px 0px 10px 0px"}} /> : <Typography variant="caption" textAlign={"center"} sx={{display: "block"}} color="textDisabled">No More Feed</Typography>}
+      {isLoading ? null : !isReachingEnd ? <div ref={ref} style={{padding: "10px 0px 10px 0px"}} /> : <Typography
+        variant="caption"
+        color="textDisabled"
+        sx={{
+          textAlign: "center",
+          display: "block"
+        }}>No More Feed</Typography>}
       <Box sx={{display: 'block', textAlign: 'center'}}>
         {isLoading && <CircularProgress aria-busy={!!isLoading} aria-describedby="loading" size={24} color="warning" />}
       </Box>

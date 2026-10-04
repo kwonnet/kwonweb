@@ -72,10 +72,12 @@ const ConnectionCard = ({
     <React.Fragment>
       <Stack
         direction={"row"}
-        justifyContent={"space-between"}
-        alignItems={"center"}
-        sx={{ width: "100%", maxWidth: "100%" }}
-      >
+        sx={{
+          justifyContent: "space-between",
+          alignItems: "center",
+          width: "100%",
+          maxWidth: "100%"
+        }}>
         <Stack
           direction={"row"}
           spacing={0.5}
@@ -149,7 +151,9 @@ const ConnectionCard = ({
           )}{" "}
         </Typography>
         <Box sx={{ pt: 0.5 }}>
-        <Stack direction={"row"} gap={2}>
+        <Stack direction={"row"} sx={{
+          gap: 2
+        }}>
           <Typography
             color="textSecondary"
             variant="caption"

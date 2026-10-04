@@ -221,6 +221,7 @@ const GameEnergy = () => {
 
   return (
     // <PaperLayout>
+    // </PaperLayout>
     <Box sx={{ px: 2, py: 1 }}>
       <Card
         sx={[(theme) => ({
@@ -298,12 +299,13 @@ const GameEnergy = () => {
 
       <Box sx={{ display: "flex", justifyContent: "center" }}>
         <Stack
-          sx={{ width: "100%" }}
-          mt={1}
           spacing={2}
           direction={"row"}
-          justifyContent={"space-between"}
-        >
+          sx={{
+            mt: 1,
+            justifyContent: "space-between",
+            width: "100%"
+          }}>
           <Box>
             <RechargeButton
               text={"Energy Gauge is filled"}
@@ -313,7 +315,12 @@ const GameEnergy = () => {
               }}
               onUpdate={(updatedItem) => updateEnergy("gauge", updatedItem)}
             />
-            <Typography sx={{ py: 1, fontFamily: "PlayFair" }} textAlign={"center"}>
+            <Typography
+              sx={{
+                textAlign: "center",
+                py: 1,
+                fontFamily: "PlayFair"
+              }}>
               Energy Gauge
             </Typography>
           </Box>
@@ -326,14 +333,18 @@ const GameEnergy = () => {
               }}
               onUpdate={(updatedItem) => updateEnergy("turbo", updatedItem)}
             />
-            <Typography sx={{ py: 1, fontFamily: "PlayFair" }} textAlign={"center"}>
+            <Typography
+              sx={{
+                textAlign: "center",
+                py: 1,
+                fontFamily: "PlayFair"
+              }}>
               Turbo Boost
             </Typography>
           </Box>
         </Stack>
       </Box>
     </Box>
-    // </PaperLayout>
   );
 };
 

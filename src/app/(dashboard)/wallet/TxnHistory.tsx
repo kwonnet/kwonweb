@@ -54,10 +54,11 @@ const DisplayTxnHistory = ({ data }: { data: GroupedRecord }) => {
   return (
     <React.Fragment>
       <Typography
-        sx={{ color: (theme) => theme.vars.palette.tints[500] }}
         variant="body2"
-        py={1}
-      >
+        sx={{
+          py: 1,
+          color: (theme) => theme.vars.palette.tints[500]
+        }}>
         {data.day}
       </Typography>
       <Grid container spacing={2}>
@@ -178,7 +179,9 @@ const TxnHistory = ({ refreshHistory }:{ refreshHistory?: boolean}) => {
   };
 
   return (
-    <Box maxWidth="xl">
+    <Box sx={{
+      maxWidth: "xl"
+    }}>
       {groupRecordsByDay(txnHistoryData).map((item, index) => (
         <DisplayTxnHistory key={index} data={item} />
       ))}

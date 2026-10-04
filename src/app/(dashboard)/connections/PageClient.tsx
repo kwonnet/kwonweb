@@ -48,7 +48,12 @@ export default function PageClient({
             image={"/no-data.svg"}
             sx={{ height: 300, width: 300 }}
           />
-          <Typography variant="body2" sx={{ mb: 2 }} color="text.secondary">
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              mb: 2
+            }}>
           No user suggestions available at the moment.
         </Typography>
         </Box>

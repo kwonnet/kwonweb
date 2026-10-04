@@ -1,7 +1,7 @@
 import { publicEnvScript } from "@/config/public-env";
 import type { Metadata } from "next";
 import AppLoadingShell from "@/components/common/AppLoadingShell";
-import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { SessionProvider } from "next-auth/react";
 import React from "react";
 import { getServerSession } from "@/lib/server-session";

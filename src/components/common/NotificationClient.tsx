@@ -69,7 +69,9 @@ const NotificationClient = ({items,
         </Box>
       )}
       {(error && !data) && <DisplayError status={error?.status} message={getErrorMessage(error)} />}
-      <Grid container spacing={2} mt={2}>
+      <Grid container spacing={2} sx={{
+        mt: 2
+      }}>
         {flatData.map((item) => (
           <Grid key={item.id} size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
             <NotificationCard item={item} close={close} />

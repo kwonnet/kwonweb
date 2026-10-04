@@ -25,12 +25,12 @@ import { formatNumber } from "@/utils";
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
 const MenuProps = {
-  PaperProps: {
+  slotProps: { paper: {
     style: {
       maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
       width: 250,
     },
-  },
+  } },
 };
 
 const DisplayClient = ({ country, trends }: { trends: TrendingTopics[], country?: string }) => {
@@ -75,9 +75,10 @@ const DisplayClient = ({ country, trends }: { trends: TrendingTopics[], country?
             <Box sx={{ margin: 1 }}>
               <Stack
                 direction={"row"}
-                justifyContent={"space-between"}
-                alignItems={"center"}
-              >
+                sx={{
+                  justifyContent: "space-between",
+                  alignItems: "center"
+                }}>
                 <Typography
                   color="textDisabled"
                   variant="caption"
@@ -113,9 +114,19 @@ const PageClient = ({ trends }: { trends: TrendingTopics[] }) => {
     <Box
       sx={{ mt: 1 }}
     >
-      <Grid container sx={{ my: 2 }} alignItems={"center"}>
+      <Grid
+        container
+        sx={{
+          alignItems: "center",
+          my: 2
+        }}>
         <Grid size={{ xs: 12, sm: 12, md: 6, lg: 6 }}>
-          <Typography textAlign={"center"} fontWeight={600} variant="h6">
+          <Typography
+            variant="h6"
+            sx={{
+              textAlign: "center",
+              fontWeight: 600
+            }}>
             Check What's Happening Worldwide
           </Typography>
         </Grid>

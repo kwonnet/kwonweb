@@ -12,12 +12,16 @@ const PageSkeleton = () => {
   return (
     <Box>
       <Container maxWidth="xl">
-        <Box mb={4}>
+        <Box sx={{
+          mb: 4
+        }}>
           <Skeleton variant="text" width="50%" height={40} animation="wave" />
         </Box>
 
         {/* Spin Lucky Wheel Section */}
-        <Box mb={4}>
+        <Box sx={{
+          mb: 4
+        }}>
           <Paper
             sx={(theme) => ({
               p: 2,

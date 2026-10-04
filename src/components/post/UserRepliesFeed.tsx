@@ -1,5 +1,5 @@
 "use client";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import usePostInteractions from "@/hooks/usePostInteractions";
 import useFeedCacheMutate from "@/hooks/useFeedCacheMutate";
 import React, { useState } from "react";
@@ -264,10 +264,11 @@ const UserRepliesFeed = ({
       ) : (
         <Typography
           variant="caption"
-          textAlign={"center"}
-          sx={{ display: "block" }}
           color="textDisabled"
-        >
+          sx={{
+            textAlign: "center",
+            display: "block"
+          }}>
           No More Feed
         </Typography>
       )}

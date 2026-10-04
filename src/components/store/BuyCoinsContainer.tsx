@@ -52,7 +52,7 @@ import Link from "next/link";
 import { useAuthSession } from "@/hooks";
 import { axiosAPI } from "@/config/axios";
 import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 
 type FlutterwavePurchaseButtonProps = Omit<ButtonProps, "onClick"> & {
   config: ReturnType<typeof getFlutterWaveCoinConfig>;

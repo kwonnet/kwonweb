@@ -5,7 +5,7 @@ import { useAuthSession } from "@/hooks";
 import { apiUrl } from "@/config";
 import { useSWRConfig } from "swr";
 import { FollowResponse, FollowStatus, UserConnection } from "@/types/user";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 
 interface SSEContextType {
   sseSource: EventSource | null;

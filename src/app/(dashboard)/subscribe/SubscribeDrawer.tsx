@@ -40,7 +40,7 @@ import SubscriptionItem from "./SubscriptionItem";
 import { useRouter } from "next/navigation";
 import { getFlwPaymentLink } from "@/lib/payments";
 import { getFlutterWaveSubPlanConfig } from "@/utils/payment";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -523,7 +523,9 @@ const SubscribeDrawer = ({
                   )})}
                 </Box>
               )}
-              <Typography mt={2} variant="body2">
+              <Typography variant="body2" sx={{
+                mt: 2
+              }}>
                 By subscribing, you agree to our{" "}
                 <Link href={"/purchaser-terms-service"}>
                   Purchaser Terms of Service

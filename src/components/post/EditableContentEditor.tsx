@@ -6,7 +6,7 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import { ContentState, EditorState } from "draft-js";
+import { ContentState, EditorState, Modifier } from "draft-js";
 import { extractPostReferences } from "@/utils/post-text";
 import Editor from "@draft-js-plugins/editor";
 import editorStyles from "./ContentEditor.module.css";
@@ -20,16 +20,15 @@ import customCreateHashtagPlugin, {
 import createMentionPlugin, { MentionItemProps } from "./mention";
 
 // linkify plugin
-import createLinkifyPlugin from "@draft-js-plugins/linkify";
-import "@draft-js-plugins/linkify/lib/plugin.css";
-import linkifyStyles from "./Linkify.module.css";
+import createLinkifyPlugin from "./linkify";
 
-// emoji plugin
-import createEmojiPlugin from "@draft-js-plugins/emoji";
-import "@draft-js-plugins/emoji/lib/plugin.css";
+import dynamic from "next/dynamic";
+import type { EmojiClickData } from "emoji-picker-react";
+import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 import Link from "next/link";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, IconButton, Popover } from "@mui/material";
 import { searchUsers } from "@/lib/users";
 import { useAuthSession } from "@/hooks";
 
@@ -92,16 +91,7 @@ const ContentEditor = ({
 }) => {
   const { token } = useAuthSession();
 
-  const linkifyPlugin = useMemo(
-    () =>
-      createLinkifyPlugin({
-        theme: {
-          ...linkifyStyles,
-          link: linkifyStyles.link,
-        },
-      }),
-    []
-  );
+  const linkifyPlugin = useMemo(() => createLinkifyPlugin(), []);
   // custom hash tag plugin
   const { HashtagSuggestions, hashtagPlugin } = useMemo(() => {
     return customCreateHashtagPlugin({
@@ -130,16 +120,10 @@ const ContentEditor = ({
       },
     });
   }, []);
-  // emoji plugin
-  const emojiPlugin = useMemo(
-    () => createEmojiPlugin({ useNativeArt: true }),
-    []
-  );
-  const { EmojiSuggestions, EmojiSelect } = emojiPlugin;
-  // declare the plugins
+  const [emojiAnchor, setEmojiAnchor] = useState<HTMLButtonElement | null>(null);
   const plugins = useMemo(
-    () => [mentionPlugin, hashtagPlugin, linkifyPlugin, emojiPlugin],
-    [mentionPlugin, linkifyPlugin, hashtagPlugin, emojiPlugin]
+    () => [mentionPlugin, hashtagPlugin, linkifyPlugin],
+    [mentionPlugin, linkifyPlugin, hashtagPlugin]
   );
   const ref = useRef<Editor>(null);
   // Create the immutable Draft state once, not on every keystroke/parent render.
@@ -185,7 +169,6 @@ const ContentEditor = ({
           <>
             <HashtagSuggestions />
             <MentionSuggestions />
-            <EmojiSuggestions />
           </>
         )}
 
@@ -217,7 +200,17 @@ const ContentEditor = ({
               fontSize: 10,
             }}
           >
-            <EmojiSelect closeOnEmojiSelect={true} />
+            <IconButton size="small" aria-label="Choose emoji" onMouseDown={event => event.preventDefault()} onClick={event => setEmojiAnchor(event.currentTarget)}><EmojiEmotionsOutlinedIcon fontSize="small" /></IconButton>
+            <Popover open={Boolean(emojiAnchor)} anchorEl={emojiAnchor} onClose={() => setEmojiAnchor(null)} disableRestoreFocus anchorOrigin={{ vertical: "bottom", horizontal: "right" }} transformOrigin={{ vertical: "top", horizontal: "right" }}>
+              {emojiAnchor && <EmojiPicker onEmojiClick={(data: EmojiClickData) => {
+                const updated = Modifier.replaceText(editorState.getCurrentContent(), editorState.getSelection(), data.emoji, editorState.getCurrentInlineStyle());
+                const next = EditorState.push(editorState, updated, "insert-characters");
+                onChange(EditorState.forceSelection(next, updated.getSelectionAfter()));
+                setEmojiAnchor(null);
+                // forceSelection restores the caret after React commits this state.
+                // Focusing synchronously makes Draft emit the previous state again.
+              }} />}
+            </Popover>
           </Box>
         </Box>
       )}

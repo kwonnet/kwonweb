@@ -1,5 +1,5 @@
 "use client";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import usePostInteractions from "@/hooks/usePostInteractions";
 import useFeedCacheMutate from "@/hooks/useFeedCacheMutate";
 import { newsfeedKey } from "@/utils/newsfeed-key";
@@ -216,7 +216,13 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
         <Typography>Couldn’t load more posts. Your feed is still here.</Typography>
         <Button onClick={retryPage} disabled={isValidating}>Retry loading posts</Button>
       </Box>}
-      {!isReachingEnd ? <div ref={ref} style={{padding: "10px 0px 10px 0px"}} /> : <Typography variant="caption" textAlign={"center"} sx={{display: "block"}} color="textDisabled">No More Feed</Typography>}
+      {!isReachingEnd ? <div ref={ref} style={{padding: "10px 0px 10px 0px"}} /> : <Typography
+        variant="caption"
+        color="textDisabled"
+        sx={{
+          textAlign: "center",
+          display: "block"
+        }}>No More Feed</Typography>}
       <Box sx={{display: 'block', textAlign: 'center'}}>
         {(loadingPage || (error && isValidating)) && <CircularProgress size={24} aria-label="Loading more posts" />}
       </Box>

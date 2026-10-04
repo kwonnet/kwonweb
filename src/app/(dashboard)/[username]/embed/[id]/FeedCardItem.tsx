@@ -34,7 +34,7 @@ import AddCircleOutlinedIcon from "@mui/icons-material/AddCircleOutlined";
 import { FeedPost, PostAuthor, PostKind, PostType } from "@/types";
 import DisplayPollItem from "@/components/post/DisplayPollItem";
 import PostText from "@/components/post/PostText";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { appUrl } from "@/config";
 import Link from "next/link";
 

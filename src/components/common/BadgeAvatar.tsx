@@ -59,7 +59,12 @@ export default function BadgeAvatar({
   
   return (
     <React.Fragment>
-      <Box display="flex" alignItems="center" gap={2}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 2
+        }}>
         <Box component={Link} href={`/@${user.username}`}>
           <PulseBadge
           overlap="circular"
@@ -82,10 +87,12 @@ export default function BadgeAvatar({
           <Slide direction="up">
             <Stack spacing={-1}>
               <Typography
-              sx={{ fontFamily: "PlayFair", fontStyle: "italic" }}
-              fontWeight="bold"
-              fontSize="1rem"
-            >
+                sx={{
+                  fontWeight: "bold",
+                  fontSize: "1rem",
+                  fontFamily: "PlayFair",
+                  fontStyle: "italic"
+                }}>
               {user.name}
             </Typography>
             <Typography

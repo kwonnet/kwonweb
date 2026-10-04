@@ -134,7 +134,9 @@ const ConnectionCard = ({
             )}{" "}
           </Typography>
           <Box sx={{ pt: 0.5 }}>
-            <Stack direction={"row"} gap={2}>
+            <Stack direction={"row"} sx={{
+              gap: 2
+            }}>
               <Typography
                 color="textSecondary"
                 variant="caption"

@@ -275,7 +275,9 @@ const PageClient = ({
                         color={
                           upward ? "success" : downward ? "error" : undefined
                         }
-                        alignSelf={"end"}
+                        sx={{
+                          alignSelf: "end"
+                        }}
                       >
                         {changeText}
                       </Typography>

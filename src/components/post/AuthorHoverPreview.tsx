@@ -149,11 +149,12 @@ const AuthorHoverPreview = ({
 
   return (
     <Box
-      display="inline"
-      position="relative"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-    >
+      sx={{
+        display: "inline",
+        position: "relative"
+      }}>
       {isName ? (
         <Link
           style={{ textDecoration: "none", color: "inherit" }}
@@ -192,15 +193,15 @@ const AuthorHoverPreview = ({
 
       {showInfo && data && (
         <Box
-          position="fixed"
           sx={{
+            position: "fixed",
             top: position.top,
             left: position.left,
             zIndex: 9999999999,
-            transition: "opacity 0.3s ease, transform 0.3s ease",
+
             // transform: showInfo ? 'translateY(0)' : 'translateY(-30px)',
-          }}
-        >
+            transition: "opacity 0.3s ease, transform 0.3s ease"
+          }}>
           <Paper
             elevation={4}
             sx={{
@@ -268,13 +269,17 @@ const AuthorHoverPreview = ({
               )}
             </Stack>
             <Stack spacing={-1}>
-              <Typography variant="subtitle1" fontWeight="bold">
+              <Typography variant="subtitle1" sx={{
+                fontWeight: "bold"
+              }}>
                 {author?.name}
               </Typography>
               <Typography
                 color="textDisabled"
                 variant="caption"
-                fontWeight="bold"
+                sx={{
+                  fontWeight: "bold"
+                }}
               >
                 @{author?.username}
               </Typography>

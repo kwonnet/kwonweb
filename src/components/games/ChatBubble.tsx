@@ -24,9 +24,10 @@ type ChatBubbleProps = {
     return (
       <Stack
         direction="row"
-        justifyContent={isSender ? 'flex-end' : 'flex-start'}
-        sx={{ marginBottom: 1 }}
-      >
+        sx={{
+          justifyContent: isSender ? 'flex-end' : 'flex-start',
+          marginBottom: 1
+        }}>
         <Box
           component={Paper}
           elevation={1}

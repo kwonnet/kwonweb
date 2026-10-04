@@ -11,7 +11,7 @@ import { decryptChatMessages } from "@/lib/conversations";
 import { useAuthSession } from "@/hooks";
 import { initiateSession } from "@/lib/sodium";
 import { SessionEvelope } from "@/types/sodium";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { usePathname } from "next/navigation";
 import { getCurrentSegment } from "@/utils";
 import { mutate } from "swr";

@@ -32,10 +32,15 @@ const PageClient = ({ trends }: { trends: TrendingTopics[] }) => {
     <Box
     sx={{mt: 1}}
     >
-      <Typography textAlign={"center"} fontWeight={600} variant="h6">
+      <Typography
+        variant="h6"
+        sx={{
+          textAlign: "center",
+          fontWeight: 600
+        }}>
         Explore What's Happening Around You!
       </Typography>
-      
+
       <Grid container spacing={1}>
       {data.map((item, index) => (
         <Grid key={index} size={{xs: 12, md: 12, lg: 6, xl: 6}} sx={[
@@ -48,9 +53,10 @@ const PageClient = ({ trends }: { trends: TrendingTopics[] }) => {
           <Box sx={{ margin: 1 }}>
           <Stack
             direction={"row"}
-            justifyContent={"space-between"}
-            alignItems={"center"}
-          >
+            sx={{
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}>
             <Typography
               color="textDisabled"
               variant="caption"

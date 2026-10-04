@@ -78,7 +78,9 @@ const WalletClient = ({tonRate}: { tonRate: number}) => {
                 }),
               ]}
             >
-              <Stack justifyContent={"space-between"} direction={"row"}>
+              <Stack direction={"row"} sx={{
+                justifyContent: "space-between"
+              }}>
               <Typography sx={{ fontFamily: "PlayFair" }} variant="caption">
                 Balance
               </Typography>

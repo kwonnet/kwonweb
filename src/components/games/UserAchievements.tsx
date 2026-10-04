@@ -2,8 +2,7 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import { Button, CardMedia, Paper, Typography } from "@mui/material";
-import Carousel from "react-multi-carousel";
-import "react-multi-carousel/lib/styles.css";
+import ResponsiveCarousel from "@/components/common/ResponsiveCarousel";
 import useSWR from "swr";
 import { getUserAchievements } from "@/lib/users";
 import { RewardSkeleton } from "../skeleton";
@@ -92,68 +91,11 @@ export default function UserAchievements() {
   return (
     <Box>
       <Box sx={{}}>
-        <Carousel
-          arrows
-          autoPlay={false}
-          autoPlaySpeed={1000}
-          className=""
-          containerClass="container-with-dots"
-          customTransition="all 1s linear"
-          centerMode={true}
-          dotListClass=""
-          draggable
-          focusOnSelect={false}
-          infinite
-          itemClass=""
-          keyBoardControl
-          minimumTouchDrag={80}
-          pauseOnHover
-          renderArrowsWhenDisabled={false}
-          renderButtonGroupOutside={false}
-          renderDotsOutside={false}
-          responsive={{
-            desktop: {
-              breakpoint: {
-                max: 3000,
-                min: 1024,
-              },
-              items: 3,
-              partialVisibilityGutter: 40,
-              slidesToSlide: 4,
-            },
-            tablet: {
-              breakpoint: {
-                max: 1024,
-                min: 464,
-              },
-              items: 2,
-              partialVisibilityGutter: 30,
-              slidesToSlide: 2,
-            },
-            mobile: {
-              breakpoint: {
-                max: 464,
-                min: 0,
-              },
-              items: 1,
-              partialVisibilityGutter: 30,
-              slidesToSlide: 1,
-            },
-          }}
-          rewind={false}
-          rewindWithAnimation={false}
-          rtl={false}
-          shouldResetAutoplay
-          showDots={false}
-          sliderClass=""
-          swipeable
-          transitionDuration={1000}
-          additionalTransfrom={-32 * 3}
-        >
+        <ResponsiveCarousel desktopItems={3} tabletItems={2} centerMode>
           {achievements.map((item) => (
             <DisplayItem key={item.id} item={item} />
           ))}
-        </Carousel>
+        </ResponsiveCarousel>
       </Box>
     </Box>
   );

@@ -168,7 +168,9 @@ const page = () => {
             </Button>
           </FormControl>
           <Box>
-            <Stack direction={"row"} spacing={1} alignItems={"center"}>
+            <Stack direction={"row"} spacing={1} sx={{
+              alignItems: "center"
+            }}>
               <Typography> { state.isSignIn ? "Don't have an account?" : "Already have an account?"} </Typography>
               <Button size="small" onClick={ev => toggleSignIn(ev)}>
                 {state.isSignIn ? "Sign Up" : "Sign in"}

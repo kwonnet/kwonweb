@@ -2,17 +2,25 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Use Node.js 22.23.3 (see `.nvmrc`), install from the npm lockfile, then start:
 
 ```bash
+nvm use
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+
+Validate a change before deploying:
+
+```bash
+npm test
+npm run typecheck
+npm run lint
+npm run build
+```
+
+See [dependency upgrade notes](docs/dependency-upgrade.md) for compatibility pins,
+migration details, and remaining upstream advisories.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
@@ -65,7 +73,7 @@ Login redirects use the configured public origin and a relative
 callback path. The sign-in page rejects old internal-host or external callbacks
 and returns to the current site's homepage instead.
 
-Configure public ImageKit, Flutterwave, VAPID and advertising values needed
+Configure public Flutterwave, VAPID and advertising values needed
 by enabled features there as well. `src/config/public-env.ts` lists the supported
 public variables. The root layout renders dynamically and injects only those
 allowlisted settings into HTML before hydration. Server code reads the same
@@ -112,6 +120,7 @@ docker run --rm --env-file .env.docker -e PORT=8080 -p 8080:8080 kwonweb:latest
 ```
 
 Use `NEXT_PUBLIC_APP_URL=http://localhost:8080`
-for this local check. Supply all enabled feature configuration, including ImageKit.
-Run regression checks with `node --test tests/*.test.cjs`.
+for this local check. Supply all enabled feature configuration, including the
+server-only Cloudflare R2 and Stream settings documented in `docs/`.
+Run regression checks with `npm test`.
 Cloud Run deployment images must target `linux/amd64`; Cloud Build handles this.

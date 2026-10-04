@@ -1,7 +1,7 @@
 "use client";
 import { useCallback } from "react";
 import { useSWRConfig } from "swr";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { postReaction, bookmarkPost, updateRePost } from "@/lib/posts";
 import { runReaction, updateReaction, type ReactionKind } from "@/utils/post-reactions";
 

@@ -7,7 +7,6 @@ import ProfileClient from "./ProfileClient";
 
 type URLParams = {
   username: string;
-  slug: string[];
 };
 
 const Layout = async ({

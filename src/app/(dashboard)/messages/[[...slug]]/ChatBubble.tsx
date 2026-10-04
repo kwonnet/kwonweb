@@ -30,9 +30,10 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isSender }) => {
   return (
     <Stack
       direction="row"
-      justifyContent={isSender ? "flex-end" : "flex-start"}
-      sx={{ marginBottom: 1 }}
-    >
+      sx={{
+        justifyContent: isSender ? "flex-end" : "flex-start",
+        marginBottom: 1
+      }}>
       <Box
         component={Paper}
         elevation={1}
@@ -47,7 +48,9 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isSender }) => {
           borderRadius: isSender ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
         }}
       >
-        <Stack direction={"row"} alignItems={"center"} spacing={0.5}>
+        <Stack direction={"row"} spacing={0.5} sx={{
+          alignItems: "center"
+        }}>
           <Avatar sx={{height: 25, width: 25}} src={message?.sender?.avatar!} alt={message?.sender?.name}>
             {message?.sender?.name[0]}
           </Avatar>

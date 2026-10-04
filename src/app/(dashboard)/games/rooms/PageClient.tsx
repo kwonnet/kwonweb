@@ -6,7 +6,7 @@ import PageHeader from "@/components/common/PageHeader";
 import { Fade } from "react-awesome-reveal";
 import { GameEventEnum, GameRoom } from "@/types";
 import { toast } from "react-toastify";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const PageClient = ({

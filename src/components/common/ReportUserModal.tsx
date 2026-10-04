@@ -23,7 +23,7 @@ import {
 import { FeedPost, ReportReasonCode } from "@/types";
 import { deletePost, reportPost } from "@/lib/posts";
 import { useAuthSession } from "@/hooks";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { blockUser, muteUser, reportUser } from "@/lib/users";
 import { UserMiniProfile } from "@/types/user";
 
@@ -266,7 +266,9 @@ export default function ReportUserModal({
           )}
           {state.isNext && (
             <Box>
-              <Typography variant="subtitle1" color="text.secondary">
+              <Typography variant="subtitle1" sx={{
+                color: "text.secondary"
+              }}>
                 You can add additional comments to your report. This is
                 optional, but it can help us understand the issue better.
               </Typography>
@@ -282,21 +284,29 @@ export default function ReportUserModal({
                   onChange={handleMessageChange}
                 />
               </FormControl>
-              <Typography variant="subtitle2" color="text.secondary">
+              <Typography variant="subtitle2" sx={{
+                color: "text.secondary"
+              }}>
                 By making this report, you are helping us keep the community
                 safe. Thank you for your vigilance!
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>
                 We know it wasn&apos;t easy, so we appreciate you taking the
                 time to answer those questions.
               </Typography>
               <Typography variant="h6">What&apos;s happening now</Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>
                 We received your report. We&apos;ll hide the reported post from
                 your timeline in the meantime.
               </Typography>
               <Typography variant="h6">What happens next</Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>
                 We&apos;ll review the report and take appropriate action if
                 necessary. If we find that the user violates our community
                 guidelines, we may suspend the user and take further action
@@ -306,7 +316,9 @@ export default function ReportUserModal({
               <Typography variant="h6">
                 What you can do for the meantime?
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>
                 Remove @{state?.user.username} posts from your timeline without
                 unfollowing or blocking them.
               </Typography>

@@ -82,37 +82,42 @@ const ConnectionSection = ({ users, connType }: { users: UserConnection[], connT
 
   return (
     <React.Fragment>
-        <Box
-          sx={[
-            (theme) => ({
-              border: `1px solid ${theme.vars.palette.divider}`,
-              mt: 1,
-              borderRadius: 2,
-              p: 1,
-            }),
-          ]}
-        >
-          <Typography textAlign={"center"} fontWeight={600} variant="h6">
-            Who to follow?
-          </Typography>
-          {data.map((item, index) => (
-            <Box key={index} sx={{ mb: 2 }}>
-              <ConnectionCard item={item} onFollowUser={onFollowUser} />
-            </Box>
-          ))}
-          <Box sx={{ textAlign: "center", display: "block", my: 1 }}>
-            <Button
-              sx={{ borderRadius: 30 }}
-              LinkComponent={Link}
-              href="/connections"
-              variant="outlined"
-            >
-              See More
-            </Button>
+      <Box
+        sx={[
+          (theme) => ({
+            border: `1px solid ${theme.vars.palette.divider}`,
+            mt: 1,
+            borderRadius: 2,
+            p: 1,
+          }),
+        ]}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            textAlign: "center",
+            fontWeight: 600
+          }}>
+          Who to follow?
+        </Typography>
+        {data.map((item, index) => (
+          <Box key={index} sx={{ mb: 2 }}>
+            <ConnectionCard item={item} onFollowUser={onFollowUser} />
           </Box>
+        ))}
+        <Box sx={{ textAlign: "center", display: "block", my: 1 }}>
+          <Button
+            sx={{ borderRadius: 30 }}
+            LinkComponent={Link}
+            href="/connections"
+            variant="outlined"
+          >
+            See More
+          </Button>
         </Box>
+      </Box>
     </React.Fragment>
-  )
+  );
 }
 
 export default ConnectionSection

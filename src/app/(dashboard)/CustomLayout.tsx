@@ -1,59 +1,58 @@
 "use client";
-import React from "react";
-import {
-  DashboardLayout,
-  SidebarFooterProps,
-} from "@toolpad/core/DashboardLayout";
-import { Typography } from "@mui/material";
-import { PageContainer } from "@toolpad/core";
+import { AppBar, Box, Divider, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Tooltip, Typography } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import MenuOpenIcon from "@mui/icons-material/MenuOpen";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useState, type ReactNode } from "react";
 import { constant } from "@/config";
+import { getNavigationItems } from "@/providers/navigation";
+import CustomThemeSwitcher from "@/components/common/CustomThemeSwitcher";
 
-const SidebarFooter = ({ mini }: SidebarFooterProps) => {
-  return (
-    <Typography
-      variant="caption"
-      sx={{
-        pb: 5,
-        overflow: "hidden",
-        textWrap: "nowrap",
-        display: "inline-block",
-        textAlign: "center",
-      }}
-    >
-      {mini
-        ? `© ${constant.siteName}`
-        : `©  ${constant.siteName} ${new Date().getFullYear()}`}
-    </Typography>
+export default function CustomLayout({ children, CustomToolbar }: { children: ReactNode; CustomToolbar: ReactNode }) {
+  const { data: session } = useSession();
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const width = collapsed ? 64 : 240;
+  const navigation = getNavigationItems(session?.user);
+  const sidebar = (mini: boolean) => (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflowX: "hidden" }}>
+      <List aria-label="Main navigation" sx={{ px: 1, flex: 1 }}>
+        {navigation.map((item, index) => {
+          if (item.kind === "divider") return <Divider key={`divider-${index}`} sx={{ my: 1 }} />;
+          if (item.segment === "#") return <Box key="theme" sx={{ px: 1 }}><CustomThemeSwitcher compact={mini} /></Box>;
+          const href = `/${item.segment}`;
+          const selected = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`) && !item.segment.startsWith("@"));
+          return <Tooltip key={href} title={mini ? item.title : ""} placement="right">
+            <ListItemButton component={Link} href={href} selected={selected} aria-current={selected ? "page" : undefined}
+              aria-label={item.title} onClick={() => setMobileOpen(false)} sx={{ borderRadius: 1, minHeight: 48, mb: 0.5, px: 1.5 }}>
+              <ListItemIcon sx={{ minWidth: mini ? 24 : 40, color: selected ? "primary.main" : "inherit" }}>{item.icon}</ListItemIcon>
+              {!mini && <ListItemText primary={item.title} sx={{ whiteSpace: "nowrap", color: selected ? "primary.main" : "inherit" }} />}
+            </ListItemButton>
+          </Tooltip>;
+        })}
+      </List>
+      {!mini && <Typography variant="caption" sx={{ textAlign: "center", p: 2 }}>© {constant.siteName} {new Date().getFullYear()}</Typography>}
+    </Box>
   );
-};
-
-const CustomLayout = (props: {
-  children: React.ReactNode;
-  CustomToolbar: React.ReactNode;
-}) => {
-  return (
-    <DashboardLayout
-      // sx={{zIndex: 999999}}
-      sidebarExpandedWidth={240}
-      slots={{
-        sidebarFooter: SidebarFooter,
-        toolbarAccount: () => null,
-        toolbarActions: () => props.CustomToolbar,
-      }}
-    >
-      <PageContainer
-        sx={{
-          mt: -4,
-          paddingLeft: { lg: 2, md: 2, sm: 0, xs: 0 },
-          paddingRight: { lg: 2, md: 2, sm: 0, xs: 0 },
-        }}
-        title=""
-        breadcrumbs={[]}
-      >
-        {props.children}
-      </PageContainer>
-    </DashboardLayout>
-  );
-};
-
-export default CustomLayout;
+  return <Box sx={{ display: "flex", height: "100dvh", overflow: "hidden" }}>
+    <AppBar position="fixed" color="inherit" elevation={0} sx={{ zIndex: theme => theme.zIndex.drawer + 1, borderBottom: 1, borderColor: "divider" }}>
+      <Toolbar sx={{ minHeight: "64px !important", gap: 1 }}>
+        <IconButton aria-label="Open navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(value => !value)} sx={{ display: { md: "none" } }}><MenuIcon /></IconButton>
+        <IconButton aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} aria-expanded={!collapsed} onClick={() => setCollapsed(value => !value)} sx={{ display: { xs: "none", md: "inline-flex" } }}><MenuOpenIcon /></IconButton>
+        <Link href="/" aria-label={`${constant.siteName} home`}><Box component="img" src="/logo.png" alt="" sx={{ height: 25, display: "block" }} /></Link>
+        <Box sx={{ flex: 1 }} />
+        {CustomToolbar}
+      </Toolbar>
+    </AppBar>
+    <Drawer variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)} sx={{ display: { md: "none" } }}
+      slotProps={{ paper: { sx: { width: 240, pt: "64px" } } }}>{sidebar(false)}</Drawer>
+    <Drawer variant="permanent" sx={{ width, flexShrink: 0, display: { xs: "none", md: "block" } }}
+      slotProps={{ paper: { sx: { width, top: 64, height: "calc(100dvh - 64px)" } } }}>{sidebar(collapsed)}</Drawer>
+    <Box component="main" id="main-content" sx={{ flex: 1, minWidth: 0, mt: "64px", overflowY: "auto", overflowX: "hidden" }}>
+      <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 0, md: 2 }, pb: { xs: 7, md: 0 } }}>{children}</Box>
+    </Box>
+  </Box>;
+}

@@ -33,7 +33,6 @@ import { genUniqueRef, getErrorMessage } from "@/utils";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import CarouselContainer from "./CarouselContainer";
 import TagPeopleDrawer from "./TagPeopleDrawer";
-// import { handleImagikPostFileUpload } from "@/lib/imagekit";
 import { createPost, createPostQuote, createPostReply } from "@/lib/posts";
 // import { toast } from "react-toastify";
 import { FeedPost, PostType } from "@/types";
@@ -53,8 +52,7 @@ import {
 } from "@/types/post";
 import ContentEditor from "./ContentEditor";
 import PostSettingsDrawer from "./PostSettingsDrawer";
-import { handleImagikPostFileUpload } from "@/lib/imagekit";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import CreatePollCard from "./CreatePollCard";
 import { debounce } from "lodash";
 import PostScheduleDrawer from "./PostScheduleDrawer";

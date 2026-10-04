@@ -12,7 +12,7 @@ import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import Brightness4OutlinedIcon from "@mui/icons-material/Brightness4Outlined";
 
-export default function CustomThemeSwitcher() {
+export default function CustomThemeSwitcher({ compact = false }: { compact?: boolean }) {
   const { setMode, mode } = useColorScheme();
 
   const handleThemeChange = React.useCallback(
@@ -27,9 +27,16 @@ export default function CustomThemeSwitcher() {
   );
   return (
     <React.Fragment>
-      <Box ml={-1} sx={{position: "sticky", bottom: 0, left: 0, zIndex: 9999}}>
+      <Box
+        sx={{
+          ml: -1,
+          position: "sticky",
+          bottom: 0,
+          left: 0,
+          zIndex: 9999
+        }}>
         <Tooltip title="Theme" enterDelay={1000}>
-          <Stack direction={"row"}>
+          <Stack direction={compact ? "column" : "row"}>
             <IconButton
               onClick={(ev) => handleThemeChange(ev, "light")}
               aria-label="light mode"

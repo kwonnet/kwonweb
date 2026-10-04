@@ -1,5 +1,5 @@
 "use client";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import usePostInteractions from "@/hooks/usePostInteractions";
 import useFeedCacheMutate from "@/hooks/useFeedCacheMutate";
 import { FeedPost, FeedPostDetail } from "@/types";
@@ -102,7 +102,9 @@ const ReplyBox = ({
           variant="standard"
           placeholder="Reply to post"
         />
-        <Stack direction={"row"} spacing={1} alignItems={"center"}>
+        <Stack direction={"row"} spacing={1} sx={{
+          alignItems: "center"
+        }}>
           <Button
             size="small"
             disabled

@@ -31,7 +31,7 @@ import {
   getUserChatDevices,
   updateUserConversations,
 } from "@/lib/conversations";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useConvoSocketIoContext } from "@/context/ConvoSocketIoContext";
 import { bootstrapPerDeviceSessions, encryptForAllDevices } from "@/lib/sodium";
 import { ChatDevice } from "@/types/sodium";
@@ -313,17 +313,21 @@ const ChatBoxClientAnon = ({
             <Paper elevation={0} sx={{ p: 1 }}>
               <Stack
                 direction={"row"}
-                justifyContent={"space-between"}
-                alignItems={"center"}
-                sx={{ pt: 0.5 }}
-              >
+                sx={{
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  pt: 0.5
+                }}>
                 <Stack
                   direction={"row"}
-                  alignItems={"center"}
                   spacing={0.5}
-                  sx={{ cursor: "pointer" }}
-                >
-                  <Stack direction={"row"} alignItems={"center"} spacing={0.1}>
+                  sx={{
+                    alignItems: "center",
+                    cursor: "pointer"
+                  }}>
+                  <Stack direction={"row"} spacing={0.1} sx={{
+                    alignItems: "center"
+                  }}>
                     <Box
                     // sx={{
                     //   display: {
@@ -365,8 +369,10 @@ const ChatBoxClientAnon = ({
                     >
                       <Stack
                         direction={"row"}
-                        alignItems={"center"}
                         spacing={0.3}
+                        sx={{
+                          alignItems: "center"
+                        }}
                       >
                         <Typography
                           color="textSecondary"
@@ -483,7 +489,11 @@ const ChatBoxClientAnon = ({
                   // alignItems: "center"
                 }}
               >
-                <Typography textAlign={"center"} sx={{ py: 1 }}>
+                <Typography
+                  sx={{
+                    textAlign: "center",
+                    py: 1
+                  }}>
                   This user is texting you for the first time, you can choose to
                   accept or reject and they won't know if you've read the chat.
                 </Typography>
@@ -526,21 +536,28 @@ const ChatBoxClientAnon = ({
               </Paper>}
 
               {noRecipientDevice && (
-              <Typography textAlign={"center"} color="warning" sx={{ p: 1 }}>
+              <Typography
+                color="warning"
+                sx={{
+                  textAlign: "center",
+                  p: 1
+                }}>
                 Sorry, you can't send message to this user right now until they
                 setup their device.
               </Typography>)}
             {noRecipientDevice ? null : (
               <Stack
                 direction={"row"}
-                sx={{ width: "100%" }}
-                justifyContent={"space-between"}
-              >
+                sx={{
+                  justifyContent: "space-between",
+                  width: "100%"
+                }}>
                 <Stack
                   direction={"row"}
-                  sx={{ width: "100%" }}
-                  alignItems={"center"}
-                >
+                  sx={{
+                    alignItems: "center",
+                    width: "100%"
+                  }}>
                   <Box>
                     <IconButton>
                       <EmojiEmotionsOutlinedIcon />
@@ -566,7 +583,9 @@ const ChatBoxClientAnon = ({
                     }}
                   />
                 </Stack>
-                <Stack direction={"row"} spacing={1} alignItems={"center"}>
+                <Stack direction={"row"} spacing={1} sx={{
+                  alignItems: "center"
+                }}>
                   <Box>
                     <IconButton>
                       <AttachmentOutlinedIcon />

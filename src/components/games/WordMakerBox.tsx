@@ -4,7 +4,7 @@ import { Box, TextField, Button, Typography, Chip } from "@mui/material";
 import { useSocketIoContext } from "@/context/SocketIoContext";
 import { toast } from "react-toastify";
 import { GameEventEnum } from "@/types";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const WordMakerBox = () => {

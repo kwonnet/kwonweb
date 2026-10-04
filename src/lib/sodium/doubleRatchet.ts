@@ -53,9 +53,9 @@ function u8Concat(...arrays: Uint8Array[]): Uint8Array {
  * We'll do: seed = HK(RK || DH) then split into root(32) | chain(32)
  */
 function KDF_RK(RK_u8: Uint8, dh_u8: Uint8) {
-  const seed = sodium.crypto_generichash(32, sodium.crypto_generichash(32, u8Concat(RK_u8, dh_u8)));
+  const seed = sodium.crypto_generichash(32, sodium.crypto_generichash(32, u8Concat(RK_u8, dh_u8), null), null);
   // further derive 64 bytes and split
-  const out = sodium.crypto_generichash(64, seed);
+  const out = sodium.crypto_generichash(64, seed, null);
   const newRK = out.slice(0, 32);
   const CK = out.slice(32, 64);
   return { newRK, CK };
@@ -66,8 +66,8 @@ function KDF_RK(RK_u8: Uint8, dh_u8: Uint8) {
  * We return nextChainKey (32) and messageKey (32).
  */
 function KDF_Chain(chainKey_u8: Uint8) {
-  const mk = sodium.crypto_generichash(32, sodium.crypto_generichash(32, u8Concat(chainKey_u8, new Uint8Array([0x01]))));
-  const nextCK = sodium.crypto_generichash(32, sodium.crypto_generichash(32, u8Concat(chainKey_u8, new Uint8Array([0x02]))));
+  const mk = sodium.crypto_generichash(32, sodium.crypto_generichash(32, u8Concat(chainKey_u8, new Uint8Array([0x01])), null), null);
+  const nextCK = sodium.crypto_generichash(32, sodium.crypto_generichash(32, u8Concat(chainKey_u8, new Uint8Array([0x02])), null), null);
   return { nextCK, mk };
 }
 

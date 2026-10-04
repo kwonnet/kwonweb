@@ -51,7 +51,12 @@ const GameAwards = ({
   return (
     <React.Fragment>
       <Box sx={{ py: 1, px: 2, height: "100%", overflowY: "auto" }}>
-        <Stack direction={"row"} alignItems={"center"} justifyContent={"space-between"}>
+        <Stack
+          direction={"row"}
+          sx={{
+            alignItems: "center",
+            justifyContent: "space-between"
+          }}>
           <Typography
             variant="h5"
             sx={{

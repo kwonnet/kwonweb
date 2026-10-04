@@ -32,7 +32,7 @@ import {
 import LinkIcon from "@mui/icons-material/Link";
 import RepeatOutlinedIcon from "@mui/icons-material/RepeatOutlined";
 import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useInView } from "react-intersection-observer";
 import { PostMediaAction, PostMediaKind, PostMediaLog } from "@/types/post";
 import { useAuthSession, useTrackVideoWatchTime } from "@/hooks";

@@ -148,7 +148,9 @@ const PostScheduleDrawer = ({
             </Box>
             {scheduleAt && <Box>
               <Typography>You scheduled your post to go live on {formatDateTime(scheduleAt)}</Typography>
-                <Stack direction={"row"} alignItems={"center"}>
+                <Stack direction={"row"} sx={{
+                  alignItems: "center"
+                }}>
                   <Typography color="error">Clear schedule</Typography>
                   <IconButton color="error" onClick={(ev) => clearSchedule(ev)}>
                     <Close />

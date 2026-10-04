@@ -107,10 +107,11 @@ const FeedQuoteItem = ({
         {!showPost && state.muted && (
           <Box>
             <Typography
-              sx={{ py: 3 }}
-              textAlign={"center"}
               color="textDisabled"
-            >
+              sx={{
+                textAlign: "center",
+                py: 3
+              }}>
               {isDeleted
                 ? "This content is not available."
                 : item.actions.isRootBlockedByUser ||

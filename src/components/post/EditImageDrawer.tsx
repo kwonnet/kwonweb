@@ -180,7 +180,9 @@ const FlagContent = memo(
                     edge="end"
                     onChange={handleToggle(value)}
                     checked={selected.includes(value)}
-                    inputProps={{ "aria-labelledby": labelId }}
+                    slotProps={{
+                      input: { "aria-labelledby": labelId }
+                    }}
                   />
                 }
                 // disablePadding

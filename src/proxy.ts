@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from './auth'; // import it but call manually
 
-export async function middleware(request: any) {
+export async function proxy(request: any) {
   const { pathname } = request.nextUrl;
 
   // Allow public access to embed pages

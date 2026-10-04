@@ -37,8 +37,8 @@ export async function initiateX3DH(localDeviceId: string, theirBundle: any) {
     const dh4 = sodium.crypto_scalarmult(ephPriv, fromB64(theirBundle.oneTimePreKey.pubX25519));
     concat = u8Concat(dh1, dh2, dh3, dh4)
   }
-  const combined = sodium.crypto_generichash(32, sodium.crypto_generichash(32, concat));
-  const rootKey = sodium.to_base64(sodium.crypto_generichash(32, combined), sodium.base64_variants.ORIGINAL);
+  const combined = sodium.crypto_generichash(32, sodium.crypto_generichash(32, concat, null), null);
+  const rootKey = sodium.to_base64(sodium.crypto_generichash(32, combined, null), sodium.base64_variants.ORIGINAL);
 
   return { rootKey_b64: rootKey, initPacket: { ephPub: ephPub_b64 }, ephemeralPriv_b64: toB64(ephPriv) };
   } catch (error) {
@@ -57,8 +57,8 @@ export async function respondX3DH(localDeviceId: string, initPacket: any, theirB
   const dh2 = sodium.crypto_scalarmult(fromB64(priv.identityX25519.priv), ephPub);
   // if oneTime priv exists, include it
   // Note: exact mapping depends on how you built DH combos above; ensure both sides use same combos
-  const combined = sodium.crypto_generichash(32, sodium.crypto_generichash(32, u8Concat(dh1, dh2)));
-  const rootKey = sodium.to_base64(sodium.crypto_generichash(32, combined), sodium.base64_variants.ORIGINAL);
+  const combined = sodium.crypto_generichash(32, sodium.crypto_generichash(32, u8Concat(dh1, dh2), null), null);
+  const rootKey = sodium.to_base64(sodium.crypto_generichash(32, combined, null), sodium.base64_variants.ORIGINAL);
   return { rootKey_b64: rootKey };
   } catch (error) {
     throw error

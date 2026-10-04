@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Box, TextField, Button, Typography } from "@mui/material";
 import { useSocketIoContext } from "@/context/SocketIoContext";
 import { GameEventEnum } from "@/types";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const TypeManiaBox = () => {

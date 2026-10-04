@@ -6,7 +6,7 @@ import { GameEventEnum } from "@/types";
 import { shuffleArray } from "@/utils";
 import { toast } from "react-toastify";
 import WheelComponent from "./WheelComponent";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const LuckySpinBox = () => {

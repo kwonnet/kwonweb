@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { useAuthSession } from "@/hooks";
 import { subscribeUserToPush } from "@/utils/pushClient";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 
 const PageClient = () => {
   const { token } = useAuthSession();
@@ -54,7 +54,12 @@ const PageClient = () => {
             }
           />
         </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+        <Typography
+          variant="body2"
+          sx={{
+            color: "text.secondary",
+            mt: 2
+          }}>
           Notifications are currently{" "}
           {notificationsEnabled ? "enabled" : "disabled"}.
         </Typography>

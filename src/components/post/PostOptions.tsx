@@ -36,7 +36,7 @@ import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { getConnBtnText } from "@/utils/post";
 import { getPostUrl, shortenText } from "@/utils";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useRouter } from "next/navigation";
 import {
   deletePost,

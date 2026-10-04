@@ -45,7 +45,13 @@ const ReposterCard = ({
 
   return (
     <Paper sx={{ pb: 2, height: "100%", width: "100%", maxWidth: "100%" }}>
-      <Stack direction={"row"} alignItems={"center"} sx={{maxWidth: "100%", width: "100%"}}>
+      <Stack
+        direction={"row"}
+        sx={{
+          alignItems: "center",
+          maxWidth: "100%",
+          width: "100%"
+        }}>
         <Box>
           <Badge
             overlap="circular"
@@ -137,7 +143,7 @@ const ReposterCard = ({
           )}
         </Stack>
       </Stack>
-      
+
       <Box sx={{ px: 2, py: 1 }}>
         <Typography color="textDisabled" component={"p"} variant="caption">
           {shortenText(
@@ -146,7 +152,9 @@ const ReposterCard = ({
           )}{" "}
         </Typography>
         <Box sx={{ pt: 0.5 }}>
-        <Stack direction={"row"} gap={2}>
+        <Stack direction={"row"} sx={{
+          gap: 2
+        }}>
           <Typography
             color="textSecondary"
             variant="caption"
@@ -258,7 +266,9 @@ export const PageClient = ({
       {error && !data && (
         <DisplayError status={error?.status} message={getErrorMessage(error)} />
       )}
-      <Grid container spacing={1} mt={1}>
+      <Grid container spacing={1} sx={{
+        mt: 1
+      }}>
         {postReposters.length > 0 &&
           postReposters?.map((item) => (
             <Grid size={{ lg: 6, md: 6, sm: 12, xs: 12 }} key={item.id}>

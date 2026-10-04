@@ -44,7 +44,7 @@ import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import CelebrationOutlinedIcon from "@mui/icons-material/CelebrationOutlined";
 import { blockUser, updateAccountState, updateUserFollower } from "@/lib/users";
 import { getUserConnInfo } from "@/utils/connections";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import PageHeader from "@/components/common/PageHeader";
 import RequestPopover from "@/components/common/RequestPopover";
 import { useSSEContext } from "@/context/SSEContext";
@@ -439,9 +439,10 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
           <Box sx={{ ml: { lg: 0, md: 0, sm: 0, xs: 10 } }}>
             <Stack
               direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
-              alignItems={"center"}
-              gap={{ lg: 1, md: 1, sm: 0.2, xs: 0.2 }}
-            >
+              sx={{
+                alignItems: "center",
+                gap: { lg: 1, md: 1, sm: 0.2, xs: 0.2 }
+              }}>
               {(canAccess || isCurrentUser) && (
                 <Tooltip title="Message">
                   <IconButton
@@ -503,7 +504,9 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
                 <Stack
                   direction={"row"}
                   spacing={2}
-                  mt={isDeactivated || !isCurrentUser ? 2 : 0}
+                  sx={{
+                    mt: isDeactivated || !isCurrentUser ? 2 : 0
+                  }}
                 >
                   {isDeactivated && (
                     <Box>
@@ -637,14 +640,17 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
             </Typography>
             <Stack
               direction={{ lg: "row", md: "row", sm: "row", xs: "column" }}
-              gap={{ lg: 2, md: 2, sm: 0.5, xs: 0.5 }}
+              sx={{
+                gap: { lg: 2, md: 2, sm: 0.5, xs: 0.5 }
+              }}
             >
               {visitedUser?.country && (
                 <Stack
                   direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
-                  alignItems={"center"}
-                  gap={1}
-                >
+                  sx={{
+                    alignItems: "center",
+                    gap: 1
+                  }}>
                   <LocationOn sx={{ height: 15, width: 15 }} color="disabled" />
                   <Typography
                     color="textDisabled"
@@ -658,9 +664,10 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
 
               <Stack
                 direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
-                alignItems={"center"}
-                gap={1}
-              >
+                sx={{
+                  alignItems: "center",
+                  gap: 1
+                }}>
                 <PublicOutlinedIcon
                   sx={{ height: 15, width: 15 }}
                   color="disabled"
@@ -679,9 +686,10 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
 
               <Stack
                 direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
-                alignItems={"center"}
-                gap={1}
-              >
+                sx={{
+                  alignItems: "center",
+                  gap: 1
+                }}>
                 <CelebrationOutlinedIcon
                   sx={{ height: 15, width: 15 }}
                   color="disabled"
@@ -700,9 +708,10 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
 
               <Stack
                 direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
-                alignItems={"center"}
-                gap={1}
-              >
+                sx={{
+                  alignItems: "center",
+                  gap: 1
+                }}>
                 <CalendarMonthOutlined
                   sx={{ height: 15, width: 15 }}
                   color="disabled"
@@ -716,7 +725,12 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
                 </Typography>
               </Stack>
             </Stack>
-            <Stack mt={0.2} direction={"row"} gap={2}>
+            <Stack
+              direction={"row"}
+              sx={{
+                mt: 0.2,
+                gap: 2
+              }}>
               <Typography
                 color="textSecondary"
                 variant="caption"
@@ -785,16 +799,16 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
           {(!canAccess || !canView) && (
             <>
               <Stack
-                sx={{}}
                 direction={{
                   lg: "row",
                   md: "row",
                   sm: "column",
                   xs: "column",
                 }}
-                alignItems={"center"}
-                justifyContent={"center"}
-              >
+                sx={{
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
                 <IconButton disabled={true} size="large">
                   {isPrivate ? <Lock /> : <WarningOutlined />}
                 </IconButton>

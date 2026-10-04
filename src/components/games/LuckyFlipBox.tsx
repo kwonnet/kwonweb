@@ -5,9 +5,9 @@ import { useSocketIoContext } from "@/context/SocketIoContext";
 import { GameEventEnum } from "@/types";
 import { shuffleArray } from "@/utils";
 // import { toast } from "react-toastify";
-import ReactCardFlip from "react-card-flip";
+import FlipCard from "./FlipCard";
 import { FlipCardBackSvgIcon, FlipCardFrontSvgIcon } from "../svg";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const LuckyFlipBox = () => {
@@ -94,9 +94,8 @@ const LuckyFlipBox = () => {
           {options.map((option, index) => (
             <Grid key={index} size={{ lg: 4, md: 4, sm: 4, xs: 4 }}>
               <Box sx={{ height: "100%", width: "100%" }}>
-                <ReactCardFlip
+                <FlipCard
                   isFlipped={state.flips.includes(option)}
-                  flipDirection="vertical"
                 >
                   <Box sx={{cursor: "pointer"}} onClick={() => handleAnswer(option)}>
                     <FlipCardBackSvgIcon />
@@ -104,7 +103,7 @@ const LuckyFlipBox = () => {
                   <Box>
                     <FlipCardFrontSvgIcon score={option} />
                   </Box>
-                </ReactCardFlip>
+                </FlipCard>
               </Box>
             </Grid>
           ))}

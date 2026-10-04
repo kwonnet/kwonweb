@@ -26,13 +26,13 @@ import FormLabel from "@mui/material/FormLabel";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
-import { FixedSizeList, ListChildComponentProps } from "react-window";
+
 import useSWR from "swr";
 import { getContinentsAndCountries } from "@/lib/locations";
 import { Continent, Country } from "@/types";
 import { toast } from "react-toastify";
 import { useAuthSession } from "@/hooks";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { QuizScopeEnum, QuizThread } from "@/types/post";
 import DisplayCountries from "./DisplayCountries";
 import DisplayContinents from "./DisplayContinents";

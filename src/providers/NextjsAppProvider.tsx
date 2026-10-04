@@ -1,47 +1,17 @@
-// 'use client'
-import React from "react";
-import { NextAppProvider } from "@toolpad/core/nextjs";
-import { signIn, signOut } from "next-auth/react";
-import { constant } from "@/config";
-import type {} from "@mui/material/themeCssVarsAugmentation";
-import { CardMedia } from "@mui/material";
-import { Session } from "next-auth";
+"use client";
+import { CssBaseline, ThemeProvider } from "@mui/material";
+import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
+import type { Session } from "next-auth";
+import type { ReactNode } from "react";
+import { NotificationsProvider } from "./NotificationsProvider";
 import theme from "./theme";
-import { getNavigationItems } from "./navigation";
 
-const AUTHENTICATION = {
-  signIn,
-  signOut,
-};
-
-const NextjsAppProvider = (props: {
-  children: React.ReactNode;
-  session?: Session | null;
-}) => {
-  const NAVIGATION = getNavigationItems(props.session?.user);
-  return (
-    <NextAppProvider
-      theme={theme}
-      authentication={AUTHENTICATION}
-      navigation={NAVIGATION}
-      session={props.session}
-      branding={{
-        homeUrl: "/",
-        logo: (
-          <CardMedia
-            sx={{ height: 25, mt: {lg: 1, md: 1, sm: 0, xs: 0}, pl: { lg: 0, md: 0, sm: 1, xs: 1} }}
-            component="img"
-            src="/logo.png"
-            alt={constant.siteName}
-          />
-        ),
-        title: "" //constant.siteName,
-      }}
-    >
-      {props.children}
-    </NextAppProvider>
-  );
-};
-
-
-export default NextjsAppProvider;
+export default function NextjsAppProvider({ children }: { children: ReactNode; session?: Session | null }) {
+  return <>
+    <InitColorSchemeScript attribute="data-toolpad-color-scheme" defaultMode="system" />
+    <ThemeProvider theme={theme} defaultMode="system" disableTransitionOnChange>
+      <CssBaseline />
+      <NotificationsProvider>{children}</NotificationsProvider>
+    </ThemeProvider>
+  </>;
+}

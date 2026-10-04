@@ -8,7 +8,7 @@ import { Fade } from "react-awesome-reveal";
 import Countdown from "react-countdown";
 import { useAuthSession } from "@/hooks";
 import { WheelComponent } from "@/components/games";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 
 
 const DailyBonus = ({

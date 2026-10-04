@@ -44,10 +44,11 @@ export default function VideoUploadProgress({
     >
       <Stack
         direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        mb={1}
-      >
+        sx={{
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 1
+        }}>
         <Typography variant="subtitle2">Preparing your videos</Typography>
         {busy && (
           <Button size="small" color="inherit" onClick={cancel}>
@@ -58,7 +59,13 @@ export default function VideoUploadProgress({
       <Stack spacing={2}>
         {uploads.map((upload) => (
           <Box key={upload.id}>
-            <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                alignItems: "center",
+                mb: 1
+              }}>
               <Typography
                 variant="body2"
                 noWrap
@@ -110,10 +117,12 @@ export default function VideoUploadProgress({
             />
             <Typography
               variant="caption"
-              color="text.secondary"
               role="status"
-              sx={{ display: "block", mt: 0.5 }}
-            >
+              sx={{
+                color: "text.secondary",
+                display: "block",
+                mt: 0.5
+              }}>
               {upload.message ||
                 (upload.phase === "ready"
                   ? "Video ready"

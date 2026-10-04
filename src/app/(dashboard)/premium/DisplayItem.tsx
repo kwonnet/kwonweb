@@ -5,7 +5,7 @@ import {
   Box,
   Button,
   Chip,
-  Divider,
+  Divider, Dialog, DialogTitle, DialogContent, DialogActions,
   Paper,
   Stack,
   Typography,
@@ -15,7 +15,7 @@ import { toast } from "react-toastify";
 import { Subscription } from "@/types";
 import { useAuthSession } from "@/hooks";
 import Link from "next/link";
-import { ConfirmDialog, useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { isError } from "lodash";
 
 const DisplayItem = ({
@@ -190,17 +190,14 @@ const DisplayItem = ({
           </Box>
         </Stack>
       </Paper>
-      <ConfirmDialog
-        open={state.open}
-        payload={{
-          msg: "Are you sure, you want to cancel this plan?",
-          cancelText: "No",
-          okText: "Yes",
-          title: "Cancel Subscription Plan",
-          severity: "warning",
-        }}
-        onClose={handleClose}
-      />
+      <Dialog open={state.open} onClose={handleCancel} aria-labelledby="cancel-subscription-title">
+        <DialogTitle id="cancel-subscription-title">Cancel Subscription Plan</DialogTitle>
+        <DialogContent>Are you sure you want to cancel this plan?</DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancel} autoFocus>No</Button>
+          <Button color="warning" disabled={state.loading} onClick={handleConfirm}>Yes</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

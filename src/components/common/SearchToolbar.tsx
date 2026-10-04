@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import SearchVideoCard from './SearchVideoCard';
-import { useNotifications } from '@toolpad/core';
+import { useNotifications } from "@/providers/NotificationsProvider";
 import debounce  from 'lodash/debounce';
 // import { searchVideos } from '@/lib/actions/stream';
 
@@ -78,7 +78,7 @@ const SearchToolbar = () => {
     debounceSearch(text);
   };
   return (
-   <React.Fragment>
+    <React.Fragment>
       <ClickAwayListener onClickAway={() => handleClickAway()}>
       <Box>
         <Box
@@ -160,7 +160,9 @@ const SearchToolbar = () => {
             }}
             elevation={3}
           >
-            <Typography textAlign={"center"}>{state.message}</Typography>
+            <Typography sx={{
+              textAlign: "center"
+            }}>{state.message}</Typography>
             {state.searching && (
               <Box sx={{ display: "block", textAlign: "center" }}>
                 <CircularProgress size={16} color="info" />
@@ -178,9 +180,9 @@ const SearchToolbar = () => {
         )}
       </Box>
         </ClickAwayListener>
-      
-   </React.Fragment>
-  )
+
+    </React.Fragment>
+  );
 }
 
 export default SearchToolbar

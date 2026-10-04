@@ -17,7 +17,7 @@ import OutlinedFlagOutlinedIcon from "@mui/icons-material/OutlinedFlagOutlined";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import { getErrorMessage } from "@/utils";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useRouter } from "next/navigation";
 import { blockUser, muteUser } from "@/lib/users";
 import { getUserConnInfo } from "@/utils/connections";

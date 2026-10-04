@@ -125,7 +125,9 @@ const SuggestionPortal: React.FC<{
           }}
         >
           <React.Fragment>
-            <Stack direction={"row"} alignItems={"center"}>
+            <Stack direction={"row"} sx={{
+              alignItems: "center"
+            }}>
               <Avatar
                 src={item.avatar}
                 alt={item.name}

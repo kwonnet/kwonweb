@@ -42,7 +42,9 @@ const CoinsClient = ({
 
   return (
     <Box>
-      <Box my={2}>
+      <Box sx={{
+        my: 2
+      }}>
         <Button
           variant="outlined"
           sx={[

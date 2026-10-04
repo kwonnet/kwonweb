@@ -66,7 +66,7 @@ import {
     BlueskyIcon,
   } from "react-share";
 import { toast } from "react-toastify";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 const FeedSocialShare = ({
   isOpen,
   toggleDrawer,
@@ -180,7 +180,7 @@ const FeedSocialShare = ({
                     </TelegramShareButton>
                 </Grid>
                 <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <EmailShareButton onClick={ev => handleShare(ev, "Email")} url={url}>
+                    <EmailShareButton beforeOnClick={() => handleShare(null, "Email")} url={url}>
                         <EmailIcon size={32} round={false} />
                     </EmailShareButton>
                 </Grid>

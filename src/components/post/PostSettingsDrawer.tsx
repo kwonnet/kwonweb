@@ -30,7 +30,7 @@ import { PostScopeEnum, PostScopeSetting } from "@/types/post";
 import { getContinentsAndCountries } from "@/lib/locations";
 import useSWR from "swr";
 import { useAuthSession, useContinentsCountries } from "@/hooks";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { Continent, Country } from "@/types";
 import DisplayCountries from "./DisplayCountries";
 import DisplaySkeleton from "./DisplaySkeleton";
@@ -303,7 +303,13 @@ const PostSettingsDrawer = ({
           )}
           {state.showSelection && (
             <Box sx={{ position: "relative" }}>
-              <Stack direction={"row"} sx={{my: 1}} alignItems={"center"} spacing={1}>
+              <Stack
+                direction={"row"}
+                spacing={1}
+                sx={{
+                  alignItems: "center",
+                  my: 1
+                }}>
                 <Box>
                   <IconButton
                     onClick={(ev) => {

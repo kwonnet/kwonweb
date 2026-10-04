@@ -18,7 +18,7 @@ import { getUserTaskSettings } from "@/lib/swrHooks";
 import { useAuthSession } from "@/hooks";
 
 
-  
+
 const WatchAds = ({ data }: { data?: {
     id: string;
     userId: string;
@@ -27,7 +27,7 @@ const WatchAds = ({ data }: { data?: {
     createdAt: string;
     updateAt: string;
 }}) => {
-  const { token, user } = useAuthSession();  
+  const { token, user } = useAuthSession();
 
   const date = new Date();
 
@@ -37,7 +37,7 @@ const WatchAds = ({ data }: { data?: {
     date?: string;
     isProcessing?: boolean;
     isLoading?: boolean;
-  }>({ 
+  }>({
     date: data?.adsBonusDate,
     isProcessing: timer.minutes > 0 || timer.seconds > 0 ? true : false,
      });
@@ -90,14 +90,14 @@ const WatchAds = ({ data }: { data?: {
         const result = await getUserTaskSettings(`/v1/users/${user.id}/task-settings`, token)
         const timer = getTimeDifference(result?.adsBonusDate);
         setState(prev => ({
-            ...prev, 
+            ...prev,
             date: result?.adsBonusDate,
             isProcessing: timer.minutes > 0 || timer.seconds > 0 ? true : false,
         }))
         if(timer.minutes > 0 || timer.seconds > 0) return
-        await showAds() 
+        await showAds()
     } catch (error: any) {
-        error.status === 404 && await showAds() 
+        error.status === 404 && (await showAds())
     }finally{
         setState(prev => ({...prev, isLoading: false}))
     }

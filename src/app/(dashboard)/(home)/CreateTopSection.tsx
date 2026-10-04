@@ -39,10 +39,11 @@ const CreateTopSection = () => {
         >
           <Stack
             direction={"row"}
-            alignItems={"center"}
             spacing={0.5}
-            sx={{ pb: 1 }}
-          >
+            sx={{
+              alignItems: "center",
+              pb: 1
+            }}>
             <Link href={`/@${user?.username}`} style={{textDecoration: "none"}}>
               <Avatar src={user?.avatar!} alt={user?.name}>
               {user?.name[0]}

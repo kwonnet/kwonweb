@@ -16,7 +16,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import Link from "next/link";
 import NotificationClient from "./NotificationClient";
 import useSWR from "swr";
-import { useSession } from "@toolpad/core";
+
 import { UserStats } from "@/types/user";
 import { updateUserNotification } from "@/lib/users";
 import { useAuthSession } from "@/hooks";
@@ -102,13 +102,13 @@ const NotificationContainer = ({
                   <Box>
                   <Stack
                     direction={"row"}
-                    justifyContent={"space-between"}
-                    alignItems={"center"}
-                    sx={[(theme) => ({
+                    sx={[{
+                      justifyContent: "space-between",
+                      alignItems: "center"
+                    }, (theme) => ({
                       background: theme.vars.palette.AppBar.defaultBg,
                       p: 1
-                    })]}
-                  >
+                    })]}>
                     <Typography>Notifications</Typography>
                     <Tooltip title="Settings">
                       <IconButton

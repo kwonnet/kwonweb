@@ -29,7 +29,6 @@ import { genUniqueRef, getErrorMessage, shortenText } from "@/utils";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import CarouselContainer from "./CarouselContainer";
 import TagPeopleDrawer from "./TagPeopleDrawer";
-// import { handleImagikPostFileUpload } from "@/lib/imagekit";
 import { createPost } from "@/lib/posts";
 // import { toast } from "react-toastify";
 import CircularProgress, {
@@ -46,7 +45,6 @@ import { useAuthSession } from "@/hooks";
 import ContentEditor from "./ContentEditor";
 import PostScheduleDrawer from "./PostScheduleDrawer";
 import PostLocationDrawer from "./PostLocationDrawer";
-import { handleImagikPostFileUpload } from "@/lib/imagekit";
 import {
   PollDuration,
   PollOption,
@@ -62,7 +60,7 @@ import {
   QuizThread,
   TagUser,
 } from "@/types/post";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import CreateQuizCard from "./CreateQuizCard";
 import { PostCreateSchema } from "@/schema/post";
 import { ZodError } from "zod";

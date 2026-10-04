@@ -19,7 +19,7 @@ import { Close } from "@mui/icons-material";
 import React, { useState } from "react";
 import { formatNumber, getErrorMessage } from "@/utils";
 import { useAuthSession } from "@/hooks";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useSWRTipPackages } from "@/lib/tips/hooks";
 import Link from "next/link";
 import { useUserCoinsWallet } from "@/lib/swrHooks";
@@ -209,9 +209,11 @@ export default function PostTipDrawer({
                       >
                         <Typography variant="body2">{item.name}</Typography>
                         <Stack
-                          alignItems={"center"}
                           spacing={0.5}
                           direction={"row"}
+                          sx={{
+                            alignItems: "center"
+                          }}
                         >
                           <Typography variant="caption">
                             {formatNumber(item.price)}
@@ -223,7 +225,9 @@ export default function PostTipDrawer({
                   ))}
                 </Grid>
                 <Box sx={{ mt: 1 }}>
-                  <Stack direction={"row"} alignItems={"center"}>
+                  <Stack direction={"row"} sx={{
+                    alignItems: "center"
+                  }}>
                     <Switch
                       value={state.isAnon}
                       onChange={(_ev, checked) =>
@@ -251,11 +255,12 @@ export default function PostTipDrawer({
           </DialogContent>
           <DialogActions sx={{ justifyContent: "space-between" }}>
             <Stack
-              sx={{ width: "100%" }}
               direction={{lg: 'row', md: 'row', sm: "column", xs: "column"}}
-              alignItems={"center"}
-              justifyContent={"space-between"}
-            >
+              sx={{
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%"
+              }}>
               <Typography variant="body2">
                 By continuing, you agree to <Link href={"/"}>our terms</Link>
               </Typography>

@@ -37,16 +37,22 @@ const SidebarTrendClient = ({trends}: { trends: TrendingTopics[]}) => {
         }),
       ]}
     >
-      <Typography textAlign={"center"} fontWeight={600} variant="h6">
+      <Typography
+        variant="h6"
+        sx={{
+          textAlign: "center",
+          fontWeight: 600
+        }}>
         Check What's happening
       </Typography>
       {data.slice(0,3).map((item, index) => (
         <Box key={index} sx={{ margin: 1 }}>
           <Stack
             direction={"row"}
-            justifyContent={"space-between"}
-            alignItems={"center"}
-          >
+            sx={{
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}>
             <Typography
               color="textDisabled"
               variant="caption"

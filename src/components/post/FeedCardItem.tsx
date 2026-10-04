@@ -479,21 +479,25 @@ const FeedCardItem = ({
           {/* tagged users */}
           <Stack
             direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
-            justifyContent={"space-between"}
             spacing={1}
+            sx={{
+              justifyContent: "space-between"
+            }}
           >
             {item?.tagUsers?.length > 0 && (
               <Stack
                 direction={"row"}
-                alignItems={"center"}
                 spacing={0.5}
-                sx={{ pt: 0.5, cursor: "pointer" }}
                 onClick={ev => {
                   ev.stopPropagation()
                   ev.preventDefault()
                   setState((prev) => ({ ...prev, users: item.tagUsers,  openTagUserDrawer: true, slug: PostTagMention.TAG_USERS, title: "Tagged Users" }));
                 }}
-              >
+                sx={{
+                  alignItems: "center",
+                  pt: 0.5,
+                  cursor: "pointer"
+                }}>
                 <LoyaltyOutlinedIcon
                   sx={{ color: "text.disabled", width: 12, height: 12 }}
                 />
@@ -516,15 +520,17 @@ const FeedCardItem = ({
             {item?.mentions?.length > 0 && (
               <Stack
                 direction={"row"}
-                alignItems={"center"}
                 spacing={0.5}
-                sx={{ pt: 0.5, cursor: "pointer" }}
                 onClick={ev => {
                   ev.stopPropagation()
                   ev.preventDefault()
                   setState((prev) => ({ ...prev, users: item.mentions,  openTagUserDrawer: true, slug: PostTagMention.MENTIONS, title: "Mentions" }));
                 }}
-              >
+                sx={{
+                  alignItems: "center",
+                  pt: 0.5,
+                  cursor: "pointer"
+                }}>
                 <AlternateEmailOutlinedIcon
                   sx={{ color: "text.disabled", width: 12, height: 12 }}
                 />

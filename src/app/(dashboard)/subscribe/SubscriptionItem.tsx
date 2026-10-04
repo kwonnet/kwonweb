@@ -174,7 +174,9 @@ const SubscriptionItem = ({
               checked={isRecurring}
               onChange={handleRecurringChange}
               color="warning"
-              inputProps={{ "aria-label": "controlled" }}
+              slotProps={{
+                input: { "aria-label": "controlled" }
+              }}
             />
           }
           label="Recurring"

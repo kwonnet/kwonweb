@@ -17,7 +17,9 @@ const PostCard = ({ index }: { index: number }) => {
   const image = shuffle(["/story.jpg", "/post.jpg", "/story2.jpg"])[0]
   return (
     <Paper sx={{ mb: 1, minHeight: 120, p: 0.5 }}>
-      <Stack direction={"row"} justifyContent={"space-between"}>
+      <Stack direction={"row"} sx={{
+        justifyContent: "space-between"
+      }}>
         <Stack direction={"row"} spacing={0.5}>
           <Avatar src="/avatar.jpeg" alt={"user"} />
           <Stack>
@@ -33,7 +35,9 @@ const PostCard = ({ index }: { index: number }) => {
           </IconButton>
         </Box>
       </Stack>
-      <Stack direction={"row"} justifyContent={"space-between"}>
+      <Stack direction={"row"} sx={{
+        justifyContent: "space-between"
+      }}>
         <Box sx={{ width: "12.2%" }} />
         <Box>
           <Typography>

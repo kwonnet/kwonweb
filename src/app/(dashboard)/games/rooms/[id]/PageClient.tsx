@@ -56,7 +56,7 @@ import PaidOutlinedIcon from "@mui/icons-material/PaidOutlined";
 import { IIdleTimer, useIdleTimer } from "react-idle-timer/legacy";
 import { useAuthSession } from "@/hooks";
 import PaperLayout from "@/components/games/PaperLayout";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const buttons = [

@@ -63,14 +63,16 @@ const FeedQuoteActionDrawer = ({
       open={open}
       onClose={(ev) => toggleDrawer(ev, false)}
       onOpen={(ev) => {}}
-      PaperProps={{
-        sx: {
-          top: "70%",
-          borderTopLeftRadius: "8px",
-          borderTopRightRadius: "8px",
-          zIndex: 999,
-          overflow: "hidden"
-        },
+      slotProps={{
+        paper: {
+          sx: {
+            top: "70%",
+            borderTopLeftRadius: "8px",
+            borderTopRightRadius: "8px",
+            zIndex: 999,
+            overflow: "hidden"
+          },
+        }
       }}
     >
       <Box sx={{ width: "auto" }} role="presentation">

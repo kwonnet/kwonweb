@@ -67,7 +67,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         try {
           const body = SignUpSchema.parse(credentials);
-          console.log("Sign up credentials - ",body)
           // if(body) throw new NextAuthError("Ref ID not provided")
           const res = await fetch(`${apiUrl}/auth/signup`, {
             method: "POST",

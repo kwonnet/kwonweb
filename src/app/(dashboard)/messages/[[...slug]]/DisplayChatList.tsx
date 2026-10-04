@@ -105,10 +105,13 @@ const ConvoListItem = ({ item }: { item: DecryptedConversation }) => {
         // component={Link}
         // href={`/messages/${convoUser.id}`}
         direction={"row"}
-        // alignItems={"center"}
-        sx={{ p: 1, width: "100%", cursor: "pointer", textDecoration: "none" }}
-        justifyContent={"space-between"}
-      >
+        sx={{
+          justifyContent: "space-between",
+          p: 1,
+          width: "100%",
+          cursor: "pointer",
+          textDecoration: "none"
+        }}>
         <Stack direction={"row"} spacing={0.5}>
           <Avatar
             onClick={(ev) => handleProfileClick(ev)}
@@ -124,10 +127,11 @@ const ConvoListItem = ({ item }: { item: DecryptedConversation }) => {
           </Avatar>
           <div onClick={(ev) => handleChatClick(ev)}>
             <Stack
-              sx={{ width: "100%" }}
               direction={"row"}
-              justifyContent={"space-between"}
-            >
+              sx={{
+                justifyContent: "space-between",
+                width: "100%"
+              }}>
               <Stack direction="column" spacing={-1}>
                 <Typography
                   color="textSecondary"
@@ -141,7 +145,9 @@ const ConvoListItem = ({ item }: { item: DecryptedConversation }) => {
                 </Typography>
               </Stack>
             </Stack>
-            <Stack direction={"row"} alignItems={"center"} spacing={0.5}>
+            <Stack direction={"row"} spacing={0.5} sx={{
+              alignItems: "center"
+            }}>
               <ReceiptMessageIcon />
               <Box
                 sx={{

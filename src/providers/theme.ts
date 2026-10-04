@@ -1,4 +1,5 @@
 'use client'
+import type {} from '@mui/material/themeCssVarsAugmentation';
 import { createTheme } from "@mui/material";
 declare module "@mui/material/styles" {
   interface Palette {

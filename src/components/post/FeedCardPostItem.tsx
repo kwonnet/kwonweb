@@ -505,15 +505,15 @@ const FeedCardPostItem = ({
           {/* tagged users */}
           <Stack
             direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
-            justifyContent={"space-between"}
             spacing={1}
+            sx={{
+              justifyContent: "space-between"
+            }}
           >
             {item?.tagUsers?.length > 0 && (
               <Stack
                 direction={"row"}
-                alignItems={"center"}
                 spacing={0.5}
-                sx={{ pt: 0.5, cursor: "pointer" }}
                 onClick={(ev) => {
                   ev.stopPropagation();
                   ev.preventDefault();
@@ -525,7 +525,11 @@ const FeedCardPostItem = ({
                     title: "Tagged Users",
                   }));
                 }}
-              >
+                sx={{
+                  alignItems: "center",
+                  pt: 0.5,
+                  cursor: "pointer"
+                }}>
                 <LoyaltyOutlinedIcon
                   sx={{ color: "text.disabled", width: 12, height: 12 }}
                 />
@@ -548,9 +552,7 @@ const FeedCardPostItem = ({
             {item?.mentions?.length > 0 && (
               <Stack
                 direction={"row"}
-                alignItems={"center"}
                 spacing={0.5}
-                sx={{ pt: 0.5, cursor: "pointer" }}
                 onClick={(ev) => {
                   ev.stopPropagation();
                   ev.preventDefault();
@@ -562,7 +564,11 @@ const FeedCardPostItem = ({
                     title: "Mentions",
                   }));
                 }}
-              >
+                sx={{
+                  alignItems: "center",
+                  pt: 0.5,
+                  cursor: "pointer"
+                }}>
                 <AlternateEmailOutlinedIcon
                   sx={{ color: "text.disabled", width: 12, height: 12 }}
                 />

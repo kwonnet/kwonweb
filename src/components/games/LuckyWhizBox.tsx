@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import { useSocketIoContext } from "@/context/SocketIoContext";
 import { GameEventEnum } from "@/types";
 import { shuffleArray } from "@/utils";
-import { useNotifications } from "@toolpad/core";
+import { useNotifications } from "@/providers/NotificationsProvider";
 import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
 const LuckyWhizBox = () => {

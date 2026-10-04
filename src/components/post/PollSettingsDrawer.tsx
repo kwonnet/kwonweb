@@ -25,13 +25,14 @@ import FormLabel from "@mui/material/FormLabel";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
-import { FixedSizeList, ListChildComponentProps } from "react-window";
+import DisplayCountries from "./DisplayCountries";
+import DisplayContinents from "./DisplayContinents";
 import useSWR from "swr";
 import { getContinentsAndCountries } from "@/lib/locations";
 import { Continent, Country } from "@/types";
 import { toast } from "react-toastify";
 import { useAuthSession } from "@/hooks";
-import { useNotifications } from "@toolpad/core"
+import { useNotifications } from "@/providers/NotificationsProvider"
 import { PollScopeEnum, PollThread } from "@/types/post";
 
 
@@ -57,135 +58,6 @@ const DisplaySkeleton = () => {
   );
 };
 
-const DisplayCountries = ({
-  countries,
-  onToggleCountry,
-  selected,
-}: {
-  countries: Country[];
-  onToggleCountry: (id: string) => void;
-  selected: string[];
-}) => {
-  const theme = useTheme()
-  const isMDDown = useMediaQuery(theme.breakpoints.down("md"));
-
-  const RenderItem = ({ index, style }: ListChildComponentProps) => {
-    const item = countries[index];
-    return (
-      <ListItem
-        style={style}
-        key={item.id}
-        secondaryAction={
-          <IconButton edge="start" aria-label={`${item.name} flag`}>
-            {item.emoji}
-          </IconButton>
-        }
-        disablePadding
-      >
-        <ListItemButton
-          role={undefined}
-          onClick={(ev) => onToggleCountry(item.id)}
-          dense
-        >
-          <ListItemIcon>
-            <Checkbox
-              edge="end"
-              checked={selected.includes(item.id)}
-              tabIndex={-1}
-              disableRipple
-              inputProps={{ "aria-labelledby": item.id }}
-            />
-          </ListItemIcon>
-          <ListItemText id={item.id} primary={item.name} />
-        </ListItemButton>
-      </ListItem>
-    );
-  };
-  return (
-      <Box
-        sx={{
-          width: "100%",
-        }}
-      >
-        <FixedSizeList
-          height={isMDDown ? 360 : 250}
-          width={"100%"}
-          itemSize={50}
-          itemCount={countries.length}
-          overscanCount={5}
-        >
-          {RenderItem}
-        </FixedSizeList>
-      </Box>
-  );
-};
-
-const DisplayContinents = ({
-  continents,
-  onToggleContinent,
-  selected,
-}: {
-  continents: Continent[];
-  onToggleContinent: (id: string) => void;
-  selected: string[];
-}) => {
-  const theme = useTheme()
-  const isMDDown = useMediaQuery(theme.breakpoints.down("md"));
-  const RenderItem = ({ index, style }: ListChildComponentProps) => {
-    const item = continents[index];
-    return (
-      <ListItem
-        style={style}
-        key={item.id}
-        secondaryAction={
-          <IconButton
-            size="small"
-            edge="start"
-            aria-label={`${item.name} code`}
-          >
-            {item.code}
-          </IconButton>
-        }
-        disablePadding
-      >
-        <ListItemButton
-          role={undefined}
-          onClick={(ev) => onToggleContinent(item.id)}
-          dense
-        >
-          <ListItemIcon>
-            <Checkbox
-              edge="end"
-              checked={selected.includes(item.id)}
-              tabIndex={-1}
-              disableRipple
-              inputProps={{ "aria-labelledby": item.id }}
-            />
-          </ListItemIcon>
-          <ListItemText id={item.id} primary={item.name} />
-        </ListItemButton>
-      </ListItem>
-    );
-  };
-  return (
-    <Box
-      sx={{
-        width: "100%",
-      }}
-    >
-      <FixedSizeList
-        height={isMDDown ? 360 : 250}
-        width={"100%"}
-        itemSize={50}
-        itemCount={continents.length}
-        overscanCount={5}
-      >
-        {RenderItem}
-      </FixedSizeList>
-    </Box>
-  );
-};
-
 const PollSettingsDrawer = ({
   isOpen,
   toggleDrawer,
@@ -200,6 +72,8 @@ const PollSettingsDrawer = ({
   poll: PollThread;
 }) => {
   const { token } = useAuthSession();
+  const theme = useTheme();
+  const isMDDown = useMediaQuery(theme.breakpoints.down("md"));
 
   const notif =  useNotifications()
 
@@ -414,7 +288,7 @@ const PollSettingsDrawer = ({
           <Box sx={{ position: "relative" }}>
             {!data && isLoading && <DisplaySkeleton />}
             {PollScopeEnum.COUNTRY === state.scope && (
-              <DisplayCountries
+              <DisplayCountries height={isMDDown ? 360 : 250}
                 countries={countries}
                 onToggleCountry={onToggleCountry}
                 selected={state.countries}
@@ -422,7 +296,7 @@ const PollSettingsDrawer = ({
             )}
 
             {PollScopeEnum.CONTINENT === state.scope && (
-              <DisplayContinents
+              <DisplayContinents height={isMDDown ? 360 : 250}
                 continents={continents}
                 onToggleContinent={onToggleContinent}
                 selected={state.continents}
