@@ -1,6 +1,5 @@
 'use client';
-import { useState } from 'react';
-import { Alert, Avatar, Box, Button, CircularProgress, List, ListItemButton, ListItemAvatar, ListItemText, Tabs, Tab, TextField, Typography } from '@mui/material';
+import { Alert, Avatar, Box, Button, CircularProgress, List, ListItemButton, ListItemAvatar, ListItemText, Tabs, Tab, Typography } from '@mui/material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import useSWRInfinite from 'swr/infinite';
@@ -20,7 +19,6 @@ export default function SearchClient({ q, tab, posts, people, failed }: {
 }) {
   const { user, token } = useAuthSession();
   const router = useRouter();
-  const [input, setInput] = useState(q);
   const { data, error, isValidating, size, setSize, mutate } = useSWRInfinite<(Person | FeedPost)[]>(
     (index, previous) => !q || (tab !== 'people' && user?.id) || (previous && previous.length < 21) ? null :
       { search: q, tab, page: index + 1, viewer: user?.id ?? 'guest' },
@@ -30,10 +28,6 @@ export default function SearchClient({ q, tab, posts, people, failed }: {
   );
   const entries = [...new Map((data ?? [tab === 'people' ? people : posts]).flat().map(item => [item.id, item])).values()];
   return <Box sx={{ width: '100%', minWidth: 0, pb: 4 }}>
-    <Box component="form" onSubmit={event => { event.preventDefault(); if (input.trim()) router.push(searchHref(input, 'typed_query', tab)); }} sx={{ p: 2, display: 'flex', gap: 1 }}>
-      <TextField fullWidth size="small" label="Search" value={input} onChange={event => setInput(event.target.value)} slotProps={{ htmlInput: { maxLength: 200 } }} />
-      <Button type="submit" variant="outlined">Search</Button>
-    </Box>
     <Tabs value={tab} variant="fullWidth" aria-label="Search results" sx={{ borderBottom: 1, borderColor: 'divider' }}>
       {(['top', 'latest', 'people'] as const).map(value => <Tab key={value} value={value} label={value} component={Link} href={searchHref(q, 'typed_query', value)} />)}
     </Tabs>
