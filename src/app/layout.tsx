@@ -1,3 +1,4 @@
+import AuthSessionBoundary from "@/providers/AuthSessionBoundary";
 import { headers } from "next/headers";
 import { PUBLIC_LEGAL_HEADER } from "@/lib/auth-redirect";
 import { publicEnvScript } from "@/config/public-env";
@@ -41,15 +42,15 @@ export default async function RootLayout({
         <script id="kwonnet-public-env" dangerouslySetInnerHTML={{ __html: publicEnvScript() }} />
       </head>
       <body>
-        <SessionProvider session={session} refetchOnWindowFocus={!publicLegal}>
+        <SessionProvider session={session} refetchOnWindowFocus={!publicLegal} refetchInterval={publicLegal ? 0 : 60}>
           <AppRouterCacheProvider>
             <React.Suspense fallback={<AppLoadingShell />}>
               <NextjsAppProvider session={session}>
-                {publicLegal ? children : <RegisterDeviceProvider>
+                {publicLegal ? children : <AuthSessionBoundary initiallyAuthenticated={!!session?.user}><RegisterDeviceProvider>
                 <SocketIoProvider>
                     <SSEContextProvider>{children}</SSEContextProvider>
                 </SocketIoProvider>
-                </RegisterDeviceProvider>}
+                </RegisterDeviceProvider></AuthSessionBoundary>}
               </NextjsAppProvider>
             </React.Suspense>
           </AppRouterCacheProvider>

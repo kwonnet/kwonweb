@@ -17,9 +17,10 @@ function modules(overrides = {}) {
       if (name.startsWith('@/lib/')) return load(`src/lib/${name.slice(6)}.ts`);
       if (name === './account-session-policy' || name === './lib/account-session-policy') return load('src/lib/account-session-policy.ts');
       if (name === './lib/saved-accounts') return load('src/lib/saved-accounts.ts');
+      if (name === './lib/auth-request-context') return load('src/lib/auth-request-context.ts');
       if (name === './lib/auth-redirect') return load('src/lib/auth-redirect.ts');
       if (name === './lib/auth-refresh-policy') return load('src/lib/auth-refresh-policy.ts');
-      if (name === './config') return { apiUrl: 'https://api.example.invalid/api/v1' };
+      if (name === './config' || name === '@/config') return { apiUrl: 'https://api.example.invalid/api/v1' };
       if (name === './schema') return {};
       if (name === './types/user') return {};
       return require(name);
@@ -297,4 +298,39 @@ test('Google GET callbacks activate the Kwonnet session generation and save the 
     if (priorId === undefined) delete process.env.AUTH_GOOGLE_ID; else process.env.AUTH_GOOGLE_ID = priorId;
     if (priorSecret === undefined) delete process.env.AUTH_GOOGLE_SECRET; else process.env.AUTH_GOOGLE_SECRET = priorSecret;
   }
+});
+
+test('backend session revocation invalidates NextAuth on polling without a refresh login event', async () => {
+  let configuration;
+  const load = modules({'next-auth': {__esModule: true, default: factory => {configuration = factory; return {handlers: {}};}, CredentialsSignin: class extends Error {}}, 'next-auth/providers/credentials': {__esModule: true, default: provider => provider}});
+  load('src/auth.ts');
+  const config = await configuration(new NextRequest('https://kwonnet.test/api/auth/session'));
+  const previousFetch = global.fetch;
+  try {
+    global.fetch = async (url, options) => {assert.equal(url, 'https://api.example.invalid/api/v1/auth/session-status'); assert.equal(options.headers.Authorization, 'Bearer private-api-token'); return {status: 401};};
+    const token = {user: {id: 'owner', accessToken: 'private-api-token', sessionId: 'session'}, sessionIssuedAt: Date.now()};
+    assert.equal(await config.callbacks.jwt({token}), null);
+  } finally {global.fetch = previousFetch;}
+});
+
+test('logout attempts backend revocation with the active bearer and still clears local cookies when the API is down', async () => {
+  const originalFetch = global.fetch;
+  const generation = '12245678-1234-1234-1234-123456789012';
+  const cookieName = `__Secure-authjs.session-token-${generation}`;
+  const token = await encode({token: {user: {id: 'owner', accessToken: 'api-secret', sessionId: 'sid'}}, secret: process.env.AUTH_SECRET, salt: cookieName});
+  const route = modules({'@/auth': {auth: async () => {throw new Error('Logout must not refresh');}}})('src/app/api/accounts/route.ts');
+  try {
+    for (const offline of [false, true]) {
+      let called = false;
+      global.fetch = async (url, options) => {
+        called = true; assert.equal(url, 'https://api.example.invalid/api/v1/auth/logout');
+        assert.equal(options.headers.Authorization, 'Bearer api-secret');
+        if (offline) throw new Error('offline'); return {ok: true};
+      };
+      const request = new NextRequest('https://kwonnet.test/api/accounts', {method: 'POST', headers: {origin: 'https://kwonnet.test', cookie: `kwonnet.active-session=${generation}; ${cookieName}=${token}`}, body: JSON.stringify({action: 'logout'})});
+      const response = await route.POST(request);
+      assert.equal(called, true); assert.equal((await response.json()).serverRevoked, !offline);
+      assert.ok(response.headers.getSetCookie().some(value => value.startsWith(cookieName + '=') && value.includes('Max-Age=0')));
+    }
+  } finally {global.fetch = originalFetch;}
 });

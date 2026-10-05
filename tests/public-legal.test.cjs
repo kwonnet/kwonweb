@@ -36,6 +36,7 @@ test('legal rendering skips session refresh even with an expired session and omi
     '@/components/common/AppLoadingShell': {__esModule: true, default: component},
     '@mui/material-nextjs/v16-appRouter': {AppRouterCacheProvider: component},
     'next-auth/react': {SessionProvider: component},
+    '@/providers/AuthSessionBoundary': {__esModule: true, default: component},
     '@/providers/NextjsAppProvider': {__esModule: true, default: component},
     '@/context/SocketIoContext': {__esModule: true, default: component},
     '@/context/SSEContext': {__esModule: true, default: component},

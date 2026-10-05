@@ -24,11 +24,12 @@ const SSEContextProvider = (props: any) => {
 
   useEffect(() => {
     if (!user?.id) return;
-    const sseSource = new EventSource(`${apiUrl}/stream`, {
+    const sseSource = new EventSource("/api/events", {
       withCredentials: true,
     });
 
-    setEventSource(sseSource);
+    const opened = () => setEventSource(sseSource);
+    sseSource.addEventListener("open", opened);
 
     sseSource?.addEventListener("message", (event: MessageEvent<any>) => {
       console.log(`SSE Client is connected to server stream: ${event.data}`);
@@ -40,6 +41,7 @@ const SSEContextProvider = (props: any) => {
     };
 
     return () => {
+      sseSource.removeEventListener("open", opened);
       sseSource?.close();
     };
   }, [user?.id]);

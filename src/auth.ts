@@ -1,3 +1,4 @@
+import {authRequestContextHeaders} from "./lib/auth-request-context";
 import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
 import { ACTIVE_SESSION_COOKIE, ACCOUNT_LIMIT, ACCOUNT_MAX_AGE, activeSessionCookieName, authCookieNames, cookieValue, logoutTime, sessionCookieBase, sessionLoginTime, sessionWasLoggedOut } from "./lib/account-session-policy";
@@ -22,6 +23,7 @@ declare module "next-auth" {
     username?: string | null;
     image?: string | null;
     accessToken?: string | null;
+    sessionId?: string;
   }
   // interface Session {
   //   user: {
@@ -40,6 +42,7 @@ declare module "next-auth" {
       username: string;
       image?: string;
       accessToken: string;
+      sessionId?: string;
     };
   }
 }
@@ -57,6 +60,7 @@ configureAuthOrigin();
 
 const authRuntime = NextAuth(async request => {
   const requestHeaders = request?.headers ?? await headers();
+  const contextHeaders = authRequestContextHeaders(requestHeaders);
   const loggedOutAt = logoutTime(requestHeaders.get("cookie"));
   const activeGeneration = cookieValue(requestHeaders.get("cookie"), ACTIVE_SESSION_COOKIE);
   const secure = new URL(process.env.AUTH_URL || request?.url || "http://localhost").protocol === "https:";
@@ -91,8 +95,8 @@ const authRuntime = NextAuth(async request => {
         const account = (await readSavedAccounts(jar, secure)).find(account => account.id === credentials.accountId);
         if (!account) throw new NextAuthError("Please log in to this account again.");
         const response = await fetch(`${apiUrl}/auth/refresh-token`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: account.accessToken }), signal: AbortSignal.timeout(8000), cache: "no-store",
+          method: "POST", headers: { "Content-Type": "application/json", ...contextHeaders },
+          body: JSON.stringify({ token: account.accessToken, newSession: true }), signal: AbortSignal.timeout(8000), cache: "no-store",
         });
         if (!response.ok) throw new NextAuthError("Please log in to this account again.");
         const { user, accessToken } = await response.json();
@@ -117,7 +121,7 @@ const authRuntime = NextAuth(async request => {
             body: JSON.stringify(body),
             credentials: "include",
             headers: {
-              "Content-Type": "application/json",
+              "Content-Type": "application/json", ...contextHeaders,
             },
           });
 
@@ -153,7 +157,7 @@ const authRuntime = NextAuth(async request => {
             body: JSON.stringify(body),
             credentials: "include",
             headers: {
-              "Content-Type": "application/json",
+              "Content-Type": "application/json", ...contextHeaders,
             },
           });
           if (!res.ok) {
@@ -192,7 +196,7 @@ const authRuntime = NextAuth(async request => {
         if (!account.id_token) return false;
         const response = await fetch(`${apiUrl}/auth/google`, {
           method: "POST", cache: "no-store", signal: AbortSignal.timeout(15_000),
-          headers: {"Content-Type": "application/json"}, body: JSON.stringify({idToken: account.id_token}),
+          headers: {"Content-Type": "application/json", ...contextHeaders}, body: JSON.stringify({idToken: account.id_token}),
         });
         if (!response.ok) return false;
         const identity = await response.json();
@@ -218,6 +222,12 @@ const authRuntime = NextAuth(async request => {
       if (!user && sessionWasLoggedOut(token, loggedOutAt)) return null;
       if (!user && activeGeneration && token.sessionGeneration !== activeGeneration) return null;
       token.sessionIssuedAt ??= sessionLoginTime(token);
+      const sessionUser = token.user as {sessionId?: string; accessToken?: string} | undefined;
+      if (!user && sessionUser?.sessionId && request && new URL(request.url).pathname === "/api/auth/session") {
+        const status = await fetch(`${apiUrl}/auth/session-status`, {headers: {Authorization: `Bearer ${sessionUser.accessToken}`}, cache: "no-store", signal: AbortSignal.timeout(8000)});
+        if (status.status === 401 || status.status === 403) return null;
+        if (!status.ok) throw new NextAuthError("Session verification temporarily unavailable");
+      }
       if (token && !user && (trigger === "update" || shouldRefreshAccessToken(
         (token.user as { accessToken?: string } | undefined)?.accessToken, token.accessTokenRefreshedAt
       ))) {
@@ -230,12 +240,11 @@ const authRuntime = NextAuth(async request => {
           credentials: "include",
           body: JSON.stringify({token: currAccessToken}),
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json", ...contextHeaders,
           },
         });
-        if (!res.ok) {
-          throw new NextAuthError(await res.text());
-        }
+        if (res.status === 401 || res.status === 403) return null;
+        if (!res.ok) throw new NextAuthError("Authentication service unavailable. Please try again.");
 
         const data = await res.json();
         const { user, accessToken } = data;

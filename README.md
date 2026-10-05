@@ -224,3 +224,34 @@ Client-supplied copies of that internal marker are stripped on other routes.
 Homepage/sidebar and authentication-form links point to these pages, and guests
 can activate the legal links without triggering the login prompt. Other actions
 retain the existing guest authentication behavior.
+
+### Authentication security lifecycle
+
+Password/Google signin forwards signed browser metadata through the existing API
+auth endpoints when `AUTH_TELEMETRY_SHARED_SECRET` (32+ chars) matches the backend.
+No cookies, credentials, or tokens are included in that metadata envelope. User
+agent/IP are transient inputs; the API retains only parsed device fields, masked
+IP/optional keyed hash and sanitized approximate-location JSON. Optional
+`AUTH_TRUSTED_WEB_IP_HEADER` must be overwritten by trusted ingress with origin
+bypass blocked; no browser IP is accepted from arbitrary forwarding headers by
+default. Missing configuration yields nullable browser location, not a fabricated
+address. Keep this secret server-only and synchronize clocks (signature window 60s).
+
+API session IDs survive refresh. Saved-account switches request a new tracked
+session with the original provider attribution. SessionProvider polls each minute;
+tracked polling validates revocation through `/auth/session-status` before exposing
+the session. The boundary discards the private React tree and reloads guest home
+when authentication is lost; public legal pages remain readable. Logout attempts
+server revocation before clearing cookies, without refreshing the old identity.
+`serverRevoked:false` reports API outage even though local logout completes.
+
+SSE connects to the same-origin `/api/events` route, which authenticates the local
+session and forwards the API bearer server-side. No API token is placed in the SSE
+URL. Backend streams and sockets enforce revocation with an idle recheck interval
+of up to 30 seconds. Existing in-flight authorized operations can still finish.
+The backend exposes owned session/history/revocation APIs; a dedicated settings
+screen for managing that history is not part of this change.
+
+Deploy the backend migration/API first, then the web runtime. See kwonserver's
+README for proxy trust, independent IP-hash salt, legacy-token compatibility and
+the `auth:cleanup` maintenance command/scheduling step.

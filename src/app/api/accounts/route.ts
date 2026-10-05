@@ -1,3 +1,4 @@
+import {apiUrl} from "@/config";
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { auth } from "@/auth";
@@ -29,7 +30,15 @@ export async function POST(request: NextRequest) {
     const cookieName = activeSessionCookieName(request.headers.get("cookie"), secure);
     const token = await getToken({ req: request, secret: process.env.AUTH_SECRET, cookieName, salt: cookieName });
     const id = (token?.user as { id?: string } | undefined)?.id;
-    const response = json({ ok: true });
+    let serverRevoked = true;
+    const accessToken = (token?.user as {accessToken?: string} | undefined)?.accessToken;
+    if (accessToken) {
+      try {
+        const revoked = await fetch(`${apiUrl}/auth/logout`, {method: "POST", headers: {Authorization: `Bearer ${accessToken}`}, cache: "no-store", signal: AbortSignal.timeout(5000)});
+        serverRevoked = revoked.ok;
+      } catch {serverRevoked = false;}
+    }
+    const response = json({ ok: true, serverRevoked });
     response.cookies.set(LOGOUT_COOKIE, String(Date.now()), options(secure));
     for (const cookie of request.cookies.getAll()) {
       if (cookie.name.startsWith(accountCookiePrefix(secure)) && (!id || cookie.name === accountCookieName(id, secure))) {
