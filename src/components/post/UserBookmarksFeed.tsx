@@ -10,15 +10,19 @@ import {
   shareFeedPost,
 } from "@/lib/posts";
 import { getErrorMessage, getSessionId } from "@/utils";
-import FeedSocialShare from "./FeedSocialShare";
+import dynamic from "next/dynamic";
+const FeedSocialShare = dynamic(() => import("./FeedSocialShare"), { ssr: false });
 import { FeedPost } from "@/types";
 import { siteUrl } from "@/config";
-import CreateQuoteDrawer from "./CreateQuoteDrawer";
+const CreateQuoteDrawer = dynamic(() => import("./CreateQuoteDrawer"), { ssr: false });
 import FeedCardItem from "./FeedCardItem";
 import { useAuthSession, useFeedCacheUpdater, useLoadMore, usePostSseListeners } from "@/hooks";
 import { FeedTypeEnum } from "@/types/post";
 import { getUserPostsFeed, updateUserFollower } from "@/lib/users";
-import useSWRInfinite from "swr/infinite";
+import useSWRInfinite, { unstable_serialize as serializeInfinite } from "swr/infinite";
+import { useSWRConfig, unstable_serialize } from "swr";
+import { missingFeedEntries } from "@/utils/seed-feed-cache";
+import FeedSkeleton from "./FeedSkeleton";
 import FeedCardPostItem from "./FeedCardPostItem";
 import { FollowAction } from "@/types/user";
 
@@ -34,7 +38,7 @@ type LocalState = {
 
 const PAGE_SIZE = 21
 
-const UserBookmarksFeed = ({ posts, userId }: { posts: FeedPost[], userId: string }) => {
+const UserBookmarksFeed = ({ posts, userId }: { posts?: FeedPost[], userId: string }) => {
 
   const { token, user } = useAuthSession();
   const notifications = useNotifications();
@@ -49,6 +53,7 @@ const UserBookmarksFeed = ({ posts, userId }: { posts: FeedPost[], userId: strin
   });
 
   const getKey = (pageIndex: number, previousPageData?: FeedPost[]) => {
+    if (!user?.id || !token) return null;
     if (pageIndex !== 0 && previousPageData && !previousPageData.length)
       return null; // Stop when no more data
     return {
@@ -61,28 +66,50 @@ const UserBookmarksFeed = ({ posts, userId }: { posts: FeedPost[], userId: strin
     };
   };
 
-  const { data, error, isLoading, mutate: mutatePages, setSize } =
+  const { cache, mutate: mutateCache } = useSWRConfig();
+  // Skip the duplicate browser request only for a newly streamed server page.
+  // Returning to a cached tab still revalidates in the background after deduping.
+  const [seededOnMount] = useState(() => posts !== undefined && cache.get(unstable_serialize(getKey(0)))?.data === undefined);
+
+  const { data, error, isLoading, isValidating, size, mutate: mutatePages, setSize } =
     useSWRInfinite(getKey, (args) => getUserPostsFeed(args, token), {
       keepPreviousData: false,
       refreshWhenOffline: false,
       revalidateOnReconnect: true,
-      fallbackData: [posts],
+      fallbackData: posts ? [posts] : undefined,
+      revalidateOnMount: seededOnMount ? false : undefined,
+      revalidateFirstPage: false,
+      revalidateOnFocus: false,
+      dedupingInterval: 30_000,
+      shouldRetryOnError: false,
     });
+
+  React.useEffect(() => {
+    if (!posts || !user?.id || !token) return;
+    const firstKey = getKey(0);
+    const pageKey = unstable_serialize(firstKey);
+    const listKey = serializeInfinite(index => getKey(index));
+    for (const [key, value] of missingFeedEntries(cache, pageKey, listKey, posts)) {
+      void mutateCache(key, value, { revalidate: false });
+    }
+    // Keys only change with the viewer, profile, and tab; pagination isn't a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cache, mutateCache, posts, user?.id, userId, token]);
 
   const mutate = useFeedCacheMutate(mutatePages, data);
 
-  const flatData = data ? data?.flat() : [];
+  const flatData = React.useMemo(() => [...new Map((data ?? []).flat().map(post => [post.id, post])).values()], [data]);
 
   const isReachingEnd =
-    (data && data[data.length - 1]?.length === 0) || !!error;
+    (data && data[data.length - 1]?.length < PAGE_SIZE) || !!error;
 
   const loadMore = () => {
-    setSize((num) => num + 1);
+    if (!isValidating && !isReachingEnd && data?.length === size) void setSize((num) => num + 1);
   }
   // feed cache update
   const { mutatePostLikes, mutatePostBookmarks, mutatePostQuotes, mutatePostShares, mutatePostReposts, mutatePostAuthor } = useFeedCacheUpdater(mutate)
 
-  const { handleReaction, handleBookmark, handleRepost } = usePostInteractions(user.id, token, { mutatePostLikes, mutatePostBookmarks, mutatePostReposts }, mutate);
+  const { handleReaction, handleBookmark, handleRepost } = usePostInteractions(user?.id ?? "", token, { mutatePostLikes, mutatePostBookmarks, mutatePostReposts }, mutate);
 
   // listen to sse streams
   usePostSseListeners(user, mutate, undefined, true, undefined, data)
@@ -118,7 +145,7 @@ const UserBookmarksFeed = ({ posts, userId }: { posts: FeedPost[], userId: strin
   };
 
   const onSocialClick = async (id: string, kind?: string) => {
-    console.log("share post ID ", id);
+
 
     const sessionId = getSessionId();
     const payload = {id, kind, sessionId, timestamp: new Date().toISOString()}
@@ -138,10 +165,11 @@ const UserBookmarksFeed = ({ posts, userId }: { posts: FeedPost[], userId: strin
     updateUserFollower(args, token);
   };
   // track load more posts
-  const ref = useLoadMore(loadMore)
+  const ref = useLoadMore(loadMore, !isValidating && !isReachingEnd && !!data && data.length === size, "0px 0px 800px 0px")
 
   return (
     <Box sx={{ mt: 1 }}>
+      {isLoading && !data && <FeedSkeleton />}
       {error && !data && (
       <Box>
         <Typography>
@@ -164,21 +192,21 @@ const UserBookmarksFeed = ({ posts, userId }: { posts: FeedPost[], userId: strin
         );
       })}
       {/* share post */}
-      <FeedSocialShare
+      {state.open && <FeedSocialShare
         isOpen={state.open}
         url={state.url}
         postId={state.postId}
         toggleDrawer={toggleShareDrawer}
         onSocialClick={onSocialClick}
-      />
+      />}
       {/* create post quote */}
-      <CreateQuoteDrawer
+      {state.isOpen && <CreateQuoteDrawer
         post={state.post}
         isOpen={state.isOpen}
         toggleDrawer={toggleDrawer}
         onQuoteCallback={onQuoteCallback}
         onFollowUserCallback={onFollowUserCallback}
-      />
+      />}
       {isLoading ? null : !isReachingEnd ? <div ref={ref} style={{padding: "10px 0px 10px 0px"}} /> : <Typography
         variant="caption"
         color="textDisabled"

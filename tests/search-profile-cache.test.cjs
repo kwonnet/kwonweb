@@ -44,3 +44,58 @@ test('search server renders seeded API results and forwards the authenticated to
   const people = await Page({ searchParams: Promise.resolve({ q: 'Ada', tab: 'people' }) });
   assert.equal(people.props.people[0].id, 'u'); assert.equal(calls[1][0], 'people');
 });
+
+test('profile streams the authorized active tab and seeds it with server posts', async () => {
+  const calls = [];
+  const user = { id: 'profile', username: 'ada', meta: {isPrivate: false, isActive: true, isPro: false}, actions: {} };
+  const previousFetch = global.fetch;
+  global.fetch = async () => ({ok: true, json: async () => user});
+  try {
+    const Page = load('src/app/(dashboard)/[username]/(profile)/[[...slug]]/page.tsx', {
+      './PageClient': {__esModule: true, default: () => null},
+      '@/components/post/FeedSkeleton': {__esModule: true, default: () => null},
+      '@/components/common/ErrorMessage': {__esModule: true, default: () => null},
+      '@/config': {apiUrl: 'https://api.test'},
+      '@/lib/server-session': {getServerSession: async () => ({user: {id: 'viewer', accessToken: 'token'}})},
+      '@/utils/connections': {getUserConnInfo: () => ({isConnected: false})},
+      '@/lib/users': {getUserPostsFeed: async (...args) => {calls.push(args); return [{id: 'server-post'}];}},
+    }).default;
+    const streamed = await Page({params: Promise.resolve({username: '@ada', slug: ['replies']})});
+    const content = await streamed.props.children.type();
+    assert.deepEqual(calls[0], [{userId: 'profile', kind: 'replies', page: 1, limit: 21}, 'token']);
+    assert.equal(content.props.posts[0].id, 'server-post');
+    assert.equal(content.props.slug, 'replies');
+    calls.length = 0;
+    const privateTab = await Page({params: Promise.resolve({username: '@ada', slug: ['bookmarks']})});
+    await privateTab.props.children.type();
+    assert.equal(calls[0][0].kind, 'posts');
+    user.actions.hasBlockedUser = true;
+    assert.equal(await Page({params: Promise.resolve({username: '@ada'})}), null);
+  } finally {global.fetch = previousFetch;}
+});
+
+test('profile API reads keep concurrent viewer tokens separate and distinguish empty pages from failures', async () => {
+  const calls = [];
+  const originalFetch = global.fetch;
+  const { getUserPostsFeed } = load('src/lib/users/index.ts', {
+    '@/config': {apiUrl: 'https://api.test'},
+    '@/config/axios': {axiosAPI: {}},
+    '@/utils': {},
+    react: {cache: fn => fn},
+  });
+  global.fetch = async (url, options) => {
+    calls.push([url, options]);
+    return {status: 200, ok: true, json: async () => [{id: options.headers.Authorization}]};
+  };
+  try {
+    const args = {userId: 'profile', kind: 'replies', page: 2, limit: 21};
+    const [one, two] = await Promise.all([getUserPostsFeed(args, 'one'), getUserPostsFeed(args, 'two')]);
+    assert.equal(one[0].id, 'Bearer one'); assert.equal(two[0].id, 'Bearer two');
+    assert.equal(calls[0][1].cache, 'no-store');
+    assert.equal(new URL(calls[0][0]).searchParams.get('page'), '2');
+    global.fetch = async () => ({status: 404, ok: false});
+    assert.deepEqual(await getUserPostsFeed(args, 'one'), []);
+    global.fetch = async () => ({status: 500, ok: false});
+    await assert.rejects(getUserPostsFeed(args, 'one'), /Unable to load profile posts/);
+  } finally {global.fetch = originalFetch;}
+});

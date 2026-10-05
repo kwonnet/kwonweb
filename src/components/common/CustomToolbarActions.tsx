@@ -51,7 +51,7 @@ const CustomToolbarActions = (props: {
       >
         <SearchToolbar />
         <Tooltip title="Store" suppressHydrationWarning>
-          <Box sx={{ display: "contents" }}>
+          <Box sx={{ display: "inline-flex", alignItems: "center" }}>
             <IconButton sx={{ display: { xs: "inline-flex", sm: "none" } }} size="small" LinkComponent={Link} href="/store">
               <LocalMallOutlinedIcon />
             </IconButton>

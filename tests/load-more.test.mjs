@@ -82,3 +82,34 @@ test('server feed hydration skips a duplicate request and load more fetches only
     assert.equal(document.getElementById('root').textContent, 'server-post,page-2');
   } finally { await React.act(async () => root.unmount()); }
 });
+
+test('profile tabs reuse cached pages on return and isolate another viewer', async () => {
+  const root = createRoot(document.getElementById('root'));
+  const cache = new Map();
+  const calls = [];
+  let rendered = [];
+  function Profile({viewer, kind}) {
+    const {data} = useSWRInfinite(index => ({viewerId: viewer, userId: 'profile', kind, page: index + 1}), async args => {
+      calls.push(args);
+      return [{id: `${args.viewerId}-${args.kind}`}];
+    }, {dedupingInterval: 30_000, revalidateFirstPage: false});
+    rendered = data?.flat() ?? [];
+    return React.createElement('div', null, rendered.map(post => post.id).join(','));
+  }
+  const render = async (viewer, kind) => {
+    await React.act(async () => {
+      root.render(React.createElement(SWRConfig, {value: {provider: () => cache}}, React.createElement(Profile, {key: `${viewer}-${kind}`, viewer, kind})));
+    });
+    await React.act(async () => {await new Promise(resolve => setTimeout(resolve, 0));});
+  };
+  try {
+    await render('viewer', 'posts');
+    await render('viewer', 'replies');
+    await render('viewer', 'posts');
+    assert.equal(calls.length, 2);
+    assert.equal(rendered[0].id, 'viewer-posts');
+    await render('other', 'posts');
+    assert.equal(calls.length, 3);
+    assert.equal(rendered[0].id, 'other-posts');
+  } finally {await React.act(async () => root.unmount());}
+});

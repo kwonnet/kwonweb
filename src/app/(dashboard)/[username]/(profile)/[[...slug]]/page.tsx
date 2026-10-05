@@ -1,12 +1,11 @@
-import React from "react";
+import React, { Suspense } from "react";
+import { getUserPostsFeed } from "@/lib/users";
+import FeedSkeleton from "@/components/post/FeedSkeleton";
 import PageClient from "./PageClient";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from "@/config";
 import { getServerSession } from "@/lib/server-session";
 import { UserMiniProfile } from "@/types/user";
-import ProfileSection from "../ProfileClient";
-import { IconButton, Stack, Typography } from "@mui/material";
-import { Lock, WarningOutlined } from "@mui/icons-material";
 import { getUserConnInfo } from "@/utils/connections";
 
 type URLParams = {
@@ -62,32 +61,15 @@ const page = async ({ params }: { params: Promise<URLParams> }) => {
 
   if(!canView) return null
 
-  return (<PageClient slug={slug} user={user} key={378} />)
-
-  // return (
-  //   <React.Fragment>
-  //     {canView ? (
-  //       <PageClient slug={slug} user={user} key={378} />
-  //     ) : (
-  //       <Stack
-  //         sx={{ }}
-  //         direction={{lg: "row", md: "row", sm: 'column', xs: "column"}}
-  //         alignItems={"center"}
-  //         justifyContent={"center"}
-  //       >
-  //         <IconButton disabled={true} size="large">
-  //           {isPrivate ? <Lock /> : <WarningOutlined />}
-  //         </IconButton>
-  //         <Typography
-  //           sx={{ p: 1, textAlign: "center", fontFamily: "PlayFair" }}
-  //           variant="h5"
-  //         >
-  //           {user.meta.message}
-  //         </Typography>
-  //       </Stack>
-  //     )}
-  //   </React.Fragment>
-  // );
+  const allowed = ["posts", "replies", "media", ...(user.meta.isPro ? ["highlights"] : []), ...(isCurrentUser ? ["scheduled", "likes", "bookmarks"] : [])];
+  const kind = allowed.includes(slug) ? slug : "posts";
+  async function ProfileFeed() {
+    // Stream the profile header while fetching the active tab on the server.
+    // No persistent cache here: visibility and reactions must use current authorization.
+    const posts = await getUserPostsFeed({ userId: user.id, kind, page: 1, limit: 21 }, session?.user?.accessToken).catch(() => undefined);
+    return <PageClient slug={kind} user={user} posts={posts} />;
+  }
+  return <Suspense fallback={<FeedSkeleton />}><ProfileFeed /></Suspense>;
 };
 
 export default page;

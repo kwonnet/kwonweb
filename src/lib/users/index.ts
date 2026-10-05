@@ -153,16 +153,18 @@ export const getUserConnections = cache(async (args:{userId: string, slug: strin
 })
 
 
-export const getUserPostsFeed = cache(async (args:{kind: string, userId: string, limit: number, page?: number}, accessToken?: string) => {
-    try {
-      const queryString = composeUrlQuery(args)
-      axiosAPI.accessToken = accessToken;
-      const result = await axiosAPI.get(`/v1/users/${args.userId}/${args.kind}?${queryString}`);
-      return result.data as FeedPost[];
-    } catch (error: any) {
-      throw error
-    }
-  })
+export const getUserPostsFeed = cache(async (args: {kind: string, userId: string, limit: number, page?: number}, accessToken?: string) => {
+  const query = new URLSearchParams({limit: String(args.limit), page: String(args.page ?? 1)});
+  const response = await fetch(`${apiUrl}/users/${encodeURIComponent(args.userId)}/${encodeURIComponent(args.kind)}?${query}`, {
+    cache: 'no-store',
+    headers: accessToken ? {Authorization: `Bearer ${accessToken}`} : {},
+    signal: AbortSignal.timeout(15_000),
+  });
+  // The existing API returns 404 for an empty profile page.
+  if (response.status === 404) return [] as FeedPost[];
+  if (!response.ok) throw new Error('Unable to load profile posts. Please try again.');
+  return await response.json() as FeedPost[];
+});
 
 
 export const updateAccountState = async (body: {userId: string; status: UserAccountStatus}, accessToken?: string) => {

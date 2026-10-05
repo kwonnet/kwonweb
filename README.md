@@ -173,3 +173,17 @@ another account automatically. Keep `NEXT_PUBLIC_APP_URL` set to the actual publ
 origin. No new environment variables or database migration are required.
 
 Deploy kwonserver first (bearer identity priority and `/auth/logout`), then kwonweb.
+
+### Profile feed loading and read caches
+
+The profile route streams its authorized active tab's first page from the server.
+Each tab caches pages by viewer, profile, kind, and page in SWR, renders cached
+content on return, and revalidates in the background. Newly streamed pages skip a
+duplicate browser request. Load-more prefetches 800 px ahead and only requests one
+page at a time. Quote/share drawers load when opened, and inactive feed tab bundles
+load on demand. Empty API pages become empty arrays; errors remain errors.
+
+The shared SWR provider deduplicates reads for 30 seconds and throttles repeated
+focus revalidation. Existing explicit mutation, reconnect and realtime updates
+remain active. Sensitive wallet/session reads are not persistently cached on the
+server. Public catalogs use the API's bounded cache described in kwonserver's README.
