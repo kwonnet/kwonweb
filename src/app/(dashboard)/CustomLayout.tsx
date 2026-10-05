@@ -34,7 +34,12 @@ export default function CustomLayout({ children, CustomToolbar }: { children: Re
           </Tooltip>;
         })}
       </List>
-      {!mini && <Typography variant="caption" sx={{ textAlign: "center", p: 2 }}>© {constant.siteName} {new Date().getFullYear()}</Typography>}
+      {!mini && <Box component="footer" sx={{textAlign: "center", p: 2}}>
+        <Box sx={{display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 1, mb: 1, fontSize: 12, '& a': {color: "text.secondary"}}}>
+          <Link href="/privacy-policy">Privacy Policy</Link><Link href="/terms-of-service">Terms of Service</Link>
+        </Box>
+        <Typography variant="caption">© {constant.siteName} {new Date().getFullYear()}</Typography>
+      </Box>}
     </Box>
   );
   return <Box sx={{ display: "flex", height: "100dvh", overflow: "hidden" }}>
@@ -52,6 +57,9 @@ export default function CustomLayout({ children, CustomToolbar }: { children: Re
     <Drawer variant="permanent" sx={{ width, flexShrink: 0, display: { xs: "none", md: "block" } }}
       slotProps={{ paper: { sx: { width, top: 64, height: "calc(100dvh - 64px)" } } }}>{sidebar(collapsed)}</Drawer>
     <Box component="main" id="main-content" sx={{ flex: 1, minWidth: 0, mt: "64px", overflowY: "auto", overflowX: "hidden" }}>
+      <Box component="nav" aria-label="Public legal links" sx={{display: {xs: "flex", md: "none"}, justifyContent: "center", gap: 2, py: 1, fontSize: 12, '& a': {color: "text.secondary"}}}>
+        <Link href="/privacy-policy">Privacy Policy</Link><Link href="/terms-of-service">Terms of Service</Link>
+      </Box>
       <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 0, md: 2 }, pb: { xs: 7, md: 0 } }}>{children}</Box>
     </Box>
   </Box>;

@@ -186,3 +186,13 @@ export interface PostCreate {
   location?: string;
   isDraft: boolean;
 }
+
+export type PostGifter = {
+  id: string; createdAt: string; message: string | null; anonymous: boolean;
+  sender: {id: string; name: string; username: string; avatar: string | null} | null;
+  coins: string; gift: string; estimated: boolean; status: string;
+};
+export type PostGiftersPage = {
+  ownerId: string; gifters: PostGifter[]; totalGifts: number; totalCoins: string; hasEstimatedAmounts: boolean;
+  page: number; hasMore: boolean;
+};

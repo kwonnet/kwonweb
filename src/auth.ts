@@ -6,11 +6,12 @@ import { accountCookieName, encodeAccount, readSavedAccounts } from "./lib/saved
 import { shouldRefreshAccessToken } from "./lib/auth-refresh-policy";
 import NextAuth, { CredentialsSignin, type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import { SignInSchema, SignUpSchema } from "./schema";
 import { apiUrl } from "./config";
 import { ZodError } from "zod";
 import { UserPublic } from "./types/user";
-import { authOrigin, configureAuthOrigin, safeAuthRedirect, signInRedirect } from "./lib/auth-redirect";
+import { authOrigin, configureAuthOrigin, safeAuthRedirect, signInRedirect, isPublicLegalPath } from "./lib/auth-redirect";
 
 // Augment the User type in next-auth
 declare module "next-auth" {
@@ -59,7 +60,10 @@ const authRuntime = NextAuth(async request => {
   const loggedOutAt = logoutTime(requestHeaders.get("cookie"));
   const activeGeneration = cookieValue(requestHeaders.get("cookie"), ACTIVE_SESSION_COOKIE);
   const secure = new URL(process.env.AUTH_URL || request?.url || "http://localhost").protocol === "https:";
-  const loginGeneration = request?.method === "POST" && new URL(request.url).pathname.startsWith("/api/auth/callback/") ? crypto.randomUUID() : null;
+  const callbackUrl = request ? new URL(request.url) : null;
+  const isGoogleCallback = request?.method === "GET" && callbackUrl?.pathname === "/api/auth/callback/google" && callbackUrl.searchParams.has("code");
+  const isCredentialCallback = request?.method === "POST" && callbackUrl?.pathname.startsWith("/api/auth/callback/");
+  const loginGeneration = isCredentialCallback || isGoogleCallback ? crypto.randomUUID() : null;
   const sessionCookie = loginGeneration ? `${sessionCookieBase(secure)}-${loginGeneration}` : activeSessionCookieName(requestHeaders.get("cookie"), secure);
   return {
   useSecureCookies: secure,
@@ -70,6 +74,11 @@ const authRuntime = NextAuth(async request => {
   },
   secret: process.env.AUTH_SECRET,
   providers: [
+    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET ? [Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      authorization: {params: {scope: "openid email profile", prompt: "select_account"}},
+    })] : []),
     Credentials({
       id: "saved-account",
       credentials: { accountId: { type: "text" } },
@@ -171,14 +180,26 @@ const authRuntime = NextAuth(async request => {
       const isLoggedIn = !!session?.user;
       const isPublicPage = nextUrl.pathname.startsWith("/public");
 
-      if (isPublicPage || isLoggedIn || nextUrl.pathname === "/" || nextUrl.pathname === "/auth/signin") {
+      if (isPublicLegalPath(nextUrl.pathname) || isPublicPage || isLoggedIn || nextUrl.pathname === "/" || nextUrl.pathname === "/auth/signin") {
         return true;
       }
 
       return Response.redirect(signInRedirect(nextUrl.href));
     },
-    signIn({ user }) {
+    async signIn({ user, account }) {
       if (!user) throw new NextAuthError("Login failed.");
+      if (account?.provider === "google") {
+        if (!account.id_token) return false;
+        const response = await fetch(`${apiUrl}/auth/google`, {
+          method: "POST", cache: "no-store", signal: AbortSignal.timeout(15_000),
+          headers: {"Content-Type": "application/json"}, body: JSON.stringify({idToken: account.id_token}),
+        });
+        if (!response.ok) return false;
+        const identity = await response.json();
+        if (!identity.user?.id || !identity.user?.username || typeof identity.accessToken !== "string") return false;
+        // Session/JWT identity must be the API account, never Google's profile ID.
+        Object.assign(user, identity.user, {image: identity.user.avatar, accessToken: identity.accessToken});
+      }
       return true;
     },
     async session({ session, token }) {
@@ -235,10 +256,7 @@ const authRuntime = NextAuth(async request => {
 });
 
 export const { auth, signIn, signOut } = authRuntime;
-export const handlers = {
-  GET: authRuntime.handlers.GET,
-  async POST(request: NextRequest) {
-    const response = await authRuntime.handlers.POST(request);
+async function finalizeAuthCallback(request: NextRequest, response: Response) {
     if (new URL(request.url).pathname.startsWith("/api/auth/callback/")) {
       // A late refresh from the previous account cannot become the active identity.
       const secure = new URL(authOrigin(request.url)).protocol === "https:";
@@ -276,5 +294,12 @@ export const handlers = {
       }
     }
     return response;
+}
+export const handlers = {
+  async GET(request: NextRequest) {
+    return finalizeAuthCallback(request, await authRuntime.handlers.GET(request));
+  },
+  async POST(request: NextRequest) {
+    return finalizeAuthCallback(request, await authRuntime.handlers.POST(request));
   },
 };

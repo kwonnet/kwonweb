@@ -13,6 +13,7 @@ test('authentication preserves input when switching modes and sends the correct 
   let form, resolveSignIn;
   const element = ({ children }) => React.createElement('div', null, children);
   const mocks = {
+    "next/link": {__esModule: true, default: ({children, href}) => React.createElement("a", {href}, children)},
     '@/lib/account-actions': { rememberCurrentAccount: async () => {} },
     '@mui/material': {
       Box: props => { form = props; return React.createElement('form', { onSubmit: props.onSubmit }, props.children); },
@@ -65,4 +66,32 @@ test('authentication preserves input when switching modes and sends the correct 
     assert.match(document.body.textContent, /Unable to sign in/);
     assert.equal(document.querySelector('button[type="submit"]').disabled, false, 'failed authentication can be retried');
   } finally { await React.act(async () => root.unmount()); dom.window.close(); }
+});
+
+test('configured Google authentication starts OAuth with the safe application redirect', async () => {
+  const dom = new JSDOM('<div id="root"></div>', {url: 'https://kwonnet.com/?callbackUrl=https://evil.invalid'});
+  global.window = dom.window; global.document = dom.window.document; global.IS_REACT_ACT_ENVIRONMENT = true;
+  const calls = [];
+  const element = ({children}) => React.createElement('div', null, children);
+  const mocks = {
+    "next/link": {__esModule: true, default: ({children, href}) => React.createElement("a", {href}, children)},
+    '@mui/material': {Box: element, Stack: element, Typography: element, Alert: element,
+      TextField: () => null, Button: ({children, onClick, disabled, type}) => React.createElement('button', {onClick, disabled, type}, children)},
+    'next-auth/react': {getProviders: async () => ({google: {id: 'google'}}), signIn: async (...args) => {calls.push(args);}},
+  };
+  function load(file) {
+    const module = {exports: {}};
+    const code = ts.transpileModule(readFileSync(file, 'utf8'), {compilerOptions: {module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true}}).outputText;
+    new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === '@/lib/auth-redirect' ? load('src/lib/auth-redirect.ts') : require(name), module, module.exports);
+    return module.exports;
+  }
+  const Form = load('src/components/auth/AuthForm.tsx').default;
+  const root = createRoot(document.getElementById('root'));
+  try {
+    await React.act(async () => root.render(React.createElement(Form)));
+    const google = [...document.querySelectorAll('button')].find(button => button.textContent === 'Continue with Google');
+    assert.ok(google);
+    await React.act(async () => google.click());
+    assert.deepEqual(calls, [['google', {redirectTo: 'https://kwonnet.com/'}]]);
+  } finally {await React.act(async () => root.unmount()); dom.window.close();}
 });

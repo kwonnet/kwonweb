@@ -90,3 +90,22 @@ test("keyboard actions and shared-card requests open login, explicit signup rema
     assert.deepEqual(opened, ['signup']);
   } finally { cleanup(); dom.window.close(); }
 });
+
+test('public legal links bypass the guest gate for clicks and keyboard activation while protected links do not', () => {
+  const dom = new JSDOM('<a href="/privacy-policy"><span>Privacy</span></a><a href="/terms-of-service">Terms</a><a href="https://other.invalid/privacy-policy">Other</a><a href="/wallet">Wallet</a>', {url: 'https://kwonnet.com/'});
+  const opened = [];
+  const cleanup = installGuestAuthTrigger(dom.window.document, mode => opened.push(mode));
+  try {
+    for (const target of [dom.window.document.querySelector('span'), dom.window.document.querySelectorAll('a')[1]]) {
+      const event = new dom.window.MouseEvent('click', {bubbles: true, cancelable: true});
+      target.dispatchEvent(event);
+      assert.equal(event.defaultPrevented, false);
+    }
+    const key = new dom.window.KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true});
+    dom.window.document.querySelector('a').dispatchEvent(key);
+    assert.equal(key.defaultPrevented, false); assert.deepEqual(opened, []);
+    const other = new dom.window.MouseEvent('click', {bubbles: true, cancelable: true});
+    dom.window.document.querySelectorAll('a')[2].dispatchEvent(other);
+    assert.equal(other.defaultPrevented, true); assert.deepEqual(opened, ['signin']);
+  } finally {cleanup(); dom.window.close();}
+});

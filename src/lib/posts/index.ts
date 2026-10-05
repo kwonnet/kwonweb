@@ -285,3 +285,23 @@ export async function searchPosts(args: { q: string; tab: 'top' | 'latest'; page
   if (!response.ok) throw new Error('Unable to load search results. Please try again.');
   return response.json() as Promise<{ posts: FeedPost[]; hasMore: boolean }>;
 }
+
+
+export const getPostGifters = cache(async (postId: string, page = 1, accessToken?: string) => {
+  const response = await fetch(`${apiUrl}/posts/${encodeURIComponent(postId)}/gifters?page=${page}&limit=21`, {
+    cache: "no-store", signal: AbortSignal.timeout(15_000),
+    headers: accessToken ? {Authorization: `Bearer ${accessToken}`} : {},
+  });
+  if (!response.ok) throw new Error(response.status === 403 ? "Only the post owner can view gifters" : "Unable to load gifters. Please try again.");
+  return await response.json() as import("@/types/post").PostGiftersPage;
+});
+
+
+export const getPostEngagementsOverview = cache(async (postId: string, accessToken?: string) => {
+  const response = await fetch(`${apiUrl}/posts/${encodeURIComponent(postId)}/engagements`, {
+    cache: "no-store", signal: AbortSignal.timeout(8_000),
+    headers: accessToken ? {Authorization: `Bearer ${accessToken}`} : {},
+  });
+  if (!response.ok) throw new Error("Unable to load post engagements");
+  return await response.json() as {isOwner: boolean};
+});

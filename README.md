@@ -187,3 +187,40 @@ The shared SWR provider deduplicates reads for 30 seconds and throttles repeated
 focus revalidation. Existing explicit mutation, reconnect and realtime updates
 remain active. Sensitive wallet/session reads are not persistently cached on the
 server. Public catalogs use the API's bounded cache described in kwonserver's README.
+
+### Google sign-in
+
+Set server-only `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` in the web runtime, and
+set the same `AUTH_GOOGLE_ID` in kwonserver's deployment environment. Use a Google
+OAuth **Web application** client with authorized redirect URIs:
+
+- Production: `https://kwonnet.com/api/auth/callback/google`
+- Local development: `http://localhost:3000/api/auth/callback/google`
+
+Register each staging/dev hostname separately and keep `AUTH_URL` aligned with the
+web app's public origin. Do not prefix these credentials with `NEXT_PUBLIC_`.
+The Continue with Google button appears when both web credentials are configured.
+Deploy the API migration before the web changes. Google callbacks exchange the
+verified Google ID token for the normal Kwonnet API identity and access token;
+logout, identity generations and saved-account switching use the same flow as
+password authentication. No Google refresh token is stored.
+
+### Post Gifters
+
+Post engagements adds an owner-only Gifters tab. Its private API rejects visitors
+and returns paginated gifts plus total gross coins gifted. Anonymous senders are
+not exposed, even to the owner. Refunded/expired gifts are excluded. Amounts are
+returned as decimal strings and wallet settlement rules remain separate.
+Historical tips without a captured coin amount are explicitly labeled estimates.
+
+### Public legal pages
+
+`/privacy-policy` and `/terms-of-service` are server-rendered legal pages outside
+the dashboard's guest authentication gate. They use Kwonnet and
+`support@kwonnet.com` as the operator/contact details. The proxy marks only these
+exact routes as public; their root rendering skips authentication refresh and
+realtime/device providers so missing or invalid sessions cannot block reading.
+Client-supplied copies of that internal marker are stripped on other routes.
+Homepage/sidebar and authentication-form links point to these pages, and guests
+can activate the legal links without triggering the login prompt. Other actions
+retain the existing guest authentication behavior.

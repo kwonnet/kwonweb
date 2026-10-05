@@ -1,7 +1,8 @@
 "use client";
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { Alert, Box, Button, Stack, TextField, Typography } from "@mui/material";
-import { signIn } from "next-auth/react";
+import { signIn, getProviders } from "next-auth/react";
+import Link from "next/link";
 import { safeAuthRedirect } from "@/lib/auth-redirect";
 
 export default function AuthForm({ initialMode = "signin", initialEmail = "" }: { initialMode?: "signin" | "signup"; initialEmail?: string }) {
@@ -12,6 +13,20 @@ export default function AuthForm({ initialMode = "signin", initialEmail = "" }: 
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const isSignIn = mode === "signin";
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  useEffect(() => {
+    let active = true;
+    if (typeof getProviders === "function") void getProviders().then(providers => { if (active) setGoogleEnabled(!!providers?.google); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+  async function googleSignIn() {
+    if (loading) return;
+    setLoading(true); setMessage("");
+    try {
+      const location = new URL(window.location.href);
+      await signIn("google", {redirectTo: safeAuthRedirect(location.searchParams.get("callbackUrl"), location.origin)});
+    } catch { setMessage("Unable to sign in with Google. Please try again."); setLoading(false); }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,6 +74,12 @@ export default function AuthForm({ initialMode = "signin", initialEmail = "" }: 
       <Button type="button" disabled={loading} onClick={() => { setMode(isSignIn ? "signup" : "signin"); setMessage(""); }}>
         {isSignIn ? "New to Kwonnet? Sign up" : "Already have an account? Log in"}
       </Button>
+      {googleEnabled && <Button type="button" variant="outlined" size="large" disabled={loading} onClick={googleSignIn}>
+        Continue with Google
+      </Button>}
+      <Typography variant="caption" color="text.secondary" data-guest-auth-ignore>
+        By continuing, you agree to our <Link href="/terms-of-service">Terms of Service</Link> and acknowledge our <Link href="/privacy-policy">Privacy Policy</Link>.
+      </Typography>
     </Stack>
   </Box>;
 }

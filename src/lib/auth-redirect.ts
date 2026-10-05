@@ -34,3 +34,9 @@ export function signInRedirect(requestUrl: string): string {
   target.searchParams.set("callbackUrl", `${requested.pathname}${requested.search}`);
   return target.href;
 }
+
+
+export const PUBLIC_LEGAL_HEADER = "x-kwonnet-public-legal";
+export function isPublicLegalPath(pathname: string): boolean {
+  return ["/privacy-policy", "/terms-of-service"].includes(pathname.replace(/\/$/, ""));
+}

@@ -252,3 +252,49 @@ test('real Auth.js callbacks replace the active account cookie and the next sess
     }
   } finally { global.fetch = oldFetch; }
 });
+
+test('Google GET callbacks activate the Kwonnet session generation and save the linked account', async () => {
+  const originalFetch = global.fetch;
+  const priorId = process.env.AUTH_GOOGLE_ID, priorSecret = process.env.AUTH_GOOGLE_SECRET;
+  process.env.AUTH_SECRET = 'local-tests-only-encryption-secret';
+  process.env.AUTH_URL = 'https://kwonnet.test';
+  process.env.AUTH_GOOGLE_ID = 'google-client'; process.env.AUTH_GOOGLE_SECRET = 'test-only-google-secret';
+  let configuration;
+  const apiUser = {id: 'kwon-google', name: 'Ada', email: 'ada@gmail.com', username: 'ada', avatar: 'avatar.png'};
+  global.fetch = async (url, options) => {
+    assert.equal(url, 'https://api.example.invalid/api/v1/auth/google');
+    assert.deepEqual(JSON.parse(options.body), {idToken: 'verified-id-token'});
+    return {ok: true, json: async () => ({user: apiUser, accessToken: 'kwon-api-token'})};
+  };
+  const load = modules({
+    'next-auth': {__esModule: true, CredentialsSignin: class extends Error {}, default: factory => {
+      configuration = factory;
+      return {handlers: {GET: async request => {
+        const config = await factory(request);
+        const user = {id: 'google-sub', name: 'Google Name', email: 'ada@gmail.com'};
+        assert.equal(await config.callbacks.signIn({user, account: {provider: 'google', id_token: 'verified-id-token'}}), true);
+        assert.equal(user.id, 'kwon-google');
+        const jwt = await config.callbacks.jwt({token: {}, user});
+        const cookieName = config.cookies.sessionToken.name;
+        const encoded = await encode({token: jwt, secret: process.env.AUTH_SECRET, salt: cookieName});
+        return new Response(null, {status: 302, headers: {'Set-Cookie': `${cookieName}=${encoded}; Path=/; HttpOnly; Secure`, Location: 'https://kwonnet.test/'}});
+      }}};
+    }},
+    'next-auth/providers/credentials': {__esModule: true, default: provider => provider},
+    'next-auth/providers/google': {__esModule: true, default: provider => ({id: 'google', ...provider})},
+  });
+  try {
+    const {handlers} = load('src/auth.ts');
+    const response = await handlers.GET(new NextRequest('https://kwonnet.test/api/auth/callback/google?code=code&state=state', {headers: {cookie: 'kwonnet.active-session=old-generation'}}));
+    const cookies = response.headers.getSetCookie();
+    assert.ok(cookies.some(cookie => cookie.startsWith('kwonnet.active-session=') && !cookie.includes('old-generation')));
+    const vault = load('src/lib/saved-accounts.ts');
+    assert.ok(cookies.some(cookie => cookie.startsWith(vault.accountCookieName('kwon-google', true) + '=')));
+    const config = await configuration(new NextRequest('https://kwonnet.test/api/auth/callback/google?code=code'));
+    assert.equal(await config.callbacks.signIn({user: {}, account: {provider: 'google'}}), false);
+  } finally {
+    global.fetch = originalFetch;
+    if (priorId === undefined) delete process.env.AUTH_GOOGLE_ID; else process.env.AUTH_GOOGLE_ID = priorId;
+    if (priorSecret === undefined) delete process.env.AUTH_GOOGLE_SECRET; else process.env.AUTH_GOOGLE_SECRET = priorSecret;
+  }
+});

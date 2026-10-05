@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+import { PUBLIC_LEGAL_HEADER } from "@/lib/auth-redirect";
 import { publicEnvScript } from "@/config/public-env";
 import type { Metadata } from "next";
 import AppLoadingShell from "@/components/common/AppLoadingShell";
@@ -31,22 +33,23 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession();
+  const publicLegal = (await headers()).get(PUBLIC_LEGAL_HEADER) === "1";
+  const session = publicLegal ? null : await getServerSession();
   return (
     <html lang="en" data-toolpad-color-scheme="system" suppressHydrationWarning>
       <head>
         <script id="kwonnet-public-env" dangerouslySetInnerHTML={{ __html: publicEnvScript() }} />
       </head>
       <body>
-        <SessionProvider session={session}>
+        <SessionProvider session={session} refetchOnWindowFocus={!publicLegal}>
           <AppRouterCacheProvider>
             <React.Suspense fallback={<AppLoadingShell />}>
               <NextjsAppProvider session={session}>
-                <RegisterDeviceProvider>
+                {publicLegal ? children : <RegisterDeviceProvider>
                 <SocketIoProvider>
                     <SSEContextProvider>{children}</SSEContextProvider>
                 </SocketIoProvider>
-                </RegisterDeviceProvider>
+                </RegisterDeviceProvider>}
               </NextjsAppProvider>
             </React.Suspense>
           </AppRouterCacheProvider>

@@ -5,9 +5,17 @@ export function installGuestAuthTrigger(doc: Document, open: (mode: "signin" | "
     if (!triggered) { triggered = true; open(mode); }
   };
   const timer = setTimeout(reveal, delay);
+  const isLegalLink = (target: Element | null) => {
+    const anchor = target?.closest?.("a[href]");
+    if (!anchor) return false;
+    try {
+      const url = new URL(anchor.getAttribute("href")!, doc.baseURI);
+      return url.origin === new URL(doc.baseURI).origin && ["/privacy-policy", "/terms-of-service"].includes(url.pathname.replace(/\/$/, ""));
+    } catch { return false; }
+  };
   const onAction = (event: Event) => {
     const target = event.target as Element | null;
-    if (target?.closest?.("[data-guest-auth-dialog]")) return;
+    if (target?.closest?.("[data-guest-auth-dialog]") || isLegalLink(target)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     const mode = target?.closest?.("[data-auth-mode]")?.getAttribute("data-auth-mode");
@@ -16,7 +24,7 @@ export function installGuestAuthTrigger(doc: Document, open: (mode: "signin" | "
   const onKeyDown = (event: KeyboardEvent) => {
     // Tab and scrolling keys can explore the preview. Typing/activating controls cannot.
     const target = event.target as Element | null;
-    if (target?.closest?.("[data-guest-auth-dialog]")) return;
+    if (target?.closest?.("[data-guest-auth-dialog]") || isLegalLink(target)) return;
     const control = target?.closest?.("a,button,input,textarea,select,[role=button],[contenteditable=true]");
     if ((target?.matches?.("input,textarea,[contenteditable=true]") && event.key !== "Tab") ||
         (control && (event.key === "Enter" || event.key === " "))) onAction(event);

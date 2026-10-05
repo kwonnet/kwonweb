@@ -4,25 +4,9 @@ import Box from "@mui/material/Box";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Link from "next/link";
-import { usePathname, useSelectedLayoutSegment } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { tabsClasses } from "@mui/material/Tabs";
 import StickyBox from "react-sticky-box";
-
-function samePageLinkNavigation(
-  event: React.MouseEvent<HTMLAnchorElement, MouseEvent>
-) {
-  if (
-    event.defaultPrevented ||
-    event.button !== 0 || // ignore everything but left-click
-    event.metaKey ||
-    event.ctrlKey ||
-    event.altKey ||
-    event.shiftKey
-  ) {
-    return false;
-  }
-  return true;
-}
 
 interface LinkTabProps {
   label?: string;
@@ -37,14 +21,15 @@ function LinkTab(props: LinkTabProps) {
   );
 }
 
-const getTabItems = (postUrl: string) => {
+const getTabItems = (postUrl: string, isOwner: boolean) => {
   return [
   { id: "quotes", path: `/${postUrl}/quotes`, name: "Quotes" },
   { id: "reposts", path: `/${postUrl}/reposts`, name: "Reposts" },
+  ...(isOwner ? [{id: "gifters", path: `/${postUrl}/gifters`, name: "Gifters"}] : []),
 ];
 }
 
-export default function TopTabNavigation() {
+export default function TopTabNavigation({isOwner = false}: {isOwner?: boolean}) {
 
   const pathname = usePathname()
 
@@ -56,32 +41,11 @@ export default function TopTabNavigation() {
 
   const segment = strArr[strArr.length - 1] //useSelectedLayoutSegment();
 
-  const tabItems = React.useMemo(() => getTabItems(postUrl), [postUrl]);
+  const tabItems = React.useMemo(() => getTabItems(postUrl, isOwner), [postUrl, isOwner]);
 
   const currIndex = tabItems.findIndex((item) => item.id === segment);
 
-  const [value, setValue] = React.useState(currIndex >= 0 ? currIndex : 0);
-
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-    if (
-      event.type !== "click" ||
-      (event.type === "click" &&
-        samePageLinkNavigation(
-          event as React.MouseEvent<HTMLAnchorElement, MouseEvent>
-        ))
-    ) {
-      const currIndex = tabItems.findIndex(
-        (_item, index) => index === newValue
-      );
-      setValue(currIndex);
-    }
-  };
-
-  React.useEffect(() => {
-    const currIndex = tabItems.findIndex((item) => item.id === segment);
-    setValue(currIndex >= 0 ? currIndex : 0);
-    return () => {};
-  }, [segment, tabItems]);
+  const value = currIndex >= 0 ? currIndex : 0;
 
   return (
     <React.Fragment>
@@ -99,7 +63,6 @@ export default function TopTabNavigation() {
         >
           <Tabs
             value={value}
-            onChange={handleChange}
             aria-label="feed types action tabs"
             role="navigation"
             variant="scrollable"
