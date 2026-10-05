@@ -289,7 +289,11 @@ visibility checks. A password change signs out other tracked/legacy sessions.
 
 The authenticated `/tasks` route is available in the main navigation. It uses the
 existing MUI styling, auth hook, notifications provider and SWR, with API calls in
-`src/lib/tasks/index.ts`. Progress is refreshed on focus and every minute. Each task
+`src/lib/tasks/index.ts`. The page fetches initial progress on the server using the
+request's authenticated session and passes it to SWR as fallback data. Fallbacks
+are scoped to the same user, and failed server requests can retry in the browser.
+Task cards fill the dashboard width in a responsive grid (one column on phones,
+two on tablets, three on wide screens). Progress is refreshed on focus and every minute. Each task
 shows its target, capped progress, daily bonus and individual 24-hour cooldown. A
 check attempts a server-verified claim; incomplete checks show remaining progress.
 The browser retains a wallet intent ID for safe retries and revalidates the current

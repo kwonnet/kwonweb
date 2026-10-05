@@ -60,7 +60,7 @@ export default function CustomLayout({ children, CustomToolbar }: { children: Re
       <Box component="nav" aria-label="Public legal links" sx={{display: {xs: "flex", md: "none"}, justifyContent: "center", gap: 2, py: 1, fontSize: 12, '& a': {color: "text.secondary"}}}>
         <Link href="/privacy-policy">Privacy Policy</Link><Link href="/terms-of-service">Terms of Service</Link>
       </Box>
-      <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 0, md: 2 }, pb: { xs: 7, md: 0 } }}>{children}</Box>
+      <Box sx={{ maxWidth: pathname === "/tasks" ? "none" : 1200, mx: "auto", px: { xs: 0, md: 2 }, pb: { xs: 7, md: 0 } }}>{children}</Box>
     </Box>
   </Box>;
 }
