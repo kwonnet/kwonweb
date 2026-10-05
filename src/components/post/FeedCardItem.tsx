@@ -95,7 +95,10 @@ const FeedCardItem = ({
     users: []
   });
 
-  const item = post.kind === PostKind.REPOST ? post.parent : post;
+  const originalItem = post.kind === PostKind.REPOST ? post.parent : post;
+  const item = originalItem.author.id === user?.id ? { ...originalItem, author: { ...originalItem.author,
+    avatar: user.avatar || user.image || undefined, name: user.name || originalItem.author.name, username: user.username || originalItem.author.username,
+  } } : originalItem;
 
   const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(
     null

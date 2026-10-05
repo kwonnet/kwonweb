@@ -14,7 +14,7 @@ import type { EditorPlugin } from "@draft-js-plugins/editor";
 import { createPortal } from "react-dom";
 import { formatNumber } from "@/utils";
 import Fuse from "fuse.js";
-import { postReferences, extractPostReferences } from "@/utils/post-text";
+import { searchHref, postReferences, extractPostReferences } from "@/utils/post-text";
 
 
 
@@ -62,7 +62,7 @@ const DefaultHashtagComponent = ({
 }: DraftDecoratorComponentProps & {
   tag?: HashTagItem;
 }): React.ReactElement => {
-  const href = tag?.link || `/hashtag/${decoratedText.substring(1)}`;
+  const href = searchHref(decoratedText, "hashtag_click");
   return (
     <a href={href} style={{ color: "blue", textDecoration: "underline" }}>
       {children}

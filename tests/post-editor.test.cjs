@@ -55,7 +55,7 @@ test('post text is present in server HTML, safely linked, without loading an edi
   const PostText = loader({ 'draft-js': new Proxy({}, { get: rejectEditor }), '@draft-js-plugins/editor': rejectEditor })('src/components/post/PostText.tsx').default;
   const html = renderToStaticMarkup(React.createElement(PostText, { content: 'Hi @Bob.Smith #hello\n<script>x</script>' }));
   assert.match(html, /href="\/@Bob.Smith"/);
-  assert.match(html, /href="\/hashtags\?tag=hello"/);
+  assert.match(html, /href="\/search\?q=%23hello&amp;src=hashtag_click&amp;vertical=trends&amp;tab=top"/);
   assert.match(html, /&lt;script&gt;x&lt;\/script&gt;/);
   assert.doesNotMatch(html, /contenteditable|DraftEditor|Loading/);
 });

@@ -34,7 +34,7 @@ export function tokenizePostText(content: string): TextPart[] {
     const raw = match[0];
     if (raw[0] === "@" || raw[0] === "#") {
       const value = encodeURIComponent(raw.slice(1));
-      parts.push({ text: raw, href: raw[0] === "@" ? `/@${value}` : `/hashtags?tag=${value}` });
+      parts.push({ text: raw, href: raw[0] === "@" ? `/@${value}` : searchHref(raw, "hashtag_click") });
     } else {
       const text = raw.replace(/[.,!?;:)\]}]+$/, "");
       parts.push({ text, href: text.startsWith("www.") ? `https://${text}` : text, external: true });
@@ -44,4 +44,8 @@ export function tokenizePostText(content: string): TextPart[] {
   }
   if (offset < content.length) parts.push({ text: content.slice(offset) });
   return parts;
+}
+
+export function searchHref(query: string, source: 'trend_click' | 'hashtag_click' | 'typed_query' = 'trend_click', tab: 'top' | 'latest' | 'people' = 'top') {
+  return `/search?${new URLSearchParams({ q: query.trim(), src: source, vertical: 'trends', tab })}`;
 }

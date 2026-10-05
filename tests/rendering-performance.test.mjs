@@ -21,7 +21,7 @@ test('plain feed renderer preserves text, Unicode, and newlines exactly', () => 
   const parts = tokenizePostText(text);
   assert.equal(parts.map(p => p.text).join(''), text);
   assert.deepEqual(parts.filter(p => p.href).map(p => p.href), [
-    '/@alice', '/hashtags?tag=Kwonnet', '/hashtags?tag=na%C3%AFve', 'https://example.com/path?q=1&v=2'
+    '/@alice', '/search?q=%23Kwonnet&src=hashtag_click&vertical=trends&tab=top', '/search?q=%23na%C3%AFve&src=hashtag_click&vertical=trends&tab=top', 'https://example.com/path?q=1&v=2'
   ]);
 });
 test('feed links do not turn scripts, HTML, or email addresses into unsafe links', () => {

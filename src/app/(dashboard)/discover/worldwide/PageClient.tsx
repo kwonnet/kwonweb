@@ -1,4 +1,5 @@
 "use client";
+import { searchHref } from "@/utils/post-text";
 import {
   Box,
   Button,
@@ -87,7 +88,7 @@ const DisplayClient = ({ country, trends }: { trends: TrendingTopics[], country?
                   <MoreHorizOutlinedIcon />
                 </IconButton>
               </Stack>
-              <Typography variant="subtitle1">{item.trend}</Typography>
+              <Typography component={Link} href={searchHref(item.trend)} variant="subtitle1" sx={{ display: "block", color: "text.primary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>{item.trend}</Typography>
               <Typography
                 color="textDisabled"
                 variant="caption"

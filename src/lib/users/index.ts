@@ -1,3 +1,4 @@
+import { apiUrl } from "@/config";
 import { axiosAPI } from "@/config/axios";
 import { AppNotification, FeedPost, GameAchievement, ReportReasonCode, Subscription } from "@/types"
 import { EncryptedConversation } from "@/types/conversation";
@@ -22,22 +23,14 @@ export const searchUser = async(query: string, accessToken?: string)=> {
     }
 }
 
-export const searchUsers = cache(async(args: {query: string, page?: number, limit?: number}, accessToken?: string)=> {
-    try {
-        let url = `/v1/users/search?q=${args.query}`
-        if(args.page){
-            url = `${url}&page=${args.page}`
-        }
-        if(args.limit){
-            url = `${url}&limit=${args.limit}`
-        }
-        axiosAPI.accessToken = accessToken
-        const result = await axiosAPI.get(url)
-        return result.data as SearchUser[]
-    } catch (error: any) {
-        throw error
-    }
-})
+export const searchUsers = async(args: {query: string, page?: number, limit?: number}, accessToken?: string) => {
+  const response = await fetch(`${apiUrl}/users/search?${new URLSearchParams({ q: args.query, page: String(args.page ?? 1), limit: String(args.limit ?? 21) })}`, {
+    cache: 'no-store', headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}, signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) throw new Error('Unable to search people. Please try again.');
+  const people = await response.json() as { id: string; name: string; username: string; avatar: string | null; bio: string | null }[];
+  return people.map(person => ({ ...person, avatar: person.avatar ?? "" }));
+};
 
 export const getUserAchievements = async(args:{limit: number, page: number, catId?: string | null, userId: string}, accessToken?: string)=> {
     try {

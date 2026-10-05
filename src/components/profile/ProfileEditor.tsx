@@ -1,11 +1,14 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from "next/navigation";
+import { useSWRConfig } from "swr";
 import { useSession } from 'next-auth/react';
 import { Alert, Autocomplete, Avatar, Box, Button, IconButton, Paper, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import PageHeader from '@/components/common/PageHeader';
+import { updateProfileCache } from '@/utils/profile-cache';
 import { saveProfile } from '@/lib/profile-actions';
 import { uploadMultipleFilesWithMetadata } from '@/utils/r2-upload';
 import type { EditableProfile, ProfileChanges, ProfileEditData } from '@/types/profile';
@@ -14,6 +17,16 @@ const fields = ['name', 'username', 'bio', 'phone', 'website', 'avatar', 'banner
 
 export default function ProfileEditor({ initial }: { initial: ProfileEditData }) {
   const { update } = useSession();
+  const router = useRouter();
+  const { mutate } = useSWRConfig();
+  async function refreshIdentity(saved: EditableProfile) {
+    await mutate(() => true, (cached: unknown) => updateProfileCache(cached, saved), { revalidate: false });
+    const session = await update({ refreshIdentity: true });
+    if (!session?.user) throw new Error("Account refresh failed");
+    const response = await fetch('/api/accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remember' }), signal: AbortSignal.timeout(8_000) });
+    if (response.ok) await mutate(key => Array.isArray(key) && key[0] === '/api/accounts');
+    router.refresh();
+  }
   const [profile, setProfile] = useState(initial.profile);
   const [savedProfile, setSavedProfile] = useState(initial.profile);
   const [busy, setBusy] = useState(false);
@@ -46,9 +59,7 @@ export default function ProfileEditor({ initial }: { initial: ProfileEditData })
     if (result.error || !result.profile) { setError(result.error || 'Unable to save profile.'); setBusy(false); return; }
     // Refresh the authenticated identity from the backend, never from form data.
     try {
-      await update();
-      // Keep the linked-account menu's stored name and avatar in sync too.
-      await fetch('/api/accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remember' }), signal: AbortSignal.timeout(8_000) });
+      await refreshIdentity(result.profile);
     } catch { /* Full document navigation also refreshes server data. */ }
     window.location.replace(`/@${result.profile.username}`);
   }
@@ -94,9 +105,9 @@ export default function ProfileEditor({ initial }: { initial: ProfileEditData })
         setSavedProfile(previous => ({ ...previous, [kind]: result.profile![kind] }));
         setCrop(null);
         try {
-          await update();
-          await fetch('/api/accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remember' }), signal: AbortSignal.timeout(8_000) });
-        } catch { /* The saved image remains available on the next navigation. */ }
+          await refreshIdentity(result.profile);
+        } catch { setError('Image saved, but account refresh failed. Please refresh the page.'); }
+
       } finally { setBusy(false); }
     }} />}
   </Box>;

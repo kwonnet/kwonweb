@@ -7,7 +7,7 @@ import React, {
   useMemo,
 } from "react";
 import { ContentState, EditorState, Modifier } from "draft-js";
-import { extractPostReferences } from "@/utils/post-text";
+import { searchHref, extractPostReferences } from "@/utils/post-text";
 import Editor from "@draft-js-plugins/editor";
 import editorStyles from "./ContentEditor.module.css";
 
@@ -34,7 +34,7 @@ import { useAuthSession } from "@/hooks";
 
 const HashtagComponent = (props: HashTagItemProps) => {
   const text = props?.decoratedText?.replace(/^#/, "");
-  const href = props?.tag?.link || `/hashtags?tag=${text}`;
+  const href = searchHref(text.startsWith("#") ? text : `#${text}`, "hashtag_click");
   return (
     <Typography
       component={Link}

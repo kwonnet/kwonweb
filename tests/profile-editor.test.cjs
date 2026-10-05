@@ -15,7 +15,7 @@ test('profile form locks restricted fields, uploads cropped images and preserves
   const previous = { window: global.window, document: global.document, act: global.IS_REACT_ACT_ENVIRONMENT };
   global.window = dom.window; global.document = dom.window.document; global.IS_REACT_ACT_ENVIRONMENT = true;
   const { createRoot } = require('react-dom/client');
-  const controls = {}, submitted = [], uploads = [];
+  const controls = {}, submitted = [], uploads = [], updates = [];
   let cropProps, rejectImage = true;
   function Container({ children, component, onSubmit }) { return React.createElement(component === 'form' ? 'form' : 'div', { onSubmit }, children); }
   const mui = Object.fromEntries(['Alert', 'Avatar', 'Box', 'Paper', 'Stack', 'Tooltip', 'Typography'].map(name => [name, Container]));
@@ -25,7 +25,10 @@ test('profile form locks restricted fields, uploads cropped images and preserves
   mui.IconButton = ({ children, onClick, disabled, ...props }) => React.createElement('button', { type: 'button', onClick, disabled, 'aria-label': props['aria-label'] }, children);
   const Editor = load('src/components/profile/ProfileEditor.tsx', {
     '@mui/material': mui, '@mui/icons-material/CameraAlt': { default: () => null, __esModule: true },
-    'next-auth/react': { useSession: () => ({ update: async () => {} }) },
+    'next-auth/react': { useSession: () => ({ update: async data => { updates.push(data); return { user: { id: 'u' } }; } }) },
+    'next/navigation': { useRouter: () => ({ refresh() {} }) },
+    'swr': { useSWRConfig: () => ({ mutate: async () => {} }) },
+    '@/utils/profile-cache': { updateProfileCache: value => value },
     'next/link': { default: Container, __esModule: true },
     'next/dynamic': { default: () => props => { cropProps = props; return React.createElement('div', null, 'Crop image'); }, __esModule: true },
     '@/components/common/PageHeader': { default: Container, __esModule: true },
@@ -59,6 +62,7 @@ test('profile form locks restricted fields, uploads cropped images and preserves
     await React.act(async () => cropProps.onSave(file));
     assert.equal(uploads[2][0].folder, "banners");
     await React.act(async () => document.querySelector('form').dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true })));
+    assert.deepEqual(updates[0], { refreshIdentity: true });
     assert.deepEqual(submitted[0], { avatar: 'https://media.kwonnet.test/avatar.webp' });
     assert.deepEqual(submitted[2], { banner: 'https://media.kwonnet.test/avatar.webp' });
     assert.deepEqual(submitted[3], { bio: 'New bio' });

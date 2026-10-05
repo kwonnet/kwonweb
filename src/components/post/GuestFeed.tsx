@@ -7,7 +7,7 @@ import { requestGuestLogin } from "@/utils/guest-auth-trigger";
 
 const loginForQuote = async () => { requestGuestLogin(); };
 
-export default function GuestFeed({ posts, unavailable = false }: { posts: PublicPostPreview[]; unavailable?: boolean }) {
+export default function GuestFeed({ posts, unavailable = false, searchResults = false }: { posts: PublicPostPreview[]; unavailable?: boolean; searchResults?: boolean }) {
   const cards = useMemo(() => posts.map(publicPreviewCard), [posts]);
   if (!cards.length) return <Paper sx={{ p: 4, textAlign: "center" }}>
     <Typography variant="h6">{unavailable ? "The feed is temporarily unavailable" : "Welcome to Kwonnet"}</Typography>
@@ -18,6 +18,6 @@ export default function GuestFeed({ posts, unavailable = false }: { posts: Publi
     {cards.map(post => <FeedCardItem key={post.id} post={post}
       handleReaction={requestGuestLogin} handleRepost={requestGuestLogin} handleShare={requestGuestLogin}
       handleBookmark={requestGuestLogin} onQuoteClick={loginForQuote} onFollowUserCallback={requestGuestLogin} />)}
-    <Box sx={{ py: 3, textAlign: "center" }}><Button onClick={requestGuestLogin} variant="outlined">Log in to see more</Button></Box>
+    {!searchResults && <Box sx={{ py: 3, textAlign: "center" }}><Button onClick={requestGuestLogin} variant="outlined">Log in to see more</Button></Box>}
   </Box>;
 }

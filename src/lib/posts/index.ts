@@ -1,3 +1,4 @@
+import { apiUrl } from "@/config";
 import { axiosAPI } from "@/config/axios";
 import { FeedPost, PostAuthor, PostPinContext, ReportReasonCode } from "@/types";
 import { composeUrlQuery, getErrorMessage } from "@/utils";
@@ -276,3 +277,11 @@ export const getPostTagUsersOrMentions = cache(async (args:{id: string, query: s
     throw error
   }
 })
+
+export async function searchPosts(args: { q: string; tab: 'top' | 'latest'; page?: number; limit?: number }, accessToken?: string) {
+  const response = await fetch(`${apiUrl}/posts/search?${new URLSearchParams({ q: args.q, tab: args.tab, page: String(args.page ?? 1), limit: String(args.limit ?? 21) })}`, {
+    cache: 'no-store', headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}, signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) throw new Error('Unable to load search results. Please try again.');
+  return response.json() as Promise<{ posts: FeedPost[]; hasMore: boolean }>;
+}

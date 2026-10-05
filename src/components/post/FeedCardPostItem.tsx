@@ -96,9 +96,9 @@ const FeedCardPostItem = ({
     users: [],
   });
 
-  // const item = post.kind === PostKind.REPOST ? post.parent : post;
-
-  const item = post;
+  const item = post.author.id === user?.id ? { ...post, author: { ...post.author,
+    avatar: user.avatar || user.image || undefined, name: user.name || post.author.name, username: user.username || post.author.username,
+  } } : post;
 
   const quotedPost =
     post.kind === PostKind.QUOTE

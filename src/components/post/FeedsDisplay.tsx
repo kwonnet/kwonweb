@@ -7,6 +7,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import Box from "@mui/material/Box";
 import { Button, CircularProgress, Typography } from "@mui/material";
 import {
+  searchPosts,
   getNewsfeed,
   shareFeedPost,
 } from "@/lib/posts";
@@ -37,7 +38,7 @@ type LocalState = {
   post?: FeedPost;
 };
 
-const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }) => {
+const FeedsDisplay = ({ posts, feed, search }: { posts: FeedPost[], feed: FeedTypeEnum; search?: { q: string; tab: "top" | "latest" } }) => {
 
   const { token, user } = useAuthSession();
   const notifications = useNotifications();
@@ -56,11 +57,11 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
     if (!user?.id || !token) return null;
     if (pageIndex !== 0 && previousPageData && !previousPageData.length)
       return null; // Stop when no more data
-    return newsfeedKey(user.id, feed, pageIndex);
+    return search ? { ...newsfeedKey(user.id, feed, pageIndex), searchQuery: search.q, searchTab: search.tab } : newsfeedKey(user.id, feed, pageIndex);
   };
 
   const { data, error, isValidating, size, mutate: mutatePages, setSize } =
-    useSWRInfinite(getKey, (args) => getNewsfeed(args, token), {
+    useSWRInfinite(getKey, (args) => search ? searchPosts({ q: search.q, tab: search.tab, page: args.page, limit: args.limit }, token).then(result => result.posts) : getNewsfeed(args, token), {
       keepPreviousData: false,
       refreshWhenOffline: false,
       revalidateOnReconnect: true,
@@ -73,19 +74,20 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
     });
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || search) return;
     const pageKey = unstable_serialize(newsfeedKey(user.id, feed, 0));
     const listKey = serializeInfinite(index => newsfeedKey(user.id, feed, index));
     for (const [key, value] of missingFeedEntries(cache, pageKey, listKey, posts)) {
       void mutateCache(key, value, { revalidate: false });
     }
-  }, [cache, mutateCache, user?.id, feed, posts]);
+  }, [cache, mutateCache, user?.id, feed, posts, search]);
 
   const mutate = useFeedCacheMutate(mutatePages, data);
 
   const flatData = useMemo(() => [...new Map((data ?? [posts]).flat().map(item => [item.id, item])).values()], [data, posts]);
 
-  const isReachingEnd = data?.[data.length - 1]?.length === 0;
+  const lastPage = data?.[data.length - 1];
+  const isReachingEnd = search ? !!lastPage && lastPage.length < 21 : lastPage?.length === 0;
   // A background refresh must not replace existing cards with a loading state.
   const loadingPage = !error && !!(data && size > data.length);
   const requestingPage = useRef(false);
@@ -190,7 +192,7 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
     )}
       {!flatData.length && !error && <Box sx={{ py: 6, px: 2, textAlign: "center" }}>
         <Typography color="text.secondary">
-          {feed === FeedTypeEnum.FOLLOWING ? "Posts from people you follow will appear here." :
+          {search ? `No results for “${search.q}”. Try another search.` : feed === FeedTypeEnum.FOLLOWING ? "Posts from people you follow will appear here." :
            feed === FeedTypeEnum.FRIENDS ? "Posts from people who follow you back will appear here." :
            feed === FeedTypeEnum.TRENDING ? "No trending posts in the last three days yet." : "No posts to show yet."}
         </Typography>

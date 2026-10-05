@@ -1,11 +1,6 @@
-import React from 'react'
-
-const Page = async({params, searchParams}: { params: Promise<Object>, searchParams: Promise<{tag: string}> }) => {
-
-    const _searchParams = await searchParams
-  return (
-    <div>Page - {_searchParams.tag} </div>
-  )
+import { redirect } from 'next/navigation';
+import { searchHref } from '@/utils/post-text';
+export default async function Page({ searchParams }: { searchParams: Promise<{ tag?: string }> }) {
+  const { tag } = await searchParams;
+  redirect(searchHref(tag ? `#${tag.replace(/^#/, '')}` : '', 'hashtag_click'));
 }
-
-export default Page
