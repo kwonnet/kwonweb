@@ -1,12 +1,15 @@
-import { redirect } from 'next/navigation'
-import React from 'react'
+import { notFound, redirect } from 'next/navigation';
+import { getServerSession } from '@/lib/server-session';
+import { getTrendingTopics } from '@/lib/discover';
+import { discoverTabItems } from '@/data';
+import PageClient from '../PageClient';
 
-const Page = async({params}:{ params: Promise<{slug: string}> }) => {
-    const args = await params
-    if(args.slug === "foryou") return redirect("/discover")
-  return (
-    <div>Page - {args.slug}</div>
-  )
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  if (slug === 'foryou') redirect('/discover');
+  if (!discoverTabItems.some(item => item.id === slug) || ['discover', 'worldwide', 'trending'].includes(slug)) notFound();
+  const topic = slug === 'arts-culture' ? 'arts & culture' : slug;
+  const session = await getServerSession();
+  const trends = await getTrendingTopics({ topic, limit: 50 }, session?.user?.accessToken).catch(() => []);
+  return <PageClient key={topic} topic={topic} trends={trends} />;
 }
-
-export default Page

@@ -18,11 +18,10 @@ import { useAuthSession } from "@/hooks";
 import { formatNumber } from "@/utils";
 
 
-const PageClient = ({ trends }: { trends: TrendingTopics[] }) => {
+const PageClient = ({ trends, topic }: { trends: TrendingTopics[]; topic?: string }) => {
   const { token, user } = useAuthSession()
-  // //user?.country?.iso2,
-  const { data, error, isLoading, mutate } =
-    useSWR({ country: user?.country?.id, limit: 50, id: user.id }, ({ id, ...rest }) => getTrendingTopics(rest, token), {
+  const { data, error, mutate } =
+    useSWR({ mode: topic ? undefined : "foryou" as const, topic, limit: 50, id: user?.id ?? "guest" }, ({ id, ...rest }) => getTrendingTopics(rest, token), {
       keepPreviousData: true,
       refreshWhenOffline: false,
       revalidateOnReconnect: true,
@@ -38,11 +37,13 @@ const PageClient = ({ trends }: { trends: TrendingTopics[] }) => {
           textAlign: "center",
           fontWeight: 600
         }}>
-        Explore What's Happening Around You!
+        {topic ? `${topic === "arts & culture" ? "Arts & Culture" : topic[0].toUpperCase() + topic.slice(1)} trends` : "Explore What's Happening Around You!"}
       </Typography>
 
+      {error && <Typography color="error" sx={{ my: 2 }}>Unable to load trends. <Button onClick={() => void mutate()}>Retry</Button></Typography>}
+      {!error && !data?.length && <Typography color="text.secondary" sx={{ my: 2 }}>No recent trends{topic ? ` in ${topic}` : ''} yet. Check back as new posts are published.</Typography>}
       <Grid container spacing={1}>
-      {data.map((item, index) => (
+      {(data ?? []).map((item, index) => (
         <Grid key={index} size={{xs: 12, md: 12, lg: 6, xl: 6}} sx={[
           (theme) => ({
             border: `1px solid ${theme.vars.palette.divider}`,
@@ -69,7 +70,7 @@ const PageClient = ({ trends }: { trends: TrendingTopics[] }) => {
           <Typography
             color="textDisabled"
             variant="caption"
-          >{`${formatNumber(item.mentions)} Posts - ${formatNumber(item.users)} Users`}</Typography>
+          >{`${formatNumber(item.last_24_posts)} Posts - ${formatNumber(item.last_24_users)} Users in the last 24 hours`}</Typography>
           {/* <Divider /> */}
         </Box>
         </Grid>

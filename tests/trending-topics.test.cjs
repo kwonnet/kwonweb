@@ -55,3 +55,15 @@ test('server sidebar fetches public trends for guests and uses authenticated cou
   assert.deepEqual(failed.props.trends, []);
   assert.equal(failed.props.initialError, true, 'fetch failures still render the retryable sidebar error state');
 });
+
+test('Discover sends the personalized mode or category without relying on a browser country', async () => {
+  const original = global.fetch, urls = [];
+  global.fetch = async url => { urls.push(new URL(url)); return Response.json([]); };
+  try {
+    await api.getTrendingTopics({ mode: 'foryou', limit: 50 }, 'token');
+    await api.getTrendingTopics({ topic: 'arts & culture', limit: 50 });
+    assert.equal(urls[0].searchParams.get('mode'), 'foryou');
+    assert.equal(urls[0].searchParams.has('country'), false);
+    assert.equal(urls[1].searchParams.get('topic'), 'arts & culture');
+  } finally { global.fetch = original; }
+});
