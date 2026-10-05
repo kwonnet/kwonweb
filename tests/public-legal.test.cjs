@@ -14,7 +14,7 @@ test('legal pages bypass authentication and sanitize spoofed public-route header
   let called = 0;
   const {proxy} = load('src/proxy.ts', {
     './lib/auth-redirect': policy,
-    './auth': {auth: () => async req => {called++; assert.equal(req.headers.get(policy.PUBLIC_LEGAL_HEADER), null); return new Response(null, {status: 401});}},
+    './auth': {auth: async () => async req => {called++; assert.equal(req.headers.get(policy.PUBLIC_LEGAL_HEADER), null); return new Response(null, {status: 401});}},
   });
   for (const path of ['/privacy-policy', '/terms-of-service', '/privacy-policy/']) {
     const response = await proxy(new NextRequest('https://kwonnet.com' + path));
@@ -48,4 +48,26 @@ test('legal rendering skips session refresh even with an expired session and omi
   assert.equal(provider.props.session, null);
   const theme = provider.props.children.props.children.props.children;
   assert.equal(theme.props.children, legal);
+});
+
+
+test('legal layout does not pass a function through MUI server/client props', () => {
+  const React = require('react');
+  const Link = () => null;
+  const stub = () => null;
+  const Layout = load('src/app/(legal)/layout.tsx', {
+    'next/link': {__esModule: true, default: Link},
+    '@mui/material': {Box: stub, Container: stub, Divider: stub, Stack: stub, Typography: stub},
+  }).default;
+  const walk = value => {
+    if (Array.isArray(value)) return value.forEach(walk);
+    if (!React.isValidElement(value)) return;
+    if (value.type !== Link) {
+      for (const [name, prop] of Object.entries(value.props)) {
+        if (name !== 'children') assert.notEqual(typeof prop, 'function', `Nonserializable ${name} passed across server/client boundary`);
+      }
+    }
+    walk(value.props.children);
+  };
+  walk(Layout({children: 'Policy content'}));
 });

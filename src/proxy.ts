@@ -2,7 +2,8 @@ import { NextRequest, NextResponse, type NextFetchEvent } from 'next/server';
 import { isPublicLegalPath, PUBLIC_LEGAL_HEADER } from './lib/auth-redirect';
 import { auth } from './auth'; // import it but call manually
 
-const authenticatedProxy = auth((_request: NextRequest, _event: NextFetchEvent) => NextResponse.next());
+// Lazy NextAuth configuration returns a Promise at runtime despite its wrapper type.
+const authenticatedProxy = Promise.resolve(auth((_request: NextRequest, _event: NextFetchEvent) => NextResponse.next()));
 
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl;
@@ -22,7 +23,8 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   }
 
   // Otherwise, run your existing auth middleware
-  const response = await authenticatedProxy(request, event);
+  const handleAuthenticatedRequest = await authenticatedProxy;
+  const response = await handleAuthenticatedRequest(request, event);
   if (response instanceof Response && response.headers.get("x-middleware-next") === "1") {
     const forwarding = NextResponse.next({request: {headers: forwardedHeaders}});
     for (const [name, value] of forwarding.headers) {

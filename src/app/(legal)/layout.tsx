@@ -7,7 +7,7 @@ export default function LegalLayout({children}: {children: ReactNode}) {
     <Box component="header" sx={{borderBottom: 1, borderColor: "divider"}}>
       <Container maxWidth="md" sx={{py: 2}}>
         <Stack direction="row" sx={{alignItems: "center", justifyContent: "space-between", gap: 2, flexWrap: "wrap"}}>
-          <Typography component={Link} href="/" variant="h5" sx={{fontWeight: 700, color: "primary.main", textDecoration: "none"}}>Kwonnet</Typography>
+          <Link href="/" style={{textDecoration: "none"}}><Typography variant="h5" sx={{fontWeight: 700, color: "primary.main"}}>Kwonnet</Typography></Link>
           <Box component="nav" aria-label="Legal navigation" sx={{display: "flex", gap: 2, flexWrap: "wrap", '& a': {color: "primary.main", textUnderlineOffset: "4px"}}}>
             <Link href="/privacy-policy">Privacy Policy</Link><Link href="/terms-of-service">Terms of Service</Link>
           </Box>
