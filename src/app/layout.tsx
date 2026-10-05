@@ -1,3 +1,4 @@
+import {siteOrigin} from '@/lib/seo';
 import AuthSessionBoundary from "@/providers/AuthSessionBoundary";
 import { headers } from "next/headers";
 import { PUBLIC_LEGAL_HEADER } from "@/lib/auth-redirect";
@@ -25,7 +26,12 @@ import RegisterDeviceProvider from "@/providers/RegisterDeviceProvider";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: constant.siteName,
+  metadataBase: new URL(siteOrigin()),
+  title: {default: constant.siteName, template: '%s | Kwonnet'},
+  applicationName: 'Kwonnet',
+  robots: {index: false, follow: false},
+  openGraph: {siteName: 'Kwonnet', type: 'website', title: 'Kwonnet', description: constant.siteDescription, images: ['/android-chrome-512x512.png']},
+  twitter: {card: 'summary_large_image', title: 'Kwonnet', description: constant.siteDescription, images: ['/android-chrome-512x512.png']},
   description: constant.siteDescription,
 };
 

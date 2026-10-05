@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import { getServerSession } from "@/lib/server-session";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from '@/config';
@@ -33,3 +34,4 @@ const Page = async() => {
 }
 
 export default Page
+export const metadata = pageMetadata('Mutual follows', 'Mutual follows on Kwonnet. Connect with your community and manage your experience.', '/connections/mutual-follows', false);

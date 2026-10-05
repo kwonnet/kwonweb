@@ -263,3 +263,24 @@ are synchronized to the selected account without asking for permission automatic
 The browser subscription is removed on logout/session loss. Use matching public VAPID
 keys with kwonserver and test a notification after deploying the server migration and
 restarting its background worker.
+
+
+### Page metadata and account settings
+
+Every page defines `metadata` or `generateMetadata` using Next.js server exports.
+`src/lib/seo.ts` supplies canonical URLs, descriptions, Open Graph/Twitter cards,
+and robots directives; `src/lib/seo-data.ts` fetches public-only dynamic metadata
+without credentials. `NEXT_PUBLIC_APP_URL` must be the production HTTPS origin.
+The root title template applies Kwonnet branding consistently. Search and all
+login-protected/private pages are noindex. Public root post detail pages render a
+public-only preview for guests and are crawlable; the existing guest authentication
+prompt still guards actions. Embeds canonicalize to their full post detail URL.
+Profiles remain behind the existing login flow and are noindex, even when their
+safe public profile fields are used for signed-in page metadata.
+
+`/robots.txt` and `/sitemap.xml` bypass login. The sitemap includes home/legal pages
+and up to 1,000 recent public root posts. Submit `/sitemap.xml` in your search engine
+console after deployment. Draft, hidden, restricted, deleted and private-author
+posts are excluded. SEO metadata fetches time out safely rather than failing pages.
+Deploy kwonserver and its migration before kwonweb so public previews use the new
+visibility checks. A password change signs out other tracked/legacy sessions.

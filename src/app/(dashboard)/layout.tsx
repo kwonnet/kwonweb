@@ -5,13 +5,8 @@ import CustomLayout from "./CustomLayout";
 import AppBottomNav from "@/components/common/AppBottomNav";
 import CustomToolbarActions from "@/components/common/CustomToolbarActions";
 import NotificationServer from "@/components/common/NotificationServer";
-import { Metadata } from "next";
-import { constant } from "@/config";
 
-export const metadata: Metadata = {
-  title: constant.siteName,
-  description: constant.siteDescription,
-};
+
 
 const layout = async (props: any) => {
   const session = await getServerSession();

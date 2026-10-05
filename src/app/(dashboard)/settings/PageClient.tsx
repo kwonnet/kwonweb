@@ -1,16 +1,58 @@
 'use client';
 import React, {useEffect, useState} from 'react';
-import {Alert, Box, Button, Chip, CircularProgress, Container, FormControlLabel, Paper, Stack, Switch, Typography} from '@mui/material';
+import {Alert, Box, Button, Chip, CircularProgress, Container, FormControlLabel, Paper, Stack, Switch, TextField, Typography} from '@mui/material';
 import useSWR from 'swr';
 import {useAuthSession} from '@/hooks';
 import {subscribeUserToPush} from '@/utils/pushClient';
 import {useNotifications} from '@/providers/NotificationsProvider';
-import {getActiveSessions, revokeActiveSession, type ActiveUserSession} from '@/lib/auth';
+import {getAccountSettings, changePassword, getActiveSessions, revokeActiveSession, type ActiveUserSession} from '@/lib/auth';
+import {signIn, useSession} from 'next-auth/react';
+import {saveProfile} from '@/lib/profile-actions';
+import {rememberCurrentAccount} from '@/lib/account-actions';
 import {logoutCurrentAccount} from '@/lib/account-actions';
 
 export default function PageClient() {
   const {token, user} = useAuthSession();
   const notif = useNotifications();
+  const {update} = useSession();
+  const [username, setUsername] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [saving, setSaving] = useState(false);
+  const {data: account, error: accountError, mutate: refreshAccount} = useSWR(token && user ? ['account-settings', user.id, token] : null, ([, , accessToken]) => getAccountSettings(accessToken), {revalidateOnFocus: false});
+  const saveUsername = async (event: React.FormEvent) => {
+    event.preventDefault(); if (saving) return;
+    setSaving(true);
+    let saved = false;
+    try {
+      const result = await saveProfile({username: username.trim().toLowerCase()});
+      if (result.error || !result.profile) throw new Error(result.error || 'Unable to update username');
+      saved = true;
+      await update({refreshIdentity: true});
+      await rememberCurrentAccount();
+      await refreshAccount();
+      notif.show('Username updated.', {severity: 'success'});
+      window.location.replace('/settings');
+    } catch (error) {
+      if (saved) window.location.replace('/settings');
+      else notif.show(error instanceof Error ? error.message : 'Unable to update username', {severity: 'error'});
+    }
+    finally {setSaving(false);}
+  };
+  const savePassword = async (event: React.FormEvent) => {
+    event.preventDefault(); if (saving || !token) return;
+    if (newPassword !== confirmPassword) {notif.show('Passwords do not match.', {severity: 'error'}); return;}
+    setSaving(true);
+    try {
+      const result = await changePassword(token, account?.hasPassword ? currentPassword : undefined, newPassword);
+      if (result.reloginRequired) {await logoutCurrentAccount(); return;}
+      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+      await refreshAccount(); await mutate();
+      notif.show('Password updated. Other sessions have been signed out.', {severity: 'success'});
+    } catch (error) {notif.show(error instanceof Error ? error.message : 'Unable to update password', {severity: 'error'});}
+    finally {setSaving(false);}
+  };
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
@@ -47,6 +89,24 @@ export default function PageClient() {
   };
   return <Container maxWidth="md" sx={{py: 3}}>
     <Typography variant="h5" sx={{mb: 2}}>Settings</Typography>
+    <Paper variant="outlined" sx={{p: {xs: 2, sm: 3}, mb: 3}}>
+      <Typography variant="h6">Account</Typography>
+      {accountError && <Alert severity="error">Unable to load account settings.</Alert>}
+      <Box component="form" onSubmit={saveUsername} sx={{mt: 2}}>
+        <TextField fullWidth label="New username" value={username} onChange={event => setUsername(event.target.value)} autoComplete="username" helperText={`Current: @${account?.username || user?.username || ''}. Use 3–30 letters, numbers or underscores.`} slotProps={{htmlInput: {minLength: 3, maxLength: 30, pattern: '[A-Za-z0-9_]{3,30}'}}} required />
+        <Button type="submit" disabled={saving || !account || !username.trim()} sx={{mt: 1}}>Update username</Button>
+      </Box>
+      <Box component="form" onSubmit={savePassword} sx={{mt: 3}}>
+        <Typography variant="subtitle1" sx={{mb: 1}}>Password</Typography>
+        {account && !account.hasPassword && <Alert severity="info" sx={{mb: 2}} action={<Button disabled={saving} onClick={() => void signIn("google", {redirectTo: "/settings"}).catch(() => notif.show("Unable to verify with Google. Please try again.", {severity: "error"}))}>Verify with Google</Button>}>Verify your account with Google, then set a password within five minutes.</Alert>}
+        <Stack spacing={2}>
+          {account?.hasPassword && <TextField type="password" label="Current password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} autoComplete="current-password" required />}
+          <TextField type="password" label="New password" value={newPassword} onChange={event => setNewPassword(event.target.value)} autoComplete="new-password" helperText="Use 8–32 characters." slotProps={{htmlInput: {minLength: 8, maxLength: 32}}} required />
+          <TextField type="password" label="Confirm new password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" required />
+        </Stack>
+        <Button type="submit" disabled={saving || !account} sx={{mt: 1}}>Update password</Button>
+      </Box>
+    </Paper>
     <Paper variant="outlined" sx={{p: {xs: 2, sm: 3}, mb: 3}}>
       <Typography variant="h6">Notifications</Typography>
       <FormControlLabel control={<Switch checked={enabled} disabled={busy || !token} onChange={(_, checked) => void toggle(checked)} />} label="Enable push notifications" />

@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import { redirect } from "next/navigation";
 import { getServerSession } from "@/lib/server-session";
 import { authOrigin, safeAuthRedirect } from "@/lib/auth-redirect";
@@ -13,3 +14,5 @@ export default async function SignInPage({ searchParams }: {
   if (typeof params.refId === "string") query.set("refId", params.refId);
   redirect(`/?${query}`);
 }
+
+export const metadata = pageMetadata('Sign in', 'Sign in on Kwonnet. Connect with your community and manage your experience.', '/auth/signin', false);

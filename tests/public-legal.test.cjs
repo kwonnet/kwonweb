@@ -6,7 +6,7 @@ const {NextRequest} = require('next/server');
 function load(file, mocks) {
   const module = {exports: {}};
   const code = ts.transpileModule(readFileSync(file, 'utf8'), {compilerOptions: {module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true}}).outputText;
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), module, module.exports);
+  new Function('require', 'module', 'exports', code)(name => name === '@/lib/seo' ? load('src/lib/seo.ts', {}) : name in mocks ? mocks[name] : require(name), module, module.exports);
   return module.exports;
 }
 const policy = load('src/lib/auth-redirect.ts', {});

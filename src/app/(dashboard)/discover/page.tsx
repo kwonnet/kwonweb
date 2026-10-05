@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import { getServerSession } from "@/lib/server-session";
 import { getTrendingTopics } from "@/lib/discover";
 import PageClient from "./PageClient";
@@ -9,3 +10,5 @@ const Page = async () => {
 };
 
 export default Page;
+
+export const metadata = pageMetadata('Discover', 'Discover on Kwonnet. Connect with your community and manage your experience.', '/discover', false);

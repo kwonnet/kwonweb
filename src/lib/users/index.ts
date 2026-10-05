@@ -210,3 +210,10 @@ export const updateUserNotification = cache(async(body: {userId: string, isRead?
 
 
 
+
+export async function getPublicProfileMetadata(username: string): Promise<{name: string; username: string; bio: string | null; avatar: string | null} | null> {
+  try {
+    const response = await fetch(`${apiUrl}/users/${encodeURIComponent(username.replace(/^@/, ''))}/metadata`, {cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(2000)});
+    return response.ok ? await response.json() : null;
+  } catch {return null;}
+}

@@ -13,13 +13,15 @@ test('settings paginates account-scoped sessions and revokes only the selected s
  const Box = ({children}) => React.createElement('div', null, children);
  const Button = ({children, onClick, disabled}) => React.createElement('button', {onClick, disabled}, children);
  const mocks = {
-  react: React, '@mui/material': {Alert: Box, Box, Button, Chip: ({label}) => React.createElement('span', null, label), CircularProgress: Box, Container: Box, FormControlLabel: Box, Paper: Box, Stack: Box, Switch: Box, Typography: Box},
+  react: React, '@mui/material': {Alert: Box, Box, Button, Chip: ({label}) => React.createElement('span', null, label), CircularProgress: Box, Container: Box, FormControlLabel: Box, Paper: Box, Stack: Box, Switch: Box, TextField: Box, Typography: Box},
+  'next-auth/react': {useSession: () => ({update: async () => {}})},
+  '@/lib/profile-actions': {saveProfile: async () => ({})},
   '@/hooks': {useAuthSession: () => ({token: 'test-token', user: {id: 'owner'}})},
   '@/providers/NotificationsProvider': {useNotifications: () => ({show: message => notices.push(message)})},
   '@/utils/pushClient': {subscribeUserToPush: async () => ({status: 200, message: 'Enabled'})},
   '@/lib/auth': {getActiveSessions: async () => ({}), revokeActiveSession: async (...args) => revoked.push(args)},
-  '@/lib/account-actions': {logoutCurrentAccount: async () => {logout++;}},
-  swr: {__esModule: true, default: currentKey => {key = currentKey; return {data: {sessions: [session], hasMore: currentKey[3] === 1}, mutate: async () => {}};}},
+  '@/lib/account-actions': {rememberCurrentAccount: async () => {}, logoutCurrentAccount: async () => {logout++;}},
+  swr: {__esModule: true, default: currentKey => {if (currentKey?.[0] === 'account-settings') return {data: {username: 'owner', hasPassword: true}}; key = currentKey; return {data: {sessions: [session], hasMore: currentKey[3] === 1}, mutate: async () => {}};}},
  };
  const module = {exports: {}};
  const code = ts.transpileModule(readFileSync('src/app/(dashboard)/settings/PageClient.tsx', 'utf8'), {compilerOptions: {module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true}}).outputText;

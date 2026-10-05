@@ -305,3 +305,16 @@ export const getPostEngagementsOverview = cache(async (postId: string, accessTok
   if (!response.ok) throw new Error("Unable to load post engagements");
   return await response.json() as {isOwner: boolean};
 });
+
+export async function getPublicPostMetadata(id: string): Promise<{id: string; content: string | null; user: {name: string; username: string}; media: {url: string; thumbnailUrl: string | null; fileType: string}[]} | null> {
+  try {
+    const response = await fetch(`${apiUrl}/posts/${encodeURIComponent(id)}/metadata`, {cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(2000)});
+    return response.ok ? await response.json() : null;
+  } catch {return null;}
+}
+export async function getPublicPostMetadataIndex(): Promise<{id: string; updatedAt: string; user: {username: string}}[] | null> {
+  try {
+    const response = await fetch(`${apiUrl}/posts/metadata-index`, {cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(2000)});
+    return response.ok ? await response.json() : null;
+  } catch {return null;}
+}

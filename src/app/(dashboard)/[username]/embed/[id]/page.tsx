@@ -1,3 +1,4 @@
+import {postMetadata} from '@/lib/seo-data';
 import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from '@/config';
 import React from 'react'
@@ -17,7 +18,7 @@ const page = async({ params }: { params: Promise<URLParams>; searchParams: Promi
 
   const result = await fetch(`${apiUrl}/posts/${id}/embed`, {
     method: "GET",
-    next: { revalidate: 60, tags: [`post-${id}`] },
+    cache: 'no-store',
     credentials: "include",
     mode: "cors",
   });
@@ -32,3 +33,7 @@ const page = async({ params }: { params: Promise<URLParams>; searchParams: Promi
 }
 
 export default page
+export async function generateMetadata({params}: {params: Promise<{username: string; id: string}>}) {
+  const {username, id} = await params;
+  return postMetadata(username, id, true);
+}

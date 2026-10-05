@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 
 import { Game } from "@/types";
 import PageClient from "./PageClient";
@@ -22,3 +23,5 @@ export default async function GameCategories() {
     </div>
   );
 }
+
+export const metadata = pageMetadata('Game categories', 'Game categories on Kwonnet. Connect with your community and manage your experience.', '/games/categories', false);

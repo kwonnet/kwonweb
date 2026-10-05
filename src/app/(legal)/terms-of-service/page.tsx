@@ -1,7 +1,7 @@
-import type {Metadata} from "next";
+import {pageMetadata} from '@/lib/seo';
 import Link from "next/link";
 import {Box, Typography} from "@mui/material";
-export const metadata: Metadata = {title: "Terms of Service | Kwonnet", description: "Terms for browsing Kwonnet and using accounts, posts, media, games, subscriptions, wallets, and tips."};
+
 export default function TermsOfService() {
   return <Box component="article">
     <Typography component="h1" variant="h3" sx={{fontWeight: 700}}>Terms of Service</Typography>
@@ -34,3 +34,5 @@ export default function TermsOfService() {
     <p>For account, content, payment, or terms questions, contact <a href="mailto:support@kwonnet.com">support@kwonnet.com</a> with enough detail to investigate, without sending passwords or full payment-card details. We encourage you to contact us first to resolve concerns. Applicable law and mandatory consumer protections continue to apply.</p>
   </Box>;
 }
+
+export const metadata = pageMetadata('Terms of Service', 'Terms for browsing Kwonnet and using accounts, posts, media, games, subscriptions, wallets and tips.', '/terms-of-service', true);

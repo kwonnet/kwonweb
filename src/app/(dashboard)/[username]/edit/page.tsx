@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import { redirect } from 'next/navigation';
 import { getServerSession } from '@/lib/server-session';
 import { apiUrl } from '@/config';
@@ -16,4 +17,9 @@ export default async function EditProfilePage({ params }: { params: Promise<{ us
     if (response.ok) initial = await response.json() as ProfileEditData;
   } catch { /* Show a recoverable load error below. */ }
   return initial ? <ProfileEditor initial={initial} /> : <ErrorMessage message="Unable to load your profile. Please refresh and try again." />;
+}
+
+export async function generateMetadata({params}: {params: Promise<{username: string}>}) {
+  const p = await params;
+  return pageMetadata('Edit profile', 'View edit profile on Kwonnet.', "/" + encodeURIComponent(p.username) + "/" + 'edit', false);
 }

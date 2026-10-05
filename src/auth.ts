@@ -12,7 +12,7 @@ import { SignInSchema, SignUpSchema } from "./schema";
 import { apiUrl } from "./config";
 import { ZodError } from "zod";
 import { UserPublic } from "./types/user";
-import { authOrigin, configureAuthOrigin, safeAuthRedirect, signInRedirect, isPublicLegalPath } from "./lib/auth-redirect";
+import { authOrigin, configureAuthOrigin, safeAuthRedirect, signInRedirect, isPublicPostPath, isPublicLegalPath } from "./lib/auth-redirect";
 
 // Augment the User type in next-auth
 declare module "next-auth" {
@@ -184,7 +184,7 @@ const authRuntime = NextAuth(async request => {
       const isLoggedIn = !!session?.user;
       const isPublicPage = nextUrl.pathname.startsWith("/public");
 
-      if (isPublicLegalPath(nextUrl.pathname) || isPublicPage || isLoggedIn || nextUrl.pathname === "/" || nextUrl.pathname === "/auth/signin") {
+      if (isPublicPostPath(nextUrl.pathname) || isPublicLegalPath(nextUrl.pathname) || isPublicPage || isLoggedIn || nextUrl.pathname === "/" || nextUrl.pathname === "/auth/signin") {
         return true;
       }
 

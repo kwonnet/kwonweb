@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import PageClient from "./PageClient";
 
 export default function Page() {
@@ -7,3 +8,5 @@ export default function Page() {
     </div>
   );
 }
+
+export const metadata = pageMetadata('Earn', 'Earn on Kwonnet. Connect with your community and manage your experience.', '/earn', false);

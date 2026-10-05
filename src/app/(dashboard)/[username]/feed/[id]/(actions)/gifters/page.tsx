@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import { getServerSession } from "@/lib/server-session";
 import { getPostGifters } from "@/lib/posts";
 import ErrorMessage from "@/components/common/ErrorMessage";
@@ -14,4 +15,9 @@ export default async function Page({params}: {params: Promise<{id: string}>}) {
     return <ErrorMessage message={error instanceof Error ? error.message : "Unable to load gifters"} />;
   }
   return <PageClient postId={id} initialPage={initialPage} />;
+}
+
+export async function generateMetadata({params}: {params: Promise<{username: string; id: string}>}) {
+  const p = await params;
+  return pageMetadata('Post gifters', 'View post gifters on Kwonnet.', "/" + encodeURIComponent(p.username) + "/" + 'feed' + "/" + encodeURIComponent(p.id) + "/" + 'gifters', false);
 }

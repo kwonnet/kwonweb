@@ -1,3 +1,6 @@
+import {notFound} from 'next/navigation';
+import PublicPostCard from '../../embed/[id]/FeedCardItem';
+import {postMetadata} from '@/lib/seo-data';
 import React from "react";
 import DisplayError from "@/components/common/DisplayError";
 import { getServerSession } from "@/lib/server-session";
@@ -27,6 +30,13 @@ const Page = async ({
 
   if (!id) return <DisplayError status={500} message="Error: post not found" />;
 
+  if (!session?.user?.accessToken) {
+    let response: Response;
+    try {response = await fetch(`${apiUrl}/posts/${encodeURIComponent(id)}/embed`, {cache: 'no-store', signal: AbortSignal.timeout(5000)});} catch {return <DisplayError status={503} message="Post temporarily unavailable" />;}
+    if (response.status === 404) notFound();
+    if (!response.ok) return <DisplayError status={response.status} message="Post unavailable" />;
+    return <PublicPostCard post={await response.json()} />;
+  }
   const result = await fetch(`${apiUrl}/posts/${id}?d=${date.getTime()}`, {
     method: "GET",
     next: { revalidate: 0, tags: [`post-${id}`] },
@@ -49,3 +59,8 @@ const Page = async ({
 };
 
 export default Page;
+
+export async function generateMetadata({params}: {params: Promise<{username: string; id: string}>}) {
+  const {username, id} = await params;
+  return postMetadata(username, id, false);
+}

@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import { getServerSession } from '@/lib/server-session';
 import { searchPosts } from '@/lib/posts';
 import { searchUsers } from '@/lib/users';
@@ -15,4 +16,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     } catch { failed = true; }
   }
   return <SearchClient key={`${session?.user?.id ?? 'guest'}:${q}:${tab}`} q={q} tab={tab} posts={posts} people={people} failed={failed} />;
+}
+
+export async function generateMetadata({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const params = await searchParams;
+  const q = typeof params.q === 'string' ? params.q.trim().slice(0, 120) : '';
+  return pageMetadata(q ? `Search: ${q}` : 'Search', q ? `Search results for ${q} on Kwonnet.` : 'Search Kwonnet posts and people.', '/search', false);
 }

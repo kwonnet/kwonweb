@@ -1,3 +1,4 @@
+import {apiUrl} from '@/config';
 import { axiosAPI } from "@/config/axios";
 import { GameArchiveUser, GameCategoryRanking, GameRankingArchiveStats, GameRoomRankingEnum, GameWinner, GameWinnersStats, UserCategoryRanking } from "@/types";
 import { composeUrlQuery } from "@/utils";
@@ -89,3 +90,11 @@ export const getUserGameRankingArchiveData = cache(async({userId, query}:{userId
         throw error
     }
 })
+export async function getPublicGameMetadata(id: string): Promise<{name: string} | null> {
+  try {
+    const response = await fetch(`${apiUrl}/games/categories/${encodeURIComponent(id)}`, {cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(2000)});
+    if (!response.ok) return null;
+    const result = await response.json();
+    return typeof result?.game?.name === 'string' ? {name: result.game.name} : null;
+  } catch {return null;}
+}

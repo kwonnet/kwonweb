@@ -41,3 +41,15 @@ export async function revokeActiveSession(token: string, id: string) {
   const response = await fetch(`${apiUrl}/auth/sessions/${encodeURIComponent(id)}`, {method: 'DELETE', headers: {Authorization: `Bearer ${token}`}, signal: AbortSignal.timeout(15_000)});
   if (!response.ok && response.status !== 404) throw new Error('Unable to revoke this session.');
 }
+
+export async function getAccountSettings(token: string): Promise<{username: string; hasPassword: boolean}> {
+  const response = await fetch(`${apiUrl}/auth/settings`, {headers: {Authorization: `Bearer ${token}`}, cache: 'no-store', signal: AbortSignal.timeout(15_000)});
+  if (!response.ok) throw new Error('Unable to load account settings');
+  return response.json();
+}
+export async function changePassword(token: string, currentPassword: string | undefined, newPassword: string) {
+  const response = await fetch(`${apiUrl}/auth/password`, {method: 'PATCH', headers: {Authorization: `Bearer ${token}`, 'Content-Type': 'application/json'}, body: JSON.stringify({currentPassword, newPassword}), signal: AbortSignal.timeout(15_000)});
+  const result = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(result?.error || (response.status === 401 ? 'Sign in again before updating your password.' : 'Unable to update password. Please try again.'));
+  return {reloginRequired: result?.reloginRequired === true};
+}

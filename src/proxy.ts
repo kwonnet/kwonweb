@@ -8,6 +8,8 @@ const authenticatedProxy = Promise.resolve(auth((_request: NextRequest, _event: 
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl;
 
+  if (['/robots.txt', '/sitemap.xml'].includes(pathname)) return NextResponse.next();
+
   // Only the proxy may mark legal routes as independent of authentication.
   const forwardedHeaders = new Headers(request.headers);
   forwardedHeaders.delete(PUBLIC_LEGAL_HEADER);

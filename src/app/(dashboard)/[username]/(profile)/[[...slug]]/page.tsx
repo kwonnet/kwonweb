@@ -1,3 +1,4 @@
+import {profileMetadata} from '@/lib/seo-data';
 import React, { Suspense } from "react";
 import { getUserPostsFeed } from "@/lib/users";
 import FeedSkeleton from "@/components/post/FeedSkeleton";
@@ -73,3 +74,10 @@ const page = async ({ params }: { params: Promise<URLParams> }) => {
 };
 
 export default page;
+
+export async function generateMetadata({params}: {params: Promise<{username: string; slug?: string[]}>}) {
+  const {username, slug} = await params;
+  const tab = slug?.[0] || '';
+  const allowed = ['posts','replies','media','highlights','scheduled','likes','bookmarks'];
+  return profileMetadata(username, allowed.includes(tab) ? `/${tab}` : '', tab ? tab[0].toUpperCase() + tab.slice(1) : 'Profile');
+}

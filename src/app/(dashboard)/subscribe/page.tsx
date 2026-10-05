@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import React from "react";
 import { CryptoAddress, SubscriptionPlan } from "@/types";
 import { getCurrent_ton_usd_rate } from "@/utils";
@@ -61,3 +62,5 @@ const Page = async () => {
 export default Page;
 
 
+
+export const metadata = pageMetadata('Subscribe', 'Subscribe on Kwonnet. Connect with your community and manage your experience.', '/subscribe', false);

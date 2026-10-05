@@ -1,7 +1,7 @@
-import type {Metadata} from "next";
+import {pageMetadata} from '@/lib/seo';
 import Link from "next/link";
 import {Box, Typography} from "@mui/material";
-export const metadata: Metadata = {title: "Privacy Policy | Kwonnet", description: "How Kwonnet handles account information, content, Google sign-in, cookies, media, and privacy requests."};
+
 export default function PrivacyPolicy() {
   return <Box component="article">
     <Typography component="h1" variant="h3" sx={{fontWeight: 700}}>Privacy Policy</Typography>
@@ -33,3 +33,5 @@ export default function PrivacyPolicy() {
     <p>We may update this policy as features or requirements change. The date above identifies the latest version. For privacy questions, contact <a href="mailto:support@kwonnet.com">support@kwonnet.com</a>. See our <Link href="/terms-of-service">Terms of Service</Link> for the rules governing use of Kwonnet.</p>
   </Box>;
 }
+
+export const metadata = pageMetadata('Privacy Policy', 'How Kwonnet handles account information, content, Google sign-in, cookies, media and privacy requests.', '/privacy-policy', true);

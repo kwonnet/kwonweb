@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import { notFound, redirect } from 'next/navigation';
 import { getServerSession } from '@/lib/server-session';
 import { getTrendingTopics } from '@/lib/discover';
@@ -12,4 +13,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const session = await getServerSession();
   const trends = await getTrendingTopics({ topic, limit: 50 }, session?.user?.accessToken).catch(() => []);
   return <PageClient key={topic} topic={topic} trends={trends} />;
+}
+
+export async function generateMetadata({params}: {params: Promise<{slug: string}>}) {
+  const p = await params;
+  const topic = discoverTabItems.find(item => item.id === p.slug)?.name || 'Discover';
+  return pageMetadata(`${topic} trends`, `Explore ${topic.toLowerCase()} trends and conversations on Kwonnet.`, "/" + 'discover' + "/" + encodeURIComponent(p.slug), false);
 }

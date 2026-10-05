@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import { getServerSession } from "@/lib/server-session";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from "@/config";
@@ -45,3 +46,8 @@ const PageServer = async ({ params }: { params: Promise<URLParams> }) => {
 };
 
 export default PageServer;
+
+export async function generateMetadata({params}: {params: Promise<{username: string; id: string}>}) {
+  const p = await params;
+  return pageMetadata('Post reposts', 'View post reposts on Kwonnet.', "/" + encodeURIComponent(p.username) + "/" + 'feed' + "/" + encodeURIComponent(p.id) + "/" + 'reposts', false);
+}

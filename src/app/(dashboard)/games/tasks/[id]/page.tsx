@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import { redirect } from "next/navigation";
 import { Container, Paper, Typography } from "@mui/material";
 import Link from "next/link";
@@ -35,4 +36,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <TaskClient task={task} />
     </div>
   );
+}
+
+export async function generateMetadata({params}: {params: Promise<{id: string}>}) {
+  const p = await params;
+  return pageMetadata('Game tasks', 'View game tasks on Kwonnet.', "/" + 'games' + "/" + 'tasks' + "/" + encodeURIComponent(p.id), false);
 }

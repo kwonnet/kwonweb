@@ -1,3 +1,4 @@
+import {gameMetadata} from '@/lib/seo-data';
 import { Game, GameCategory } from "@/types";
 import { redirect } from "next/navigation";
 import React from "react";
@@ -42,3 +43,6 @@ const Page = async ({ params, searchParams }: { params: Promise<URLParams>; sear
 };
 
 export default Page;
+export async function generateMetadata({params}: {params: Promise<{id: string}>}) {
+  return gameMetadata((await params).id);
+}

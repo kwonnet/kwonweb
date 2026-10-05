@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import React from "react";
 import { getServerSession } from "@/lib/server-session";
 import ErrorMessage from "@/components/common/ErrorMessage";
@@ -48,3 +49,8 @@ const page = async ({
 };
 
 export default page;
+
+export async function generateMetadata({params}: {params: Promise<{username: string; id: string}>}) {
+  const p = await params;
+  return pageMetadata('Hidden replies', 'View hidden replies on Kwonnet.', "/" + encodeURIComponent(p.username) + "/" + 'feed' + "/" + encodeURIComponent(p.id) + "/" + 'hidden', false);
+}

@@ -5,7 +5,7 @@ const ts = require('typescript');
 function load(path, dependencies = {}) {
   const module = { exports: {} };
   const code = ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
-  new Function('require', 'module', 'exports', code)(id => id in dependencies ? dependencies[id] : require(id), module, module.exports);
+  new Function('require', 'module', 'exports', code)(id => id === '@/lib/seo' ? load('src/lib/seo.ts', {}) : id === '@/lib/seo-data' ? {profileMetadata: async () => ({})} : id in dependencies ? dependencies[id] : require(id), module, module.exports);
   return module.exports;
 }
 test('trend and hashtag search URLs preserve Unicode, spaces and query punctuation safely', () => {

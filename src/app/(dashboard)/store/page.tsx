@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import React from 'react'
 import PageClient from './PageClient'
 import { CoinPackage, CryptoAddress } from '@/types'
@@ -30,3 +31,4 @@ const Page = async() => {
 }
 
 export default Page
+export const metadata = pageMetadata('Store', 'Store on Kwonnet. Connect with your community and manage your experience.', '/store', false);

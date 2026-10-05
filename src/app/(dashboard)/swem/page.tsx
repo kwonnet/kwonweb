@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import { Typography } from "@mui/material";
 import React from "react";
 
@@ -20,3 +21,5 @@ const page = () => {
 };
 
 export default page;
+
+export const metadata = pageMetadata('Swem', 'Swem on Kwonnet. Connect with your community and manage your experience.', '/swem', false);

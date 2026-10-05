@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import TasksClient from "./TasksClient";
 import { Task } from "@/types";
 import { apiUrl } from "@/config";
@@ -20,3 +21,5 @@ export default async function Page() {
     </div>
   );
 }
+
+export const metadata = pageMetadata('Game tasks', 'Game tasks on Kwonnet. Connect with your community and manage your experience.', '/games/tasks', false);

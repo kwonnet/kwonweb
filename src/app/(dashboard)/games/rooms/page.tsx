@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import { GameRoom } from "@/types";
 import { redirect } from "next/navigation";
 import React from "react";
@@ -44,3 +45,5 @@ const Page = async ({ searchParams }: { params: Promise<URLParams>, searchParams
 };
 
 export default Page;
+
+export const metadata = pageMetadata('Game rooms', 'Game rooms on Kwonnet. Connect with your community and manage your experience.', '/games/rooms', false);

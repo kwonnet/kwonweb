@@ -40,3 +40,8 @@ export const PUBLIC_LEGAL_HEADER = "x-kwonnet-public-legal";
 export function isPublicLegalPath(pathname: string): boolean {
   return ["/privacy-policy", "/terms-of-service"].includes(pathname.replace(/\/$/, ""));
 }
+
+/** The page renders an authoritative public-only post preview for guests. */
+export function isPublicPostPath(pathname: string): boolean {
+  return /^\/[^/]+\/feed\/[^/]+\/?$/.test(pathname);
+}

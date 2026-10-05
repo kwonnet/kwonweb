@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import { getServerSession } from "@/lib/server-session";
 import { apiUrl } from "@/config";
 import { TrendingTopics } from "@/types";
@@ -32,3 +33,5 @@ const Page = async () => {
 
 export default Page;
 
+
+export const metadata = pageMetadata('Worldwide trends', 'Worldwide trends on Kwonnet. Connect with your community and manage your experience.', '/discover/worldwide', false);

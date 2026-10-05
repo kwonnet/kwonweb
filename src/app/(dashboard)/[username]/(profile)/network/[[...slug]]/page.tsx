@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import React from "react";
 import PageClient from "./PageClient";
 import ErrorMessage from "@/components/common/ErrorMessage";
@@ -109,3 +110,8 @@ const page = async ({ params }: { params: Promise<URLParams> }) => {
 }
 
 export default page;
+
+export async function generateMetadata({params}: {params: Promise<{username: string; slug: string[]}>}) {
+  const p = await params;
+  return pageMetadata('Network', 'View network on Kwonnet.', "/" + encodeURIComponent(p.username) + "/" + 'network' + "/" + (p.slug || []).map(encodeURIComponent).join("/"), false);
+}

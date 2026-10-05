@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import React from "react";
 import PageClient from "../profile/PageClient";
 import DisplayError from "@/components/common/DisplayError";
@@ -66,3 +67,8 @@ const page = async ({ params }: { params: Promise<URLParams> }) => {
 }
 
 export default page;
+
+export async function generateMetadata({params}: {params: Promise<{username: string}>}) {
+  const p = await params;
+  return pageMetadata('Analytics', 'View analytics on Kwonnet.', "/" + encodeURIComponent(p.username) + "/" + 'analytics', false);
+}

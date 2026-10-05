@@ -1,3 +1,4 @@
+import {pageMetadata} from '@/lib/seo';
 import React from 'react'
 import WalletClient from './WalletClient'
 import { getCurrent_ton_usd_rate } from '@/utils'
@@ -19,3 +20,4 @@ const Page = async() => {
 
 
 export default Page
+export const metadata = pageMetadata('Wallet', 'Wallet on Kwonnet. Connect with your community and manage your experience.', '/wallet', false);
