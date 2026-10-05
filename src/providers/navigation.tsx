@@ -1,4 +1,5 @@
 import React from "react";
+import TaskAltOutlinedIcon from "@mui/icons-material/TaskAltOutlined";
 import SportsEsportsOutlinedIcon from "@mui/icons-material/SportsEsportsOutlined";
 import ExploreOutlinedIcon from "@mui/icons-material/ExploreOutlined";
 import LocalMallOutlinedIcon from "@mui/icons-material/LocalMallOutlined";
@@ -33,6 +34,11 @@ export const getNavigationItems = (user?: Session["user"]) => {
       segment: "store",
       title: "Store",
       icon: <LocalMallOutlinedIcon key={101} />,
+    },
+    {
+      segment: "tasks",
+      title: "Tasks",
+      icon: <TaskAltOutlinedIcon key={180} />,
     },
     {
       segment: "wallet",

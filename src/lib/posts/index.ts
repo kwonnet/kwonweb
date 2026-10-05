@@ -318,3 +318,8 @@ export async function getPublicPostMetadataIndex(): Promise<{id: string; updated
     return response.ok ? await response.json() : null;
   } catch {return null;}
 }
+
+export async function getPostBoostStatus(id:string,token:string): Promise<{target:number;confirmed:number;expiresAt:string;state: string}|null> {
+ const response=await fetch(`${apiUrl}/posts/${encodeURIComponent(id)}/boost`,{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
+ if(response.status===404)return null; if(!response.ok)throw new Error('Boost status unavailable'); return response.json();
+}

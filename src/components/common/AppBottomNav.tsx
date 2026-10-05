@@ -32,7 +32,6 @@ import OfflineBoltOutlinedIcon from "@mui/icons-material/OfflineBoltOutlined";
 import WavingHandIcon from "@mui/icons-material/WavingHand";
 
 
-
 const buttons = (pathname: string) => {
   const paths = { home: "/", shortz: "/sparks", videos: "/videos", games: "/games", tasks: "/tasks", profile: "/profile", invite: "/invite", people: "/connections", explore: "/discover", contests: "/contests",}
 
@@ -44,13 +43,13 @@ const buttons = (pathname: string) => {
       isSmallOnly: true,
       path: paths.home,
     },
-    {
-      id: 2,
-      title: "Sparks",
-      icon: pathname === paths.shortz ? <OfflineBoltOutlinedIcon /> : <OfflineBoltOutlinedIcon />,
-      isSmallOnly: false,
-      path: paths.shortz,
-    },
+    // {
+    //   id: 2,
+    //   title: "Sparks",
+    //   icon: pathname === paths.shortz ? <OfflineBoltOutlinedIcon /> : <OfflineBoltOutlinedIcon />,
+    //   isSmallOnly: false,
+    //   path: paths.shortz,
+    // },
     {
       id: 3,
       title: "Games",
@@ -58,6 +57,16 @@ const buttons = (pathname: string) => {
       isSmallOnly: false,
       path: paths.games,
     },
+
+    {
+      id: 9,
+      title: "Tasks",
+      icon: pathname === paths.tasks ? <TaskAltIcon /> : <TaskAltOutlinedIcon />,
+      isSmallOnly: false,
+      path: paths.tasks,
+    },
+
+    
     // {
     //   id: 4,
     //   title: "Videos",
@@ -80,13 +89,13 @@ const buttons = (pathname: string) => {
       path: paths.explore,
     },
     
-    {
-      id: 7,
-      title: "Netwaves",
-      icon: <WavingHandIcon />,
-      isSmallOnly: false,
-      path: "/netwaves",
-    },
+    // {
+    //   id: 7,
+    //   title: "Netwaves",
+    //   icon: <WavingHandIcon />,
+    //   isSmallOnly: false,
+    //   path: "/netwaves",
+    // },
     {
       id: 8,
       title: "Connect",

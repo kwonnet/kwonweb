@@ -284,3 +284,27 @@ console after deployment. Draft, hidden, restricted, deleted and private-author
 posts are excluded. SEO metadata fetches time out safely rather than failing pages.
 Deploy kwonserver and its migration before kwonweb so public previews use the new
 visibility checks. A password change signs out other tracked/legacy sessions.
+
+### Engagement Tasks and community reach
+
+The authenticated `/tasks` route is available in the main navigation. It uses the
+existing MUI styling, auth hook, notifications provider and SWR, with API calls in
+`src/lib/tasks/index.ts`. Progress is refreshed on focus and every minute. Each task
+shows its target, capped progress, daily bonus and individual 24-hour cooldown. A
+check attempts a server-verified claim; incomplete checks show remaining progress.
+The browser retains a wallet intent ID for safe retries and revalidates the current
+wallet after a successful reward. Admin/Super users can disable tasks or change the
+required count in the same page; the API enforces the role independently.
+
+Feed cards identify injected community slots without changing organic ordering.
+Post-owner Analytics shows the 24-hour boost target, qualified impressions and
+expiry. Impressions require half the card visible for one second in a visible tab;
+authenticated keepalive fetches use headers so tokens never appear in logging URLs.
+Guests do not mint rewards or boost impressions. Organic repeats remain possible;
+boosted inserts are suppressed for the same authenticated viewer across all five
+feed tabs. Do not edit the separate existing game/ad bonus page to configure these
+tasks. Deploy kwonserver's migration and worker before deploying this UI.
+
+See kwonserver README → “Engagement rewards, community boosts and welcome-email
+delivery” for the defaults, eligibility definition, API responses, concurrency,
+SMTP variables, target limits, rollout behavior and operational recovery.

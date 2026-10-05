@@ -678,6 +678,7 @@ export interface PostAuthor {
 }
 
 export interface FeedPost {
+  boost?: {label: string; target: number};
   id: string;
   content?: string;
   type: PostType;

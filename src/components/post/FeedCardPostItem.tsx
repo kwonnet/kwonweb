@@ -296,6 +296,7 @@ const FeedCardPostItem = ({
         }}
         suppressHydrationWarning
       >
+        {post.boost && <Typography variant="caption" color="text.secondary" sx={{gridColumn: '1 / -1', mb: 0.5}}>Community boost</Typography>}
         {post.kind === PostKind.REPOST && (
           <Stack direction={"row"} sx={{ gridColumn: "1 / -1", alignItems: "center", gap: 0.5, mb: 0.5 }}>
             <RepeatOutlinedIcon

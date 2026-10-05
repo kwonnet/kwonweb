@@ -1,4 +1,6 @@
 "use client";
+import useSWR from 'swr';
+import {getPostBoostStatus} from '@/lib/posts';
 import { useAuthSession } from "@/hooks";
 import { useAccountAnalytics, usePostAnalytics } from "@/lib/swrHooks";
 import { AccountAnalytics } from "@/types/user";
@@ -83,6 +85,7 @@ const PageClient = ({
   }[];
 }) => {
   const { token, user } = useAuthSession();
+  const {data:boost}=useSWR(token&&user?.id===post.author.id?['post-boost',user.id,post.id,token]:null,([,,id,accessToken])=>getPostBoostStatus(id,accessToken),{refreshInterval:30000,revalidateOnFocus:true});
 
   const [state, setState] = useState({ duration: durationItems[0].id });
 
@@ -120,6 +123,7 @@ const PageClient = ({
 
   return (
     <React.Fragment>
+      {boost&&<Paper variant="outlined" sx={{p:2,mb:2}}><Typography variant="h6">Community reach</Typography><Typography>{boost.confirmed} / {boost.target} qualified impressions</Typography><Typography variant="body2" color="text.secondary">{boost.confirmed>=boost.target?'Target reached':boost.state==='EXPIRED'?'Window ended':'Boosting until '+new Date(boost.expiresAt).toLocaleString()}. Reach depends on eligible audience activity; feed deliveries are not counted as impressions.</Typography></Paper>}
       <PageHeader
         title={<Typography variant="h6">Post Analytics</Typography>}
       />
