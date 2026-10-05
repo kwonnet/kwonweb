@@ -161,15 +161,21 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
     } catch {
       notifications.show("Could not record the share. Please try again.", { severity: "error", autoHideDuration: 5000 });
     }
-  }, [mutatePostShares, token, mutate, notifications]);
+  }, [token, mutate, notifications]);
   // follow user
-  const onFollowUserCallback = useCallback((
+  const onFollowUserCallback = useCallback(async (
     args: { senderId: string; recipientId: string; action: FollowAction }
   ) => {
     mutatePostAuthor(args.recipientId, args.action);
-    // send to api
-    updateUserFollower(args, token);
-  }, [mutatePostAuthor, token]);
+    try {
+      await updateUserFollower(args, token);
+      // Re-read the relationship feeds after following or unfollowing an author.
+      if (feed === FeedTypeEnum.FOLLOWING || feed === FeedTypeEnum.FRIENDS) await mutatePages();
+    } catch (error) {
+      void mutatePages().catch(() => undefined);
+      notifications.show(getErrorMessage(error), { severity: "error", autoHideDuration: 5000 });
+    }
+  }, [mutatePostAuthor, token, feed, mutatePages, notifications]);
   // track load more posts
   const ref = useLoadMore(loadMore, !loadingPage && !isValidating && !isReachingEnd && !error, "0px 0px 1600px 0px")
 
@@ -182,6 +188,13 @@ const FeedsDisplay = ({ posts, feed }: { posts: FeedPost[], feed: FeedTypeEnum }
         </Typography>
       </Box>
     )}
+      {!flatData.length && !error && <Box sx={{ py: 6, px: 2, textAlign: "center" }}>
+        <Typography color="text.secondary">
+          {feed === FeedTypeEnum.FOLLOWING ? "Posts from people you follow will appear here." :
+           feed === FeedTypeEnum.FRIENDS ? "Posts from people who follow you back will appear here." :
+           feed === FeedTypeEnum.TRENDING ? "No trending posts in the last three days yet." : "No posts to show yet."}
+        </Typography>
+      </Box>}
       {flatData.map((item) => {
         return (
             <FeedCardItem

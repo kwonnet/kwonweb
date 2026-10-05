@@ -15,6 +15,7 @@ const fields = ['name', 'username', 'bio', 'phone', 'website', 'avatar', 'banner
 export default function ProfileEditor({ initial }: { initial: ProfileEditData }) {
   const { update } = useSession();
   const [profile, setProfile] = useState(initial.profile);
+  const [savedProfile, setSavedProfile] = useState(initial.profile);
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60_000); return () => clearInterval(timer); }, []);
@@ -36,7 +37,7 @@ export default function ProfileEditor({ initial }: { initial: ProfileEditData })
     e.preventDefault();
     if (busy || crop) return;
     const changes: ProfileChanges = {};
-    for (const key of fields) if (profile[key] !== initial.profile[key]) changes[key] = profile[key] as never;
+    for (const key of fields) if (profile[key] !== savedProfile[key]) changes[key] = profile[key] as never;
     if (!Object.keys(changes).length) { setError('There are no changes to save.'); return; }
     setBusy(true); setError('');
     let result: Awaited<ReturnType<typeof saveProfile>>;
@@ -71,7 +72,7 @@ export default function ProfileEditor({ initial }: { initial: ProfileEditData })
         {error && <Alert severity="error" role="alert">{error}</Alert>}
         <TextField label="Name" required value={profile.name} disabled={busy} onChange={e => change('name', e.target.value)} slotProps={{ htmlInput: { minLength: 2, maxLength: 80 } }} />
         <TextField label="Username" required value={profile.username} disabled={busy} onChange={e => change('username', e.target.value)} helperText="3–30 letters, numbers or underscores. Changing this also changes your profile link." slotProps={{ htmlInput: { pattern: '[a-zA-Z0-9_]{3,30}', maxLength: 30 } }} />
-        <TextField label="Bio" multiline minRows={3} value={profile.bio || ''} disabled={busy} onChange={e => change('bio', e.target.value)} helperText={`${profile.bio?.length || 0}/500`} slotProps={{ htmlInput: { maxLength: 500 } }} />
+        <TextField label="Bio" multiline minRows={3} value={profile.bio || ''} disabled={busy} onChange={e => change('bio', e.target.value)} helperText={`${profile.bio?.length || 0}/160`} slotProps={{ htmlInput: { maxLength: 160 } }} />
         <TextField label="Website" type="url" value={profile.website || ''} disabled={busy} onChange={e => change('website', e.target.value)} slotProps={{ htmlInput: { maxLength: 2048 } }} />
         <TextField label="Phone number" type="tel" value={profile.phone || ''} disabled={busy} onChange={e => change('phone', e.target.value)} helperText="Not displayed on your public profile." slotProps={{ htmlInput: { maxLength: 25 } }} />
         <Autocomplete options={initial.countries} value={initial.countries.find(c => c.id === profile.countryId) || null} disabled={busy || countryLocked}
@@ -83,8 +84,20 @@ export default function ProfileEditor({ initial }: { initial: ProfileEditData })
       </Stack>
     </Paper>
     {crop && <ProfileImageCropper kind={crop.kind} source={crop.source} onClose={() => setCrop(null)} onSave={async file => {
-      const [uploaded] = await uploadMultipleFilesWithMetadata([{ file, flags: [], folder: crop.kind === "avatar" ? "profiles" : "banners" }]);
-      change(crop.kind, uploaded.url); setCrop(null);
+      const kind = crop.kind;
+      setBusy(true);
+      try {
+        const [uploaded] = await uploadMultipleFilesWithMetadata([{ file, flags: [], folder: kind === "avatar" ? "profiles" : "banners" }]);
+        const result = await saveProfile({ [kind]: uploaded.url });
+        if (result.error || !result.profile) throw new Error(result.error || 'Unable to save profile image.');
+        change(kind, result.profile[kind]);
+        setSavedProfile(previous => ({ ...previous, [kind]: result.profile![kind] }));
+        setCrop(null);
+        try {
+          await update();
+          await fetch('/api/accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remember' }), signal: AbortSignal.timeout(8_000) });
+        } catch { /* The saved image remains available on the next navigation. */ }
+      } finally { setBusy(false); }
     }} />}
   </Box>;
 }

@@ -105,7 +105,7 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
 
   const badgeColor = useBadgeColor(visitedUser?.meta?.color);
 
-  const dob = getDateInfo(visitedUser?.createdAt);
+  const dob = visitedUser.dateOfBirth ? getDateInfo(visitedUser.dateOfBirth) : null;
 
   const { isConnected, isFriends } = getUserConnInfo(visitedUser?.conn);
 
@@ -641,11 +641,6 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
                 gap: { lg: 2, md: 2, sm: 0.5, xs: 0.5 }
               }}
             >
-              {visitedUser.website && /^https?:\/\//i.test(visitedUser.website) && (
-                <Typography component="a" href={visitedUser.website} target="_blank" rel="noopener noreferrer" variant="caption" color="primary" sx={{ overflowWrap: "anywhere" }}>
-                  {visitedUser.website}
-                </Typography>
-              )}
               {visitedUser?.country && (
                 <Stack
                   direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
@@ -664,29 +659,14 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
                 </Stack>
               )}
 
-              <Stack
-                direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
-                sx={{
-                  alignItems: "center",
-                  gap: 1
-                }}>
-                <PublicOutlinedIcon
-                  sx={{ height: 15, width: 15 }}
-                  color="disabled"
-                />
-                <Typography
-                  color="textDisabled"
-                  variant="caption"
-                  sx={{ textDecoration: "none" }}
-                  component={Link}
-                  href={`/${visitedUser.username}/network/followers`}
-                  target="_blank"
-                >
-                  Website
+              {visitedUser.website && /^https?:\/\//i.test(visitedUser.website) && <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
+                <PublicOutlinedIcon sx={{ height: 15, width: 15 }} color="disabled" />
+                <Typography component="a" href={visitedUser.website} target="_blank" rel="noopener noreferrer" variant="caption" color="primary" sx={{ overflowWrap: "anywhere" }}>
+                  {visitedUser.website}
                 </Typography>
-              </Stack>
+              </Stack>}
 
-              <Stack
+              {isCurrentUser && dob && <Stack
                 direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}
                 sx={{
                   alignItems: "center",
@@ -706,7 +686,7 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
                     ? `${dob.monthStr}-${dob.day}-${dob.year}`
                     : `${dob.monthStr} ${dob.day}`}
                 </Typography>
-              </Stack>
+              </Stack>}
 
               <Stack
                 direction={{ lg: "row", md: "row", sm: "row", xs: "row" }}

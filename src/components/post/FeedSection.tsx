@@ -5,5 +5,5 @@ import type { FeedTypeEnum } from "@/types/post";
 import FeedsDisplay from "./FeedsDisplay";
 
 export default function FeedSection({ posts, feed }: { posts: FeedPost[]; feed: FeedTypeEnum }) {
-  return <Box sx={{ mb: 1 }}><FeedsDisplay posts={posts} feed={feed} /></Box>;
+  return <Box sx={{ mb: 1 }}><FeedsDisplay key={feed} posts={posts} feed={feed} /></Box>;
 }

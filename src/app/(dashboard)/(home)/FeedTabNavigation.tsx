@@ -9,22 +9,6 @@ import { tabsClasses } from "@mui/material/Tabs";
 import StickyBox from "react-sticky-box";
 import { feedTabItems } from "@/data";
 
-function samePageLinkNavigation(
-  event: React.MouseEvent<HTMLAnchorElement, MouseEvent>
-) {
-  if (
-    event.defaultPrevented ||
-    event.button !== 0 || // ignore everything but left-click
-    event.metaKey ||
-    event.ctrlKey ||
-    event.altKey ||
-    event.shiftKey
-  ) {
-    return false;
-  }
-  return true;
-}
-
 interface LinkTabProps {
   label?: string;
   href: string;
@@ -44,28 +28,7 @@ export default function FeedTabNavigation() {
 
   const currIndex = feedTabItems.findIndex((item) => item.id === segment);
 
-  const [value, setValue] = React.useState(currIndex >= 0 ? currIndex : 0);
-
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-    if (
-      event.type !== "click" ||
-      (event.type === "click" &&
-        samePageLinkNavigation(
-          event as React.MouseEvent<HTMLAnchorElement, MouseEvent>
-        ))
-    ) {
-      const currIndex = feedTabItems.findIndex(
-        (_item, index) => index === newValue
-      );
-      setValue(currIndex);
-    }
-  };
-
-  React.useEffect(() => {
-    const currIndex = feedTabItems.findIndex((item) => item.id === segment);
-    setValue(currIndex >= 0 ? currIndex : 0);
-    return () => {};
-  }, [segment]);
+  const value = currIndex >= 0 ? currIndex : 0;
 
   return (
     <React.Fragment>
@@ -83,13 +46,12 @@ export default function FeedTabNavigation() {
         >
           <Tabs
             value={value}
-            onChange={handleChange}
             aria-label="feed types action tabs"
             role="navigation"
             variant="scrollable"
             scrollButtons="auto"
             allowScrollButtonsMobile={true}
-            selectionFollowsFocus={true}
+            selectionFollowsFocus={false}
 
             sx={{
               [`& .${tabsClasses.scrollButtons}`]: {
