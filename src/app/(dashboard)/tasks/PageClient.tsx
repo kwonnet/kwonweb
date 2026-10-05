@@ -35,7 +35,7 @@ export default function PageClient({initialTasks,initialUserId}:{initialTasks?:E
     <LinearProgress variant="determinate" value={Math.min(100,100*task.progress/task.target)} sx={{mb:2,borderRadius:1}}/>
     {!task.enabled&&<Alert severity="info" sx={{mb:1}}>This task is currently disabled.</Alert>}
     {remaining>0&&<Typography variant="body2" color="text.secondary" sx={{mb:1}}>Available in {Math.floor(remaining/3600000)}h {Math.floor(remaining/60000)%60}m</Typography>}
-    <Button variant="contained" sx={{mt:'auto'}} disabled={!!pending||!task.enabled||remaining>0} onClick={()=>void claim(task)}>{pending===task.id?'Checking…':'Check eligibility & claim'}</Button>
+    <Button variant="outlined" sx={{mt:'auto'}} disabled={!!pending||!task.enabled||remaining>0} onClick={()=>void claim(task)}>{pending===task.id?'Checking…':'Check eligibility & claim'}</Button>
     {user&&['ADMIN','SUPER'].includes(user.role)&&<Box sx={{mt:2,pt:2,borderTop:1,borderColor:'divider'}}><Stack direction="row" spacing={2} sx={{alignItems:'center'}}><Typography variant="body2">Enabled</Typography><Switch checked={task.enabled} disabled={!!pending} onChange={(_,enabled)=>void change(task,{enabled})}/><TextField size="small" label="Required count" type="number" defaultValue={task.target} key={task.target} slotProps={{htmlInput:{min:1,max:1000}}} onBlur={event=>{const target=Number(event.target.value);if(Number.isInteger(target)&&target>0&&target<=1000&&target!==task.target)void change(task,{target});}}/></Stack></Box>}
    </Paper></Grid>;
   })}</Grid>

@@ -46,7 +46,9 @@ const CustomToolbarActions = (props: {
         direction="row"
         spacing={{lg: 2, md: 2, sm: 1, xs: 1}}
         sx={{
-          alignItems: "center"
+          alignItems: "center",
+          flex: {lg: 1},
+          minWidth: 0
         }}
       >
         <SearchToolbar />

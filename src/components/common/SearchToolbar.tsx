@@ -35,7 +35,7 @@ function SearchInput() {
   const submit = () => { if (query) { router.push(searchHref(query, 'typed_query')); close(); } };
   return <>
     <IconButton aria-label="Open search" onClick={() => { if (open) close(); else setOpen(true); }} sx={{ display: { xs: 'inline-flex', lg: 'none' } }}><SearchOutlinedIcon /></IconButton>
-    <Box component="form" onSubmit={event => { event.preventDefault(); submit(); }} sx={{ display: { xs: open ? 'flex' : 'none', lg: 'flex' }, position: { xs: 'absolute', lg: 'relative' }, width: { xs: 'calc(100% - 32px)', lg: 'clamp(240px, 28vw, 440px)' }, maxWidth: { xs: 440, lg: 440 }, left: { xs: '50%', lg: 'auto' }, transform: { xs: 'translateX(-50%)', lg: 'none' }, top: { xs: 64, lg: 'auto' }, flexShrink: 1 }}>
+    <Box component="form" onSubmit={event => { event.preventDefault(); submit(); }} sx={{ display: { xs: open ? 'flex' : 'none', lg: 'flex' }, position: { xs: 'absolute', lg: 'relative' }, width: { xs: 'calc(100% - 32px)', lg: '100%' }, minWidth: 0, flex: {lg: 1}, left: { xs: '50%', lg: 'auto' }, transform: { xs: 'translateX(-50%)', lg: 'none' }, top: { xs: 64, lg: 'auto' }, flexShrink: 1 }}>
       <Autocomplete fullWidth value={null} inputValue={value} options={ready ? data : []} filterOptions={options => options}
         open={focused && !!query} onOpen={() => setFocused(true)} onClose={() => setFocused(false)}
         onInputChange={(_, text, reason) => { if (reason === 'input' || reason === 'clear') setDraft({ routeQuery, value: text.slice(0, 200) }); }}
@@ -55,7 +55,7 @@ function SearchInput() {
         renderInput={props => <TextField {...props} size="small" label="Search" onFocus={() => setFocused(true)} slotProps={{
           ...props.slotProps,
           htmlInput: { ...props.slotProps.htmlInput, maxLength: 200 },
-          input: { ...props.slotProps.input, sx: { borderRadius: 30, bgcolor: 'background.paper' }, endAdornment: <>{loading && <CircularProgress size={18} />}<IconButton type="submit" aria-label="Search"><SearchOutlinedIcon /></IconButton>{props.slotProps.input.endAdornment}</> },
+          input: { ...props.slotProps.input, sx: { borderRadius: 30, bgcolor: 'background.paper', height: 36, py: '0 !important', '& .MuiAutocomplete-input': {py: '4px !important'} }, endAdornment: <>{loading && <CircularProgress size={18} />}<IconButton size="small" type="submit" aria-label="Search"><SearchOutlinedIcon fontSize="small" /></IconButton>{props.slotProps.input.endAdornment}</> },
         }} />}
       />
     </Box>

@@ -48,7 +48,7 @@ export default function CustomLayout({ children, CustomToolbar }: { children: Re
         <IconButton aria-label="Open navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(value => !value)} sx={{ display: { md: "none" } }}><MenuIcon /></IconButton>
         <IconButton aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} aria-expanded={!collapsed} onClick={() => setCollapsed(value => !value)} sx={{ display: { xs: "none", md: "inline-flex" } }}><MenuOpenIcon /></IconButton>
         <Link href="/" aria-label={`${constant.siteName} home`}><Box component="img" src="/logo.png" alt="" sx={{ height: 25, display: "block" }} /></Link>
-        <Box sx={{ flex: 1 }} />
+        <Box sx={{ flex: 1, display: {xs: 'block', lg: 'none'} }} />
         {CustomToolbar}
       </Toolbar>
     </AppBar>
