@@ -40,8 +40,9 @@ const PostScheduleDrawer = ({
 
   const handleSelected = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     ev.preventDefault()
-    onPostScheduleCallback(!state.scheduleDate ? undefined : state.scheduleDate?.toISOString());
-    // toggleDrawer(ev, false);
+    if (!state.scheduleDate?.isValid() || state.scheduleDate.valueOf() < Date.now() + 5 * 60_000) return;
+    onPostScheduleCallback(state.scheduleDate.toISOString());
+    toggleDrawer(ev, false);
   };
 
   const clearSchedule = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -117,6 +118,7 @@ const PostScheduleDrawer = ({
               <LocalizationProvider  dateAdapter={AdapterDayjs}>
               <DateTimePicker
                     label="Schedule At"
+                    minDateTime={dayjs().add(5, "minute")}
                     value={state.scheduleDate}
                     onChange={(newValue) =>
                       setState((prev) => ({ ...prev, scheduleDate: newValue }))

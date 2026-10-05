@@ -35,7 +35,7 @@ function SearchInput() {
   const submit = () => { if (query) { router.push(searchHref(query, 'typed_query')); close(); } };
   return <>
     <IconButton aria-label="Open search" onClick={() => { if (open) close(); else setOpen(true); }} sx={{ display: { xs: 'inline-flex', lg: 'none' } }}><SearchOutlinedIcon /></IconButton>
-    <Box component="form" onSubmit={event => { event.preventDefault(); submit(); }} sx={{ display: { xs: open ? 'flex' : 'none', lg: 'flex' }, position: 'absolute', width: { xs: '70%', lg: '50%' }, left: '50%', transform: 'translateX(-50%)', top: 10 }}>
+    <Box component="form" onSubmit={event => { event.preventDefault(); submit(); }} sx={{ display: { xs: open ? 'flex' : 'none', lg: 'flex' }, position: { xs: 'absolute', lg: 'relative' }, width: { xs: 'calc(100% - 32px)', lg: 'clamp(240px, 28vw, 440px)' }, maxWidth: { xs: 440, lg: 440 }, left: { xs: '50%', lg: 'auto' }, transform: { xs: 'translateX(-50%)', lg: 'none' }, top: { xs: 64, lg: 'auto' }, flexShrink: 1 }}>
       <Autocomplete fullWidth value={null} inputValue={value} options={ready ? data : []} filterOptions={options => options}
         open={focused && !!query} onOpen={() => setFocused(true)} onClose={() => setFocused(false)}
         onInputChange={(_, text, reason) => { if (reason === 'input' || reason === 'clear') setDraft({ routeQuery, value: text.slice(0, 200) }); }}

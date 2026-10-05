@@ -1,36 +1,23 @@
-self.addEventListener('push', function (event) {
-  const data = event.data.json();
-  console.log("notifications received ", data)
-  navigator.serviceWorker.ready.then((registration) => {
-    registration.showNotification(data.title, {
-      body: data.body,
-      vibrate: [200, 100, 200, 100, 200, 100, 200],
-      tag: "torazon-notif",
-      icon: "/android-chrome-192x192.png",
-      badge: '/android-chrome-512x512.png',
-      image: "/post.jpg",
-      silent: false,
-      requireInteraction: true,
-      renotify: true
-    });
-  }).then((val) =>{
-    console.log("Notification displayed", val)
-  }).catch((reason)=>{
-    console.log(`Notification error ${reason}}`)
-  });
+self.addEventListener('push', event => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch { data = {body: 'You have a new notification.'}; }
+  const target = new URL(data.url || '/notifications', self.location.origin);
+  event.waitUntil(self.registration.showNotification(data.title || 'Kwonnet', {
+    body: data.body || 'You have a new notification.',
+    tag: data.tag || 'kwonnet-notification', icon: '/android-chrome-192x192.png',
+    badge: '/android-chrome-192x192.png',
+    data: {url: target.origin === self.location.origin ? target.href : self.location.origin + '/notifications'},
+  }));
 });
-
-
-// self.addEventListener('push', function (event) {
-//     const data = event.data.json();
-//     console.log("notifications received ", data)
-//     self.registration.showNotification(data.title, {
-//       body: data.body,
-//       badge: '/android-chrome-512x512.png', // optional
-//       renotify: true,
-//       icon: '/android-chrome-512x512.png',
-//       tag: "torazon-notif"
-//     });
-//   });
-
-  
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const target = new URL(event.notification.data?.url || '/notifications', self.location.origin);
+    if (target.origin !== self.location.origin) return;
+    const windows = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
+    for (const client of windows) {
+      if (new URL(client.url).origin === target.origin) {await client.navigate(target.href); return client.focus();}
+    }
+    return self.clients.openWindow(target.href);
+  })());
+});

@@ -615,7 +615,7 @@ export default function CreateQuoteDrawer({
           autoHideDuration: 2500,
         });
       }
-      onQuoteCallback(post?.id!, true);
+      if (!state.scheduleAt && !state.isDraft) onQuoteCallback(post?.id!, true);
       toggleDrawer(ev, false);
       notif.show(result.message, {
         severity: "success",

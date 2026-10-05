@@ -13,6 +13,7 @@ function modules(overrides = {}) {
     const code = ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
     new Function('require', 'module', 'exports', code)(name => {
       if (name in overrides) return overrides[name];
+      if (name === '@/utils/pushClient') return {clearBrowserPushSubscription: async () => {}};
       if (name === 'server-only') return {};
       if (name.startsWith('@/lib/')) return load(`src/lib/${name.slice(6)}.ts`);
       if (name === './account-session-policy' || name === './lib/account-session-policy') return load('src/lib/account-session-policy.ts');

@@ -407,7 +407,7 @@ export default function CreateReplyDrawer({
       if (result.data) {
         setState(initialState);
         videoUploads.reset();
-        onReplyCallback(post?.id!, true);
+        if (!state.scheduleAt && !state.isDraft) onReplyCallback(post?.id!, true);
         toggleDrawer(ev, false);
       }
     } catch (error) {

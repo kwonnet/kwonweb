@@ -44,19 +44,20 @@ test('SSE uses same-origin auth and passes tokens only in backend authorization 
  } finally {global.fetch = previousFetch;}
 });
 
-test('revoked frontend sessions unmount private content while public legal reading remains available', () => {
+test('revoked frontend sessions unmount private content while public legal reading remains available', async () => {
  let status = 'authenticated', path = '/', redirects = [];
  const previousWindow = global.window;
  global.window = {location: {replace: url => redirects.push(url)}};
  const policy = load('src/lib/auth-redirect.ts');
  const Boundary = load('src/providers/AuthSessionBoundary.tsx', {
+  '@/utils/pushClient': {clearBrowserPushSubscription: async () => {}, syncExistingPushSubscription: async () => {}},
   react: {useEffect: effect => effect()}, 'next-auth/react': {useSession: () => ({status})},
   'next/navigation': {usePathname: () => path}, '@/lib/auth-redirect': policy,
  }).default;
  try {
   assert.equal(Boundary({initiallyAuthenticated: true, children: 'private'}), 'private');
-  status = 'unauthenticated'; assert.equal(Boundary({initiallyAuthenticated: true, children: 'private'}), null); assert.deepEqual(redirects, ['/']);
-  path = '/privacy-policy'; assert.equal(Boundary({initiallyAuthenticated: true, children: 'public'}), 'public'); assert.deepEqual(redirects, ['/']);
+  status = 'unauthenticated'; assert.equal(Boundary({initiallyAuthenticated: true, children: 'private'}), null); await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(redirects, ['/']);
+  path = '/privacy-policy'; assert.equal(Boundary({initiallyAuthenticated: true, children: 'public'}), 'public'); await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(redirects, ['/']);
   path = '/'; assert.equal(Boundary({initiallyAuthenticated: false, children: 'guest'}), 'guest');
  } finally {global.window = previousWindow;}
 });

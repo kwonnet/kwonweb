@@ -255,3 +255,11 @@ screen for managing that history is not part of this change.
 Deploy the backend migration/API first, then the web runtime. See kwonserver's
 README for proxy trust, independent IP-hash salt, legacy-token compatibility and
 the `auth:cleanup` maintenance command/scheduling step.
+
+
+Settings now lists the signed-in user's active sessions with pagination and revoke
+controls. Push enable/disable applies to the current browser; existing subscriptions
+are synchronized to the selected account without asking for permission automatically.
+The browser subscription is removed on logout/session loss. Use matching public VAPID
+keys with kwonserver and test a notification after deploying the server migration and
+restarting its background worker.

@@ -1,4 +1,5 @@
 "use client";
+import { clearBrowserPushSubscription } from '@/utils/pushClient';
 import { signIn } from "next-auth/react";
 import { axiosAPI } from "@/config/axios";
 import { apiUrl } from "@/config";
@@ -16,6 +17,7 @@ export async function switchAccount(accountId: string) {
   return true;
 }
 export async function logoutCurrentAccount() {
+  await clearBrowserPushSubscription().catch(() => {});
   const response = await fetch("/api/accounts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "logout" }), cache: "no-store" });
   if (!response.ok) throw new Error("Unable to sign out. Please try again.");
   // Also remove historical cookies on the API host. Local logout remains effective

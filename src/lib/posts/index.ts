@@ -11,7 +11,7 @@ export const createPost = async (body: PostCreate, accessToken?: string) => {
   try {
     axiosAPI.accessToken = accessToken;
     const result = await axiosAPI.post("/v1/posts", body);
-    return { data: result.data, message: "Post created successfully" };
+    return { data: result.data, message: body.isDraft ? "Draft saved" : body.scheduleAt ? "Post scheduled successfully" : "Post created successfully" };
   } catch (error: any) {
     return { data: null, message: getErrorMessage(error) };
   }
