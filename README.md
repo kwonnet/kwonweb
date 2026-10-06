@@ -316,10 +316,17 @@ SMTP variables, target limits, rollout behavior and operational recovery.
 ### New-post availability button
 
 Each authenticated home feed opens a feed-scoped SSE stream through `/api/events`
-using `useAvailableNewsfeed`. Every 30 seconds the API sends a bounded snapshot of
-new eligible IDs and minimal author previews. A sticky floating button displays
+using `useAvailableNewsfeed`. Every three minutes while the page is visible, the
+API checks for a bounded snapshot of new eligible IDs and minimal author previews. A sticky floating button displays
 the unseen count (up to 50+) with a horizontal MUI AvatarGroup for the latest three
-distinct pending authors. Already displayed or consumed posts are excluded.
+distinct pending authors. Already displayed or consumed posts are excluded. For
+You compares personalized ranked recommendations with the user’s delivered-post
+history; no generic fallback notifications are pushed. Hidden pages close the
+stream and resume with their latest seen baseline when visible. Multiple visible
+tabs keep separate SSE connections but reuse a per-user Redis ranking snapshot;
+only its lease owner triggers inference in each three-minute window. Each tab still
+filters its own displayed posts. Optional For You notifications pause if Redis
+coordination is unavailable, while ordinary feed loading remains functional.
 Clicking loads those exact posts, prepends them to SWR's first page, preserves loaded
 pages, and scrolls to the feed start. It does not automatically jump or clear cards
 while reading. Failures retain the pending snapshot for retry. Tab/account changes

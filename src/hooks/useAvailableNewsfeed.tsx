@@ -20,7 +20,8 @@ export default function useAvailableNewsfeed({feed, userId, token, posts, since,
   useEffect(() => {
     if (!enabled || !userId || !token) return;
     generation.current += 1;
-    const source = new EventSource(`/api/events?${new URLSearchParams({feed, since: since ?? new Date().toISOString()})}`);
+    let source: EventSource|null = null;
+    const baselineSince = since ?? new Date().toISOString();
     const receive = (event: MessageEvent) => {
       try {
         const payload = JSON.parse(event.data);
@@ -32,8 +33,17 @@ export default function useAvailableNewsfeed({feed, userId, token, posts, since,
           (author.avatar === null || typeof author.avatar === 'string')).slice(0,50) : []);
       } catch { /* Ignore malformed events; reconnection remains automatic. */ }
     };
-    source.addEventListener('feed_available', receive as EventListener);
-    return () => {generation.current += 1;source.removeEventListener('feed_available', receive as EventListener);source.close();};
+    const stop = () => {if (source) {source.removeEventListener('feed_available', receive as EventListener);source.close();source = null;}};
+    const syncVisibility = () => {
+      if (document.visibilityState === 'hidden') {stop();return;}
+      if (!source) {
+        source = new EventSource(`/api/events?${new URLSearchParams({feed, since: baselineSince, known: Array.from(seen.current).slice(-200).join(',')})}`);
+        source.addEventListener('feed_available', receive as EventListener);
+      }
+    };
+    document.addEventListener('visibilitychange', syncVisibility);
+    syncVisibility();
+    return () => {generation.current += 1;document.removeEventListener('visibilitychange', syncVisibility);stop();};
   }, [enabled, userId, token, feed, since]);
   async function consume() {
     if (!token || busy.current || !ids.length) return;
