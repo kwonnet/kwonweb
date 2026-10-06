@@ -308,8 +308,9 @@ test('backend session revocation invalidates NextAuth on polling without a refre
   const config = await configuration(new NextRequest('https://kwonnet.test/api/auth/session'));
   const previousFetch = global.fetch;
   try {
-    global.fetch = async (url, options) => {assert.equal(url, 'https://api.example.invalid/api/v1/auth/session-status'); assert.equal(options.headers.Authorization, 'Bearer private-api-token'); return {status: 401};};
-    const token = {user: {id: 'owner', accessToken: 'private-api-token', sessionId: 'session'}, sessionIssuedAt: Date.now()};
+    const accessToken = `header.${Buffer.from(JSON.stringify({exp:Date.now()/1000+3600,iat:Date.now()/1000})).toString('base64url')}.signature`;
+    global.fetch = async (url, options) => {assert.equal(url, 'https://api.example.invalid/api/v1/auth/session-status'); assert.equal(options.headers.Authorization, `Bearer ${accessToken}`); return {status: 401};};
+    const token = {user: {id: 'owner', accessToken, sessionId: 'session'}, sessionIssuedAt: Date.now(),accessTokenRefreshedAt:Date.now()};
     assert.equal(await config.callbacks.jwt({token}), null);
   } finally {global.fetch = previousFetch;}
 });
@@ -334,4 +335,32 @@ test('logout attempts backend revocation with the active bearer and still clears
       assert.ok(response.headers.getSetCookie().some(value => value.startsWith(cookieName + '=') && value.includes('Max-Age=0')));
     }
   } finally {global.fetch = originalFetch;}
+});
+
+test('idle token expiry refreshes before verification and parallel tabs keep the same tracked identity',async()=>{
+ let configuration;
+ const load=modules({'next-auth':{__esModule:true,default:factory=>{configuration=factory;return {handlers:{}};},CredentialsSignin:class extends Error{}},'next-auth/providers/credentials':{__esModule:true,default:provider=>provider}});
+ load('src/auth.ts');const config=await configuration(new NextRequest('https://kwonnet.test/api/auth/session'));
+ const old=global.fetch;const calls=[];
+ const expired=`header.${Buffer.from(JSON.stringify({exp:Date.now()/1000-60})).toString('base64url')}.signature`;
+ const fresh=`header.${Buffer.from(JSON.stringify({exp:Date.now()/1000+86400})).toString('base64url')}.signature`;
+ try{
+  global.fetch=async(url,options)=>{calls.push(url);assert.equal(url,'https://api.example.invalid/api/v1/auth/refresh-token');assert.equal(JSON.parse(options.body).token,expired);return new Response(JSON.stringify({user:{id:'owner',sessionId:'session'},accessToken:fresh}));};
+  const make=()=>({user:{id:'owner',accessToken:expired,sessionId:'session'},sessionIssuedAt:Date.now(),accessTokenRefreshedAt:Date.now()});
+  const results=await Promise.all([config.callbacks.jwt({token:make()}),config.callbacks.jwt({token:make()})]);
+  assert.equal(calls.length,2);for(const token of results){assert.equal(token.user.id,'owner');assert.equal(token.user.sessionId,'session');assert.equal(token.user.accessToken,fresh);}
+ }finally{global.fetch=old;}
+});
+test('transient refresh/status failures preserve sessions but confirmed revocation still clears them',async()=>{
+ let configuration;const load=modules({'next-auth':{__esModule:true,default:factory=>{configuration=factory;return {handlers:{}};},CredentialsSignin:class extends Error{}},'next-auth/providers/credentials':{__esModule:true,default:provider=>provider}});
+ load('src/auth.ts');const config=await configuration(new NextRequest('https://kwonnet.test/api/auth/session'));const old=global.fetch;
+ const accessToken=`header.${Buffer.from(JSON.stringify({exp:Date.now()/1000+86400})).toString('base64url')}.signature`;
+ const make=(due=false)=>({user:{id:'owner',accessToken,sessionId:'session'},sessionIssuedAt:Date.now(),accessTokenRefreshedAt:Date.now()-(due?600000:0)});
+ try{
+  for(const due of [true,false]){
+   global.fetch=async()=>{throw Error('temporary network outage');};const token=make(due);assert.equal(await config.callbacks.jwt({token}),token);
+   global.fetch=async()=>new Response('temporarily unavailable',{status:503});const again=make(due);assert.equal(await config.callbacks.jwt({token:again}),again);
+   global.fetch=async()=>new Response('revoked',{status:401});assert.equal(await config.callbacks.jwt({token:make(due)}),null);
+  }
+ }finally{global.fetch=old;}
 });

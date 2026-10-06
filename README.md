@@ -334,3 +334,13 @@ close the old stream, remount viewer-scoped feed state, and discard stale respon
 Existing reaction streams, load-more behavior and server-loaded fallback data remain
 in use. Search/profile pages and guests do not use this feature. See the server
 README's “Available newsfeed snapshots over SSE” for API and operational details.
+
+### Idle-session recovery
+
+Session polling refreshes expiring access tokens before verifying server session
+status. Transient API/network failures preserve the local session; confirmed
+revocation still clears it. Account-generation and explicit-logout protections remain
+in place, including concurrent tabs. API authorization remains server enforced;
+keeping a browser session during an outage does not grant access to protected data.
+The new-post floating button uses concise singular/plural labels (“1 post”, “2 posts”)
+and retains the author AvatarGroup.

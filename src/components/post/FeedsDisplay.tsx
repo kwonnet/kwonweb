@@ -203,7 +203,7 @@ const FeedsDisplay = ({ posts, feed, search, availableSince }: { posts: FeedPost
           {available.profiles.length > 0 && <AvatarGroup max={3} spacing="small" sx={{mr: 1, '& .MuiAvatar-root': {width: 26, height: 26, fontSize: 12, borderColor: 'primary.main'}}}>
             {available.profiles.map(profile => <Avatar key={profile.id} src={profile.avatar || undefined} alt={profile.name}>{profile.name.slice(0,1)}</Avatar>)}
           </AvatarGroup>}
-          {available.loading ? 'Loading new posts…' : `${available.count}${available.count === 50 ? '+' : ''} new ${available.count === 1 ? 'post' : 'posts'} available`}
+          {available.loading ? 'Loading new posts…' : `${available.count}${available.count === 50 ? '+' : ''} ${available.count === 1 ? 'post' : 'posts'}`}
         </Button>
       </Box>}
       {available.error && <Box role="alert" sx={{p: 1}}><Typography color="error">{available.error}</Typography></Box>}

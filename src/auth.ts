@@ -222,34 +222,37 @@ const authRuntime = NextAuth(async request => {
       if (!user && sessionWasLoggedOut(token, loggedOutAt)) return null;
       if (!user && activeGeneration && token.sessionGeneration !== activeGeneration) return null;
       token.sessionIssuedAt ??= sessionLoginTime(token);
-      const sessionUser = token.user as {sessionId?: string; accessToken?: string} | undefined;
-      if (!user && sessionUser?.sessionId && request && new URL(request.url).pathname === "/api/auth/session") {
-        const status = await fetch(`${apiUrl}/auth/session-status`, {headers: {Authorization: `Bearer ${sessionUser.accessToken}`}, cache: "no-store", signal: AbortSignal.timeout(8000)});
-        if (status.status === 401 || status.status === 403) return null;
-        if (!status.ok) throw new NextAuthError("Session verification temporarily unavailable");
-      }
+      let refreshed = false;
       if (token && !user && (trigger === "update" || shouldRefreshAccessToken(
         (token.user as { accessToken?: string } | undefined)?.accessToken, token.accessTokenRefreshedAt
       ))) {
-        // console.log("token & no user ")
-        // refresh access token
-        const currAccessToken = (token.user as { accessToken?: string } | undefined)?.accessToken;
-        const res = await fetch(`${apiUrl}/auth/refresh-token`, {
-          signal: AbortSignal.timeout(8000),
-          method: "POST",
-          credentials: "include",
-          body: JSON.stringify({token: currAccessToken}),
-          headers: {
-            "Content-Type": "application/json", ...contextHeaders,
-          },
-        });
-        if (res.status === 401 || res.status === 403) return null;
-        if (!res.ok) throw new NextAuthError("Authentication service unavailable. Please try again.");
-
-        const data = await res.json();
-        const { user, accessToken } = data;
-        token.user = {...user, image: user?.avatar, accessToken };
-        token.accessTokenRefreshedAt = Date.now();
+        const current = token.user as {id?: string; accessToken?: string} | undefined;
+        try {
+          const res = await fetch(`${apiUrl}/auth/refresh-token`, {
+            signal: AbortSignal.timeout(8000), method: "POST", credentials: "include", cache: "no-store",
+            body: JSON.stringify({token: current?.accessToken}),
+            headers: {"Content-Type": "application/json", ...contextHeaders},
+          });
+          if (res.status === 401 || res.status === 403) return null;
+          if (res.ok) {
+            const data = await res.json();
+            if (data.user?.id === current?.id && typeof data.accessToken === 'string') {
+              token.user = {...data.user, image: data.user.avatar, accessToken: data.accessToken};
+              token.accessTokenRefreshedAt = Date.now();
+              refreshed = true;
+            }
+          }
+        } catch { /* A timeout/outage must not delete the browser's valid session cookie. */ }
+      }
+      const sessionUser = token.user as {sessionId?: string; accessToken?: string} | undefined;
+      if (!user && !refreshed && sessionUser?.sessionId && request && new URL(request.url).pathname === "/api/auth/session") {
+        // Never check an expired access token before attempting session-backed refresh.
+        if (!shouldRefreshAccessToken(sessionUser.accessToken, token.accessTokenRefreshedAt)) {
+          try {
+            const status = await fetch(`${apiUrl}/auth/session-status`, {headers: {Authorization: `Bearer ${sessionUser.accessToken}`}, cache: "no-store", signal: AbortSignal.timeout(8000)});
+            if (status.status === 401 || status.status === 403) return null;
+          } catch { /* Keep the session during transient verification failures. */ }
+        }
       }
       return token;
     },

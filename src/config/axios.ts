@@ -92,7 +92,7 @@ axiosAPI.interceptors.response.use(
   },
   async function (error) {
     const originalRequest = error.config;
-    if (error?.response?.status === 403 && !originalRequest._retry) {
+    if ([401,403].includes(error?.response?.status) && originalRequest && !originalRequest._retry) {
       try {
         originalRequest._retry = true;
         // mittEmitter.emit(EventEnum.AUTH_ERROR, "retry")
