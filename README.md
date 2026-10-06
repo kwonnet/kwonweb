@@ -317,7 +317,9 @@ SMTP variables, target limits, rollout behavior and operational recovery.
 
 Each authenticated home feed opens a feed-scoped SSE stream through `/api/events`
 using `useAvailableNewsfeed`. Every 30 seconds the API sends a bounded snapshot of
-new eligible IDs. A sticky floating button displays the unseen count (up to 50+).
+new eligible IDs and minimal author previews. A sticky floating button displays
+the unseen count (up to 50+) with a horizontal MUI AvatarGroup for the latest three
+distinct pending authors. Already displayed or consumed posts are excluded.
 Clicking loads those exact posts, prepends them to SWR's first page, preserves loaded
 pages, and scrolls to the feed start. It does not automatically jump or clear cards
 while reading. Failures retain the pending snapshot for retry. Tab/account changes

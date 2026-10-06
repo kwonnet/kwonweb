@@ -2,6 +2,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {getAvailableNewsfeedPosts} from '@/lib/posts';
 import type {FeedPost} from '@/types';
+type AvailableAuthor = {postId: string; id: string; name: string; avatar: string|null};
 
 /** Keep new posts pending until explicitly consumed; one stream for the mounted tab. */
 export default function useAvailableNewsfeed({feed, userId, token, posts, since, enabled, apply}: {
@@ -9,6 +10,7 @@ export default function useAvailableNewsfeed({feed, userId, token, posts, since,
   apply: (posts: FeedPost[]) => Promise<void>;
 }) {
   const [ids, setIds] = useState<string[]>([]);
+  const [authors, setAuthors] = useState<AvailableAuthor[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string|null>(null);
   const seen = useRef(new Set(posts.map(post => post.id)));
@@ -25,6 +27,9 @@ export default function useAvailableNewsfeed({feed, userId, token, posts, since,
         if (payload.feed !== feed || !Array.isArray(payload.ids)) return;
         const next = payload.ids.filter((id: unknown): id is string => typeof id === 'string' && /^[a-zA-Z0-9_-]{1,100}$/.test(id) && !seen.current.has(id));
         setIds([...new Set<string>(next)].slice(0,50));
+        setAuthors(Array.isArray(payload.authors) ? payload.authors.filter((author: AvailableAuthor) =>
+          author && next.includes(author.postId) && typeof author.id === 'string' && typeof author.name === 'string' &&
+          (author.avatar === null || typeof author.avatar === 'string')).slice(0,50) : []);
       } catch { /* Ignore malformed events; reconnection remains automatic. */ }
     };
     source.addEventListener('feed_available', receive as EventListener);
@@ -45,5 +50,7 @@ export default function useAvailableNewsfeed({feed, userId, token, posts, since,
     finally {busy.current = false;if (requestGeneration === generation.current) setLoading(false);}
   }
   const displayed = new Set(posts.map(post => post.id));
-  return {count: ids.filter(id => !displayed.has(id)).length, loading, error, consume};
+  const pending = new Set(ids.filter(id => !displayed.has(id)));
+  const profiles = [...new Map(authors.filter(author => pending.has(author.postId)).map(author => [author.id, author])).values()].slice(0,3);
+  return {count: pending.size, profiles, loading, error, consume};
 }

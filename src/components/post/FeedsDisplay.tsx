@@ -7,7 +7,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import { newsfeedKey } from "@/utils/newsfeed-key";
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Box from "@mui/material/Box";
-import { Button, CircularProgress, Typography } from "@mui/material";
+import { Avatar, AvatarGroup, Button, CircularProgress, Typography } from "@mui/material";
 import {
   searchPosts,
   getNewsfeed,
@@ -200,6 +200,9 @@ const FeedsDisplay = ({ posts, feed, search, availableSince }: { posts: FeedPost
       {!search && available.count > 0 && <Box sx={{position: 'sticky', top: 8, height: 0, zIndex: 3, display: 'flex', justifyContent: 'center'}}>
         <Button variant="contained" startIcon={<ArrowUpwardIcon />} disabled={available.loading} onClick={() => void available.consume()}
           sx={{borderRadius: 20, boxShadow: 3, minHeight: 36}} aria-live="polite">
+          {available.profiles.length > 0 && <AvatarGroup max={3} spacing="small" sx={{mr: 1, '& .MuiAvatar-root': {width: 26, height: 26, fontSize: 12, borderColor: 'primary.main'}}}>
+            {available.profiles.map(profile => <Avatar key={profile.id} src={profile.avatar || undefined} alt={profile.name}>{profile.name.slice(0,1)}</Avatar>)}
+          </AvatarGroup>}
           {available.loading ? 'Loading new posts…' : `${available.count}${available.count === 50 ? '+' : ''} new ${available.count === 1 ? 'post' : 'posts'} available`}
         </Button>
       </Box>}

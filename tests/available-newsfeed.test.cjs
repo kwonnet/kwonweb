@@ -11,10 +11,10 @@ test('SSE availability stays pending until clicked, deduplicates, retries and cl
  try {
   await React.act(async()=>root.render(React.createElement(Probe)));
   assert.match(streams[0].url,/feed=following/);assert.ok(!streams[0].url.includes('token'));
-  await React.act(async()=>streams[0].receive({data:JSON.stringify({feed:'following',ids:['old','new','new','../bad']})}));
-  assert.equal(state.count,1);assert.equal(applied.length,0);
-  await React.act(async()=>state.consume());assert.equal(state.count,1);assert.equal(state.error,'retry');
-  fail=false;await React.act(async()=>state.consume());assert.equal(state.count,0);assert.equal(applied.length,1);assert.deepEqual(requests[1],['following',['new'],'token']);
+  await React.act(async()=>streams[0].receive({data:JSON.stringify({feed:'following',ids:['old','new','new','new-b','new-c','new-d','../bad'],authors:[{postId:'old',id:'old-author',name:'Old',avatar:null},{postId:'new',id:'a',name:'Ada',avatar:'https://media.test/a.jpg'},{postId:'new-b',id:'b',name:'Ben',avatar:null},{postId:'new-c',id:'c',name:'Cara',avatar:null},{postId:'new-d',id:'a',name:'Ada',avatar:'https://media.test/a.jpg'}]})}));
+  assert.equal(state.count,4);assert.equal(applied.length,0);assert.deepEqual(state.profiles.map(profile=>profile.id),['a','b','c']);
+  await React.act(async()=>state.consume());assert.equal(state.count,4);assert.equal(state.error,'retry');
+  fail=false;await React.act(async()=>state.consume());assert.equal(state.count,0);assert.equal(state.profiles.length,0);assert.equal(applied.length,1);assert.deepEqual(requests[1],['following',['new','new-b','new-c','new-d'],'token']);
   await React.act(async()=>streams[0].receive({data:JSON.stringify({feed:'following',ids:['new']})}));assert.equal(state.count,0);
   await React.act(async()=>root.render(React.createElement(Probe,{feed:'friends'})));assert.equal(streams[0].closed,true);assert.match(streams[1].url,/feed=friends/);
   await React.act(async()=>root.unmount());assert.equal(streams[1].closed,true);
