@@ -461,7 +461,6 @@ const PageClient = ({ games }: { games: Game[] }) => {
   return (
     <Box>
       <Container maxWidth="xl">
-        <PageHeader title="All Games" />
         <Fade cascade>
           <Grid container spacing={2}>
             {games.map((game) => (
@@ -473,11 +472,10 @@ const PageClient = ({ games }: { games: Game[] }) => {
         </Fade>
 
         <Box>
-          <Grid container spacing={1}>
+          <Grid container spacing={1} sx={{ mt: 2 }}>
             {cardItems.map((item, index) => (
               <React.Fragment key={index}>
-                <Grid size={{ lg: 3, md: 3, sm: 6, xs: 6 }} key={item.id}>
-                  <Slide direction="down" delay={item.delay}>
+                <Grid size={{ lg: 4, md: 4, sm: 12, xs: 12 }} key={item.id}>
                     <Card
                       raised
                       onClick={(ev) => handleClick(ev, item.url)}
@@ -535,7 +533,6 @@ const PageClient = ({ games }: { games: Game[] }) => {
                         </Typography>
                       </CardContent>
                     </Card>
-                  </Slide>
                 </Grid>
               </React.Fragment>
             ))}
