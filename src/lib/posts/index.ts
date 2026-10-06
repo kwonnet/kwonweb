@@ -1,4 +1,12 @@
 import { apiUrl } from "@/config";
+
+export async function getAvailableNewsfeedPosts(feed: string, ids: string[], token: string): Promise<FeedPost[]> {
+  const response = await fetch(`${apiUrl}/posts/feed/${encodeURIComponent(feed)}/available?${new URLSearchParams({ids: ids.join(',')})}`, {
+    headers: {Authorization: `Bearer ${token}`}, cache: 'no-store', signal: AbortSignal.timeout(15000),
+  });
+  if (!response.ok) throw new Error('Unable to load new posts. Please try again.');
+  return response.json();
+}
 import { axiosAPI } from "@/config/axios";
 import { FeedPost, PostAuthor, PostPinContext, ReportReasonCode } from "@/types";
 import { composeUrlQuery, getErrorMessage } from "@/utils";

@@ -312,3 +312,16 @@ tasks. Deploy kwonserver's migration and worker before deploying this UI.
 See kwonserver README → “Engagement rewards, community boosts and welcome-email
 delivery” for the defaults, eligibility definition, API responses, concurrency,
 SMTP variables, target limits, rollout behavior and operational recovery.
+
+### New-post availability button
+
+Each authenticated home feed opens a feed-scoped SSE stream through `/api/events`
+using `useAvailableNewsfeed`. Every 30 seconds the API sends a bounded snapshot of
+new eligible IDs. A sticky floating button displays the unseen count (up to 50+).
+Clicking loads those exact posts, prepends them to SWR's first page, preserves loaded
+pages, and scrolls to the feed start. It does not automatically jump or clear cards
+while reading. Failures retain the pending snapshot for retry. Tab/account changes
+close the old stream, remount viewer-scoped feed state, and discard stale responses.
+Existing reaction streams, load-more behavior and server-loaded fallback data remain
+in use. Search/profile pages and guests do not use this feature. See the server
+README's “Available newsfeed snapshots over SSE” for API and operational details.

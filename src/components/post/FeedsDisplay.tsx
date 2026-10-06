@@ -2,6 +2,8 @@
 import { useNotifications } from "@/providers/NotificationsProvider";
 import usePostInteractions from "@/hooks/usePostInteractions";
 import useFeedCacheMutate from "@/hooks/useFeedCacheMutate";
+import useAvailableNewsfeed from "@/hooks/useAvailableNewsfeed";
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import { newsfeedKey } from "@/utils/newsfeed-key";
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Box from "@mui/material/Box";
@@ -38,7 +40,7 @@ type LocalState = {
   post?: FeedPost;
 };
 
-const FeedsDisplay = ({ posts, feed, search }: { posts: FeedPost[], feed: FeedTypeEnum; search?: { q: string; tab: "top" | "latest" } }) => {
+const FeedsDisplay = ({ posts, feed, search, availableSince }: { posts: FeedPost[], feed: FeedTypeEnum; availableSince?: string; search?: { q: string; tab: "top" | "latest" } }) => {
 
   const { token, user } = useAuthSession();
   const notifications = useNotifications();
@@ -85,6 +87,18 @@ const FeedsDisplay = ({ posts, feed, search }: { posts: FeedPost[], feed: FeedTy
   const mutate = useFeedCacheMutate(mutatePages, data);
 
   const flatData = useMemo(() => [...new Map((data ?? [posts]).flat().map(item => [item.id, item])).values()], [data, posts]);
+
+  const feedStart = useRef<HTMLDivElement>(null);
+  const applyAvailable = useCallback(async (incoming: FeedPost[]) => {
+    await mutatePages(current => {
+      const pages = current ?? [posts];
+      const incomingIds = new Set(incoming.map(post => post.id));
+      const first = [...incoming, ...(pages[0] ?? []).filter(post => !incomingIds.has(post.id))];
+      return [first, ...pages.slice(1)];
+    }, {revalidate: false});
+    feedStart.current?.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }, [mutatePages, posts]);
+  const available = useAvailableNewsfeed({feed, userId: user?.id, token, posts: flatData, since: availableSince, enabled: !search, apply: applyAvailable});
 
   const lastPage = data?.[data.length - 1];
   const isReachingEnd = search ? !!lastPage && lastPage.length < 21 : lastPage?.length === 0;
@@ -182,7 +196,14 @@ const FeedsDisplay = ({ posts, feed, search }: { posts: FeedPost[], feed: FeedTy
   const ref = useLoadMore(loadMore, !loadingPage && !isValidating && !isReachingEnd && !error, "0px 0px 1600px 0px")
 
   return (
-    <Box sx={{ mt: 1 }}>
+    <Box ref={feedStart} sx={{ mt: 1, scrollMarginTop: 16 }}>
+      {!search && available.count > 0 && <Box sx={{position: 'sticky', top: 8, height: 0, zIndex: 3, display: 'flex', justifyContent: 'center'}}>
+        <Button variant="contained" startIcon={<ArrowUpwardIcon />} disabled={available.loading} onClick={() => void available.consume()}
+          sx={{borderRadius: 20, boxShadow: 3, minHeight: 36}} aria-live="polite">
+          {available.loading ? 'Loading new posts…' : `${available.count}${available.count === 50 ? '+' : ''} new ${available.count === 1 ? 'post' : 'posts'} available`}
+        </Button>
+      </Box>}
+      {available.error && <Box role="alert" sx={{p: 1}}><Typography color="error">{available.error}</Typography></Box>}
       {error && !data && (
       <Box>
         <Typography>

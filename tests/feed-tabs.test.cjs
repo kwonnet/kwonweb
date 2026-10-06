@@ -31,11 +31,11 @@ test('tab selection always follows the route, including browser back navigation'
 test('each feed mounts separately and cache keys distinguish viewers, tabs and pages', () => {
   const noop = () => null;
   const Section = load('src/components/post/FeedSection.tsx', {
-    '@mui/material/Box': { default: noop, __esModule: true }, './FeedsDisplay': { default: noop, __esModule: true },
+    '@mui/material/Box': { default: noop, __esModule: true }, './FeedsDisplay': { default: noop, __esModule: true }, '@/hooks': {useAuthSession:()=>({user:{id:'ada'}})},
   }).default;
   for (const feed of ['foryou', 'following', 'friends', 'trending', 'latest']) {
     const child = Section({ posts: [{ id: feed }], feed }).props.children;
-    assert.equal(child.key, feed); assert.equal(child.props.feed, feed);
+    assert.equal(child.key, `ada:${feed}`); assert.equal(child.props.feed, feed);
   }
   const { newsfeedKey } = load('src/utils/newsfeed-key.ts', {});
   const keys = new Set();

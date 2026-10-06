@@ -21,6 +21,7 @@ export default async function ServerFeed({ feed }: { feed: FeedTypeEnum }) {
     return <GuestFeed posts={posts} unavailable={unavailable} />;
   }
 
+  const availableSince = new Date().toISOString();
   const result = await fetch(`${apiUrl}/posts/feed/${feed}?feed=${feed}&limit=21&page=1`, {
     cache: "no-store",
     headers: { Authorization: `Bearer ${session.user.accessToken}` },
@@ -33,5 +34,5 @@ export default async function ServerFeed({ feed }: { feed: FeedTypeEnum }) {
     backendTiming: result.headers.get("server-timing"), source: result.headers.get("x-feed-source"),
   }));
   if (typeof payload === "string") return <DisplayError status={result.status} message={payload} />;
-  return <FeedSection posts={payload} feed={feed} />;
+  return <FeedSection posts={payload} feed={feed} availableSince={availableSince} />;
 }
