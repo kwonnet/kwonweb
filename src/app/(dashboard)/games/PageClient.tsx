@@ -370,13 +370,48 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import React from "react";
-import { Fade } from "react-awesome-reveal";
+
+import { Slide, Fade } from "react-awesome-reveal";
+import RedeemOutlinedIcon from "@mui/icons-material/RedeemOutlined";
+import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
+import PlayersOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+
+
+// Card data with icons
+const cardItems = [
+  {
+    id: 3,
+    title: "Winners",
+    url: "/games/winners",
+    icon: <PlayersOutlinedIcon fontSize="large" />,
+    delay: 200,
+    bg: "200",
+  },
+  {
+    id: 4,
+    title: "Rankings",
+    url: "/games/leaderboard",
+    icon: <LeaderboardOutlinedIcon fontSize="large" />,
+    delay: 100,
+    bg: "400",
+  },
+  {
+    id: 5,
+    title: "Daily Bonus",
+    url: "/games/reward",
+    icon: <RedeemOutlinedIcon fontSize="large" />,
+    delay: 100,
+    bg: "700",
+  },
+
+];
 
 const GameCard = ({ game }: { game: Game }) => {
   const router = useRouter()
   const handleClick = () => {
     router.push(`/games/${game.id}?g_n=${game.name}`)
   }
+
   return (
     <Card
       onClick={() => handleClick()}
@@ -395,25 +430,34 @@ const GameCard = ({ game }: { game: Game }) => {
         }),
       ]}
     >
-      
-        <CardContent>
-          <Typography
-            sx={{ fontFamily: "PlayFair", fontWeight: "bold" }}
-            variant="h6"
-          >
-            {game.name}
-          </Typography>
-          <Typography
-            sx={{ fontFamily: "PlayFair", fontWeight: "bold" }}
-            variant="caption"
-          >
-            {game.description}
-          </Typography>
-        </CardContent>
+
+      <CardContent>
+        <Typography
+          sx={{ fontFamily: "PlayFair", fontWeight: "bold" }}
+          variant="h6"
+        >
+          {game.name}
+        </Typography>
+        <Typography
+          sx={{ fontFamily: "PlayFair", fontWeight: "bold" }}
+          variant="caption"
+        >
+          {game.description}
+        </Typography>
+      </CardContent>
     </Card>
   );
 };
 const PageClient = ({ games }: { games: Game[] }) => {
+  const router = useRouter();
+  const handleClick = async (
+    ev: React.MouseEvent<HTMLDivElement, MouseEvent>,
+    url: string
+  ) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    router.push(url);
+  };
   return (
     <Box>
       <Container maxWidth="xl">
@@ -427,6 +471,76 @@ const PageClient = ({ games }: { games: Game[] }) => {
             ))}
           </Grid>
         </Fade>
+
+        <Box>
+          <Grid container spacing={1}>
+            {cardItems.map((item, index) => (
+              <React.Fragment key={index}>
+                <Grid size={{ lg: 3, md: 3, sm: 6, xs: 6 }} key={item.id}>
+                  <Slide direction="down" delay={item.delay}>
+                    <Card
+                      raised
+                      onClick={(ev) => handleClick(ev, item.url)}
+                      sx={[
+                        (theme) => ({
+
+                          boxShadow:
+                            "4px 4px 10px rgba(0, 0, 0, 0.2), -4px -4px 10px rgba(3, 29, 55, 0.1)",
+                          borderRadius: 2,
+                          overflow: "hidden",
+                          position: "relative",
+                          height: "150px",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          textDecoration: "none",
+                          ...theme.applyStyles("dark", {
+                            background: theme.vars.palette.grey[900],
+                          }),
+                        }),
+                      ]}
+                    >
+                      <Box
+                        sx={[
+                          (theme) => ({
+                            position: "absolute",
+                            top: -20,
+                            right: -20,
+                            width: 100,
+                            height: 100,
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "rgba(0, 0, 0, 0.05)",
+                            color: "rgba(0, 0, 0, 0.1)",
+                            ...theme.applyStyles("dark", {
+                              background: "rgba(0, 0, 0, 0.15)",
+                              color: theme.vars.palette.grey[800],
+                            }),
+                          }),
+                        ]}
+                      >
+                        {item.icon}
+                      </Box>
+                      <CardContent>
+                        <Typography
+                          sx={{ fontFamily: "PlayFair" }}
+                          variant="h6"
+                          align="center"
+                        >
+                          {item.title}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Slide>
+                </Grid>
+              </React.Fragment>
+            ))}
+          </Grid>
+        </Box>
       </Container>
     </Box>
   );
