@@ -357,3 +357,12 @@ termination becomes clean EOF, allowing browser EventSource reconnection, rather
 than escaping as Next.js “failed to pipe response”. Downstream cancellation aborts
 the upstream request and releases listeners. This handles interrupted streams; it
 does not make upstream outages or deployment interruptions impossible.
+
+### Stable socket sessions
+
+`SocketIoContext` creates sockets per account/tracked-session identity, rather than
+per access-token value. Renewing the token does not close live game/conversation
+connections; authentication callbacks read the latest token on future handshakes.
+Changing accounts, starting a different tracked session or logout retires the old
+connections. The SSE proxy additionally logs unexpected upstream interruptions
+without logging credentials or treating normal cancellation as an upstream error.

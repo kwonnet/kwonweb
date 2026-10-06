@@ -27,7 +27,12 @@ export async function GET(request: Request) {
           if (closed) return;
           if (chunk.done) {closed = true;cleanup();controller.close();return;}
           controller.enqueue(chunk.value);
-        } catch {
+        } catch (error) {
+          if (!closed && !request.signal.aborted) console.warn(JSON.stringify({
+            event: 'sse_upstream_interrupted', feed: feed ?? 'interactions',
+            errorType: error instanceof Error ? error.name : 'Unknown',
+            code: typeof (error as {cause?: {code?: unknown}})?.cause?.code === 'string' ? (error as {cause: {code: string}}).cause.code : undefined,
+          }));
           if (!closed) {closed = true;cleanup();controller.close();}
           connection.abort();
         }
