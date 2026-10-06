@@ -47,6 +47,7 @@ const CustomToolbarActions = (props: {
         spacing={{lg: 2, md: 2, sm: 1, xs: 1}}
         sx={{
           alignItems: "center",
+          justifyContent: "flex-end",
           flex: {lg: 1},
           minWidth: 0
         }}
