@@ -366,3 +366,22 @@ connections; authentication callbacks read the latest token on future handshakes
 Changing accounts, starting a different tracked session or logout retires the old
 connections. The SSE proxy additionally logs unexpected upstream interruptions
 without logging credentials or treating normal cancellation as an upstream error.
+
+### Profile identity synchronization
+
+Profile editor saves (including avatar/banner uploads) and settings username saves
+use `useRefreshProfileIdentity`. After the API commits the change, it forces a
+NextAuth update and verifies the returned account ID, public identity and country
+against the saved profile. A preserved old session during a backend outage is
+reported as a refresh failure instead of being saved over the updated identity.
+Only backend-returned country data drives the store/subscription currency selection.
+
+The refreshed session updates all `useAuthSession` consumers. Public identity fields
+are patched into matching SWR records, preserving other authors, reactions and
+private fields. Saved-account cookies are remembered again and account-list caches
+are revalidated for both profile and settings saves. Account GET also overlays the
+active authenticated identity on older saved-cookie metadata, so profile links use
+the current username. NextAuth broadcasts the update to other tabs; the existing app
+provider synchronizes their cached records and refreshes server-rendered content
+when identity/country changes. Routine token renewal does not sweep caches or
+refresh layouts. No new database migration is required.

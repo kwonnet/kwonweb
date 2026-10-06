@@ -1,14 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from "next/navigation";
-import { useSWRConfig } from "swr";
-import { useSession } from 'next-auth/react';
 import { Alert, Autocomplete, Avatar, Box, Button, IconButton, Paper, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import PageHeader from '@/components/common/PageHeader';
-import { updateProfileCache } from '@/utils/profile-cache';
+import useRefreshProfileIdentity from '@/hooks/useRefreshProfileIdentity';
 import { saveProfile } from '@/lib/profile-actions';
 import { uploadMultipleFilesWithMetadata } from '@/utils/r2-upload';
 import type { EditableProfile, ProfileChanges, ProfileEditData } from '@/types/profile';
@@ -16,17 +14,8 @@ const ProfileImageCropper = dynamic(() => import('./ProfileImageCropper'), { ssr
 const fields = ['name', 'username', 'bio', 'phone', 'website', 'avatar', 'banner', 'countryId', 'dateOfBirth'] as const;
 
 export default function ProfileEditor({ initial }: { initial: ProfileEditData }) {
-  const { update } = useSession();
   const router = useRouter();
-  const { mutate } = useSWRConfig();
-  async function refreshIdentity(saved: EditableProfile) {
-    await mutate(() => true, (cached: unknown) => updateProfileCache(cached, saved), { revalidate: false });
-    const session = await update({ refreshIdentity: true });
-    if (!session?.user) throw new Error("Account refresh failed");
-    const response = await fetch('/api/accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remember' }), signal: AbortSignal.timeout(8_000) });
-    if (response.ok) await mutate(key => Array.isArray(key) && key[0] === '/api/accounts');
-    router.refresh();
-  }
+  const refreshIdentity = useRefreshProfileIdentity();
   const [profile, setProfile] = useState(initial.profile);
   const [savedProfile, setSavedProfile] = useState(initial.profile);
   const [busy, setBusy] = useState(false);
@@ -60,8 +49,8 @@ export default function ProfileEditor({ initial }: { initial: ProfileEditData })
     // Refresh the authenticated identity from the backend, never from form data.
     try {
       await refreshIdentity(result.profile);
-    } catch { /* Full document navigation also refreshes server data. */ }
-    window.location.replace(`/@${result.profile.username}`);
+    } catch (error) { setSavedProfile(result.profile); setError(error instanceof Error ? error.message : 'Profile saved, but account refresh failed.'); setBusy(false); return; }
+    router.replace(`/@${result.profile.username}`);
   }
   return <Box sx={{ maxWidth: 800, mx: 'auto', pb: 4 }}>
     <PageHeader title="Edit profile" />

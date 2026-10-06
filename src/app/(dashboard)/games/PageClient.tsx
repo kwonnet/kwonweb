@@ -460,7 +460,7 @@ const PageClient = ({ games }: { games: Game[] }) => {
   };
   return (
     <Box>
-      <Container maxWidth="xl">
+      <Container maxWidth="xl" sx={{mt: 2}}>
         <Fade cascade>
           <Grid container spacing={2}>
             {games.map((game) => (

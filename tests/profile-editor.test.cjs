@@ -29,6 +29,7 @@ test('profile form locks restricted fields, uploads cropped images and preserves
     'next/navigation': { useRouter: () => ({ refresh() {} }) },
     'swr': { useSWRConfig: () => ({ mutate: async () => {} }) },
     '@/utils/profile-cache': { updateProfileCache: value => value },
+    '@/hooks/useRefreshProfileIdentity': {__esModule: true, default: () => async () => {updates.push({refreshIdentity: true});}},
     'next/link': { default: Container, __esModule: true },
     'next/dynamic': { default: () => props => { cropProps = props; return React.createElement('div', null, 'Crop image'); }, __esModule: true },
     '@/components/common/PageHeader': { default: Container, __esModule: true },

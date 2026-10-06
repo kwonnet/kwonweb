@@ -16,6 +16,7 @@ test('settings paginates account-scoped sessions and revokes only the selected s
   react: React, '@mui/material': {Alert: Box, Box, Button, Chip: ({label}) => React.createElement('span', null, label), CircularProgress: Box, Container: Box, FormControlLabel: Box, Paper: Box, Stack: Box, Switch: Box, TextField: Box, Typography: Box},
   'next-auth/react': {useSession: () => ({update: async () => {}})},
   '@/lib/profile-actions': {saveProfile: async () => ({})},
+  '@/hooks/useRefreshProfileIdentity': {__esModule: true, default: () => async () => {}},
   '@/hooks': {useAuthSession: () => ({token: 'test-token', user: {id: 'owner'}})},
   '@/providers/NotificationsProvider': {useNotifications: () => ({show: message => notices.push(message)})},
   '@/utils/pushClient': {subscribeUserToPush: async () => ({status: 200, message: 'Enabled'})},

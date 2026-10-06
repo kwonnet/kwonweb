@@ -364,3 +364,17 @@ test('transient refresh/status failures preserve sessions but confirmed revocati
   }
  }finally{global.fetch=old;}
 });
+
+test('linked account GET overlays the current authenticated identity on an older saved cookie', async () => {
+  process.env.AUTH_SECRET = 'local-tests-only-encryption-secret';
+  process.env.NEXT_PUBLIC_APP_URL = 'https://kwonnet.test';
+  const user = {id: 'same', name: 'Updated', username: 'updated', avatar: 'new.png', accessToken: 'private'};
+  const load = modules({'@/auth': {auth: async () => ({user})}});
+  const vault = load('src/lib/saved-accounts.ts'), route = load('src/app/api/accounts/route.ts');
+  const old = {id: 'same', name: 'Old', username: 'old', avatar: 'old.png', accessToken: 'private-old', savedAt: 1};
+  const cookie = `${vault.accountCookieName(old.id, true)}=${await vault.encodeAccount(old, true)}`;
+  const response = await route.GET(new NextRequest('https://kwonnet.test/api/accounts', {headers: {cookie}}));
+  const [account] = await response.json();
+  assert.equal(account.username, 'updated'); assert.equal(account.avatar, 'new.png'); assert.equal(account.active, true);
+  assert.equal('accessToken' in account, false);
+});

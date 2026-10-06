@@ -6,15 +6,15 @@ import {useAuthSession} from '@/hooks';
 import {subscribeUserToPush} from '@/utils/pushClient';
 import {useNotifications} from '@/providers/NotificationsProvider';
 import {getAccountSettings, changePassword, getActiveSessions, revokeActiveSession, type ActiveUserSession} from '@/lib/auth';
-import {signIn, useSession} from 'next-auth/react';
+import {signIn} from 'next-auth/react';
 import {saveProfile} from '@/lib/profile-actions';
-import {rememberCurrentAccount} from '@/lib/account-actions';
+import useRefreshProfileIdentity from '@/hooks/useRefreshProfileIdentity';
 import {logoutCurrentAccount} from '@/lib/account-actions';
 
 export default function PageClient() {
   const {token, user} = useAuthSession();
   const notif = useNotifications();
-  const {update} = useSession();
+  const refreshIdentity = useRefreshProfileIdentity();
   const [username, setUsername] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -29,13 +29,12 @@ export default function PageClient() {
       const result = await saveProfile({username: username.trim().toLowerCase()});
       if (result.error || !result.profile) throw new Error(result.error || 'Unable to update username');
       saved = true;
-      await update({refreshIdentity: true});
-      await rememberCurrentAccount();
+      await refreshIdentity(result.profile);
       await refreshAccount();
       notif.show('Username updated.', {severity: 'success'});
-      window.location.replace('/settings');
+      setUsername('');
     } catch (error) {
-      if (saved) window.location.replace('/settings');
+      if (saved) notif.show(error instanceof Error ? error.message : 'Username saved, but account refresh failed.', {severity: 'warning'});
       else notif.show(error instanceof Error ? error.message : 'Unable to update username', {severity: 'error'});
     }
     finally {setSaving(false);}

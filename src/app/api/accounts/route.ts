@@ -14,7 +14,11 @@ const options = (secure: boolean) => ({ httpOnly: true, secure, sameSite: "lax" 
 export async function GET(request: NextRequest) {
   const session = await auth();
   const accounts = await readSavedAccounts(request.cookies, secureFor(request));
-  return json(accounts.map(account => ({ ...accountProfile(account), active: account.id === session?.user?.id })));
+  return json(accounts.map(account => {
+    const active = account.id === session?.user?.id;
+    const user = active ? session?.user : undefined;
+    return {...accountProfile(user ? {...user, avatar: user.avatar ?? user.image} : account), active};
+  }));
 }
 
 export async function POST(request: NextRequest) {
