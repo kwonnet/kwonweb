@@ -75,6 +75,9 @@ const GameSocketIoProvider = (props: any) => {
     function historyCallback(messages: ChatMessage[]) {
       setState(prev=>({...prev,messages:[...new Map([...prev.messages,...messages].map(m=>[m.id,m])).values()].slice(-100)}));
     }
+    const resetJoined = () => setState(prev => ({...prev, isJoined: false}));
+    gameSocketIo?.on('connect', resetJoined);
+    gameSocketIo?.on('disconnect', resetJoined);
     const recoverMessages = () => { if(gameSocketIo?.connected) gameSocketIo.emit(GameEventEnum.GAME_ROOM_CHAT); };
     gameSocketIo?.on(GameEventEnum.GAME_ROOM_CHAT,historyCallback);
     const recoveryTimer = setInterval(recoverMessages,5000);
@@ -198,6 +201,8 @@ const GameSocketIoProvider = (props: any) => {
 
     return () => {
       clearInterval(recoveryTimer);
+      gameSocketIo?.off('connect', resetJoined);
+      gameSocketIo?.off('disconnect', resetJoined);
       gameSocketIo?.off(GameEventEnum.GAME_ROOM_CHAT,historyCallback);
       gameSocketIo?.off(GameEventEnum.MESSAGE, messageCallback);
       gameSocketIo?.off(GameEventEnum.NOTIFY_MESSAGE, notificationCallback);

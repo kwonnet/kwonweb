@@ -61,3 +61,14 @@ test('revoked frontend sessions unmount private content while public legal readi
   path = '/'; assert.equal(Boundary({initiallyAuthenticated: false, children: 'guest'}), 'guest');
  } finally {global.window = previousWindow;}
 });
+
+test('SSE upstream termination becomes clean EOF and downstream cancellation aborts the upstream',async()=>{
+ const priorFetch=global.fetch;let signal,cancelled=false;
+ const {GET}=load('src/app/api/events/route.ts',{'@/config':{apiUrl:'https://api.test/api/v1'},'@/lib/server-session':{getServerSession:async()=>({user:{accessToken:'token'}})}});
+ try{
+  global.fetch=async(_url,options)=>{signal=options.signal;let sent=false;return new Response(new ReadableStream({pull(controller){if(!sent){sent=true;controller.enqueue(new TextEncoder().encode('data: first\n\n'));}else controller.error(new TypeError('terminated'));}}));};
+  const response=await GET(new Request('https://kwonnet.test/api/events'));assert.equal(await response.text(),'data: first\n\n');assert.equal(signal.aborted,true);
+  global.fetch=async(_url,options)=>{signal=options.signal;return new Response(new ReadableStream({cancel(){cancelled=true;}}));};
+  const second=await GET(new Request('https://kwonnet.test/api/events'));await second.body.cancel();assert.equal(cancelled,true);assert.equal(signal.aborted,true);
+ }finally{global.fetch=priorFetch;}
+});

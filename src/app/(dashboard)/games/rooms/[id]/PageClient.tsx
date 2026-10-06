@@ -199,9 +199,9 @@ const PageClient = ({
 
   const notif = useNotifications()
   const notifRef = React.useRef(notif);
-  notifRef.current = notif;
+  useEffect(() => {notifRef.current = notif;}, [notif]);
   const routerRef = React.useRef(router);
-  routerRef.current = router;
+  useEffect(() => {routerRef.current = router;}, [router]);
 
   const theme = useTheme();
 
@@ -237,15 +237,15 @@ const PageClient = ({
     if (!isJoined) {
       socketIo?.emit(
         GameEventEnum.PLAYER_JOINED,
-        room.id,
+        {roomId: room.id, mode: room.mode},
         (args: { isError: boolean; message: string }) => {
           if (args.isError) return notifRef.current.show(args.message, {severity: "warning", autoHideDuration: 3000});
           console.log("Player joined");
-          routerRef.current.push(`/games`);
+          updateSocketState({isJoined: true});
         }
       );
     }
-  }, [socketIo, isJoined, room.id]);
+  }, [socketIo, isJoined, room.id, room.mode, updateSocketState]);
 
   useEffect(() => {
     const errorCallback = (msg: string) => {
@@ -580,7 +580,7 @@ const PageClient = ({
                     <ChatBox
                       currentUserId={user.id}
                       onSendMessage={handleSendMessage}
-                      hidden={room?.mode.toUpperCase() === GameMode.SINGLE}
+                      hidden={room?.mode?.toUpperCase() === GameMode.SINGLE}
                     />
                   )}
                 </Paper>

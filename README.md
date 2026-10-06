@@ -344,3 +344,16 @@ in place, including concurrent tabs. API authorization remains server enforced;
 keeping a browser session during an outage does not grant access to protected data.
 The new-post floating button uses concise singular/plural labels (“1 post”, “2 posts”)
 and retains the author AvatarGroup.
+
+### Game reconnects and interrupted SSE responses
+
+Room-page rejoin emits the same `{roomId, mode}` contract as initial room selection.
+A successful rejoin updates joined state and keeps the player in the game page.
+Game socket connect/disconnect events reset joined state so the active page can
+rejoin after network reconnection or token refresh.
+
+The `/api/events` proxy owns reads of the upstream SSE body. An upstream socket
+termination becomes clean EOF, allowing browser EventSource reconnection, rather
+than escaping as Next.js “failed to pipe response”. Downstream cancellation aborts
+the upstream request and releases listeners. This handles interrupted streams; it
+does not make upstream outages or deployment interruptions impossible.
