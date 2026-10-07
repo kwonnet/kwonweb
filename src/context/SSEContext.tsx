@@ -9,9 +9,10 @@ import { useNotifications } from "@/providers/NotificationsProvider";
 
 interface SSEContextType {
   sseSource: EventSource | null;
+  notificationRevision: number;
 }
 
-const SSEContext = createContext<SSEContextType>({ sseSource: null });
+const SSEContext = createContext<SSEContextType>({ sseSource: null, notificationRevision: 0 });
 
 const SSEContextProvider = (props: any) => {
   const { user } = useAuthSession();
@@ -19,8 +20,10 @@ const SSEContextProvider = (props: any) => {
   // console.log(`Auth User`, user);
 
   const notif = useNotifications();
+  const { mutate } = useSWRConfig();
 
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
+  const [notificationRevision, setNotificationRevision] = useState(0);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -28,6 +31,17 @@ const SSEContextProvider = (props: any) => {
       withCredentials: true,
     });
 
+    const notificationListener = (event: MessageEvent) => {
+      try {
+        const snapshot = JSON.parse(event.data);
+        if (snapshot.userId !== user.id || !Number.isSafeInteger(snapshot.totalUnseenCount) || snapshot.totalUnseenCount < 0) return;
+        void mutate(key => Array.isArray(key) && key[0] === `/v1/users/${user.id}/stats`,
+          (current: any) => current ? {...current, totalUnseenCount: snapshot.totalUnseenCount} : current,
+          {revalidate: true});
+        setNotificationRevision(revision => revision + 1);
+      } catch { /* A malformed event cannot interrupt the shared stream. */ }
+    };
+    sseSource.addEventListener('notifications_updated', notificationListener);
     const opened = () => setEventSource(sseSource);
     sseSource.addEventListener("open", opened);
 
@@ -42,13 +56,14 @@ const SSEContextProvider = (props: any) => {
 
     return () => {
       sseSource.removeEventListener("open", opened);
+      sseSource.removeEventListener("notifications_updated", notificationListener);
+      setEventSource(null);
       sseSource?.close();
     };
-  }, [user?.id]);
+  }, [user?.id, mutate]);
 
   //   listen to different server events
 
-  const { mutate } = useSWRConfig();
 
   const mutateData = (
     updateConnData: (users: UserConnection[]) => UserConnection[]
@@ -109,7 +124,7 @@ const SSEContextProvider = (props: any) => {
     // eslint-disable-next-line
   }, [eventSource, user?.id, mutate]);
 
-  const value = useMemo(() => ({ sseSource: eventSource }), [eventSource]);
+  const value = useMemo(() => ({ sseSource: eventSource, notificationRevision }), [eventSource, notificationRevision]);
   return (
     <SSEContext.Provider value={value}>
       {props.children}

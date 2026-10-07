@@ -3,7 +3,7 @@ import React, {useEffect, useState} from 'react';
 import {Alert, Box, Button, Chip, CircularProgress, Container, FormControlLabel, Paper, Stack, Switch, TextField, Typography} from '@mui/material';
 import useSWR from 'swr';
 import {useAuthSession} from '@/hooks';
-import {subscribeUserToPush} from '@/utils/pushClient';
+import {subscribeUserToPush, testDeviceNotification} from '@/utils/pushClient';
 import {useNotifications} from '@/providers/NotificationsProvider';
 import {getAccountSettings, changePassword, getActiveSessions, revokeActiveSession, type ActiveUserSession} from '@/lib/auth';
 import {signIn} from 'next-auth/react';
@@ -54,6 +54,16 @@ export default function PageClient() {
   };
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [testingNotification, setTestingNotification] = useState(false);
+  const testNotification = async () => {
+    setTestingNotification(true);
+    try {
+      await testDeviceNotification();
+      notif.show('Test requested. If no device notification appears, check your browser’s notification settings in macOS and turn off Focus.', {severity: 'info', autoHideDuration: 10000});
+    } catch (error) {
+      notif.show(error instanceof Error ? error.message : 'Unable to display the test notification.', {severity: 'error'});
+    } finally {setTestingNotification(false);}
+  };
   const [revoking, setRevoking] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const {data, error, isLoading, mutate} = useSWR(token && user ? ['active-sessions', user.id, token, page] : null,
@@ -110,6 +120,7 @@ export default function PageClient() {
       <Typography variant="h6">Notifications</Typography>
       <FormControlLabel control={<Switch checked={enabled} disabled={busy || !token} onChange={(_, checked) => void toggle(checked)} />} label="Enable push notifications" />
       <Typography variant="body2" color="text.secondary">Receive notifications on this device, including when Kwonnet is closed.</Typography>
+      <Button disabled={!enabled || busy || testingNotification} onClick={() => void testNotification()} sx={{mt: 1}}>Test notification</Button>
     </Paper>
     <Paper variant="outlined" sx={{p: {xs: 2, sm: 3}}}>
       <Typography variant="h6">Where you’re logged in</Typography>

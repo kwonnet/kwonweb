@@ -6,8 +6,21 @@ async function saveSubscription(action: 'subscribe' | 'unsubscribe', body: unkno
   const response = await fetch(`${apiUrl}/notifications/${action}`, {method: 'POST', headers: {'Content-Type': 'application/json', Authorization: `Bearer ${token}`}, body: JSON.stringify(body), signal: AbortSignal.timeout(15_000)});
   if (!response.ok) throw new Error('Unable to save notification preferences. Please try again.');
 }
+export async function testDeviceNotification() {
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) throw new Error('This browser does not support device notifications.');
+  if (Notification.permission !== 'granted') throw new Error('Enable push notifications first and allow notifications for Kwonnet in Chrome.');
+  const registration = await navigator.serviceWorker.getRegistration('/');
+  if (!registration?.active) throw new Error('Reload Kwonnet and enable push notifications before testing.');
+  await registration.showNotification('Kwonnet notification test', {
+    body: 'Notifications can be displayed on this device.',
+    tag: `kwonnet-test-${Date.now()}`,
+    icon: '/android-chrome-192x192.png',
+    data: {url: new URL('/settings', window.location.origin).href},
+  });
+}
 export async function syncExistingPushSubscription(token: string) {
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || Notification.permission !== 'granted') return;
+  await navigator.serviceWorker.register('/sw.js', {updateViaCache: 'none'});
   const registration = await navigator.serviceWorker.getRegistration('/');
   const subscription = await registration?.pushManager.getSubscription();
   if (subscription) await saveSubscription('subscribe', subscription.toJSON(), token);
@@ -16,7 +29,7 @@ export async function subscribeUserToPush(token?: string, enabled = true) {
   try {
     if (!token) throw new Error('Sign in to manage notifications.');
     if (!window.isSecureContext || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) throw new Error('Push notifications require a supported browser and HTTPS. On iPhone, install Kwonnet on your Home Screen first.');
-    await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.register('/sw.js', {updateViaCache: 'none'});
     const registration = await navigator.serviceWorker.ready;
     let subscription = await registration.pushManager.getSubscription();
     if (!enabled) {

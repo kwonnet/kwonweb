@@ -1,4 +1,5 @@
 "use client";
+import {useSSEContext} from '@/context/SSEContext';
 import {
   Box,
   Button,
@@ -7,7 +8,7 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
-import React, { cache } from "react";
+import React, { cache, useEffect } from "react";
 import { AppNotification } from "@/types";
 import useSWRInfinite from "swr/infinite";
 import NotificationCard from "./NotificationCard";
@@ -37,17 +38,25 @@ const NotificationClient = ({items,
   const {user, token} = useAuthSession()
 
   const getKey = (pageIndex: number, previousPageData?: AppNotification[]) => {
+    if (!user?.id || !token) return null;
     if (pageIndex !== 0 && previousPageData && !previousPageData.length)
       return null; // Stop when no more data
-    return { type: "notifications", userId: user?.id, limit: PAGE_SIZE, page: pageIndex + 1 }
+    return { type: "notifications", userId: user.id, token, limit: PAGE_SIZE, page: pageIndex + 1 }
   };
 
   const { data, error, isLoading, isValidating, mutate, size, setSize } =
-    useSWRInfinite(getKey, (args) => getUserNotifications(args, token), {
-      keepPreviousData: true,
+    useSWRInfinite(getKey, (args) => getUserNotifications({userId: args.userId, limit: args.limit, page: args.page}, args.token), {
+      keepPreviousData: false,
+      revalidateOnMount: true,
+      revalidateAll: true,
       fallbackData: items ? [items] : items,
       errorRetryCount: 2
     });
+
+  const {notificationRevision} = useSSEContext();
+  useEffect(() => {
+    if (user?.id && token && notificationRevision) void mutate();
+  }, [notificationRevision, user?.id, token, mutate]);
 
   const flatData = data ? data?.flat() : [];
 

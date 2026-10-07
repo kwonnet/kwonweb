@@ -110,12 +110,14 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
     token && user?.id && visitedUser?.id && !isCurrentUser ? ['author-post-notifications', user.id, visitedUser.id, token] : null,
     () => getAuthorPostNotifications(visitedUser.id, token!),
   );
-  const notificationLabel = postNotifications?.subscribed ? 'Turn off post notifications' : 'Notify me about new posts';
+  const followsAuthor = visitedUser.conn?.followedStatus === FollowStatus.ACCEPTED;
+  const notificationLabel = postNotifications?.subscribed ? 'Turn off post notifications' : followsAuthor ? 'Notify me about new posts' : 'Follow this user to enable post notifications';
   const togglePostNotifications = async () => {
     if (!token || notificationBusy || !postNotifications) return;
     setNotificationBusy(true);
     try {
       const enabled = !postNotifications.subscribed;
+      if (enabled && !followsAuthor) return;
       // Request permission from the explicit bell click, never on profile load.
       const push = enabled ? await subscribeUserToPush(token) : null;
       const result = await setAuthorPostNotifications(visitedUser.id, enabled, token);
@@ -165,7 +167,8 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
         : FollowAction.FOLLOW;
   };
 
-  const onFollowUser = (action: FollowAction) => {
+  const onFollowUser = async (action: FollowAction) => {
+    const previousConn = visitedUser.conn;
     const conn = getFollowStatus(visitedUser.conn, visitedUser.meta, action);
 
     setState((prev) => ({
@@ -179,10 +182,18 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
       },
     }));
     // send to api
-    updateUserFollower(
-      { senderId: user.id, recipientId: visitedUser.id, action },
-      token
-    );
+    try {
+      await updateUserFollower(
+        { senderId: user.id, recipientId: visitedUser.id, action },
+        token
+      );
+    } catch (error) {
+      setState(prev => ({...prev, visitedUser: {...prev.visitedUser, conn: previousConn}}));
+      notif.show(getErrorMessage(error), {severity: 'error', autoHideDuration: 5000});
+      return;
+    }
+    if (action === FollowAction.UNFOLLOW || action === FollowAction.CANCEL) await refreshPostNotifications({subscribed: false}, {revalidate: false});
+    await refreshPostNotifications().catch(error => notif.show(getErrorMessage(error), {severity: 'error', autoHideDuration: 5000}));
   };
 
   const onReactivateAccount = async (status: UserAccountStatus) => {
@@ -486,7 +497,7 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
               )}
               {!isCurrentUser && (canAccess || postNotifications?.subscribed) && (
                   <Tooltip title={notificationError ? 'Could not load preferences. Click to retry.' : notificationLabel}>
-                    <IconButton disabled={(disabled && !postNotifications?.subscribed) || notificationBusy || notificationLoading || !token}
+                    <IconButton disabled={((disabled || !followsAuthor) && !postNotifications?.subscribed) || notificationBusy || notificationLoading || !token}
                       size="small" aria-label={notificationLabel} aria-pressed={!!postNotifications?.subscribed}
                       color={postNotifications?.subscribed ? 'primary' : 'default'}
                       onClick={() => notificationError

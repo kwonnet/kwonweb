@@ -16,8 +16,14 @@ self.addEventListener('notificationclick', event => {
     if (target.origin !== self.location.origin) return;
     const windows = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
     for (const client of windows) {
-      if (new URL(client.url).origin === target.origin) {await client.navigate(target.href); return client.focus();}
+      if (new URL(client.url).origin !== target.origin) continue;
+      try {
+        const navigated = await client.navigate(target.href);
+        if (navigated) {await navigated.focus().catch(() => undefined); return;}
+      } catch { /* A closing or unavailable tab must not prevent opening the post. */ }
     }
     return self.clients.openWindow(target.href);
   })());
 });
+self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
+self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
