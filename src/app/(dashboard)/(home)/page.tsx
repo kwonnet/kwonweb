@@ -7,22 +7,22 @@ export default function Page() {
 }
 
 export const metadata = {
-  ...pageMetadata('Connect the dots and nodes, discover and play', 'Discover conversations, creators, games and community on Kwonnet.', '/', true), title: { absolute: 'Kwonnet — Connecting the dots and nodes, discover and play', template: '%s — Kwonnet' },
+  ...pageMetadata('Connecting the dots and nodes, discover, share and play', 'Discover conversations, creators, games and community on Kwonnet.', '/', true), title: { absolute: 'Kwonnet — Connecting the dots and nodes, discover, share and play', template: '%s — Kwonnet' },
   openGraph: {
-    ...pageMetadata('Connect the dots and nodes, discover and play', 'Discover conversations, creators, games and community on Kwonnet.', '/', true).openGraph,
-    title: 'Kwonnet — Connecting the dots and nodes, discover and play',
+    ...pageMetadata('Connecting the dots and nodes, discover, share and play', 'Discover conversations, creators, games and community on Kwonnet.', '/', true).openGraph,
+    title: 'Kwonnet — Connecting the dots and nodes, discover, share and play',
     url: 'https://kwonnet.com/',
     images: [
       {
-        url: 'https://kwonnet.com/kwonnet-og-image.png',
-        width: 1024,
-        height: 1024,
-        alt: 'Kwonnet — Connecting the dots and nodes, discover and play',
+        url: 'https://kwonnet.com/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Kwonnet — Connecting the dots and nodes, discover, share and play',
       },
     ],
   },
   twitter: {
-    ...pageMetadata('Connect the dots and nodes, discover and play', 'Discover conversations, creators, games and community on Kwonnet.', '/', true).twitter, title: 'Kwonnet — Connecting the dots and nodes, discover and play'
+    ...pageMetadata('Connecting the dots and nodes, discover, share and play', 'Discover conversations, creators, games and community on Kwonnet.', '/', true).twitter, title: 'Kwonnet — Connecting the dots and nodes, discover, share and play'
   }
 };
 
