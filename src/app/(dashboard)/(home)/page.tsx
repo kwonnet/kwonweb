@@ -12,9 +12,9 @@ export default function Page() {
 }
 
 export const metadata = {
-  ...pageMetadata('Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet.', '/', true), title: { absolute: 'Kwonnet — Connecting the dots and nodes, discover and play', template: '%s — Kwonnet' },
+  ...pageMetadata('Kwonnet - Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet.', '/', true), title: { absolute: 'Kwonnet — Connecting the dots and nodes, discover and play', template: '%s — Kwonnet' },
   openGraph: {
-    ...pageMetadata('Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet', '/', true).openGraph,
+    ...pageMetadata('Kwonnet - Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet', '/', true).openGraph,
     title: 'Kwonnet — Connecting the dots and nodes, discover and play',
 
     url: 'https://kwonnet.com/',
@@ -28,7 +28,7 @@ export const metadata = {
     ],
   },
   twitter: {
-    ...pageMetadata('Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet', '/', true).twitter, title: 'Kwonnet — Connecting the dots and nodes, discover and play'
+    ...pageMetadata('Kwonnet - Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet', '/', true).twitter, title: 'Kwonnet — Connecting the dots and nodes, discover and play'
   }
 };
 
