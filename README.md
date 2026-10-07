@@ -278,8 +278,7 @@ prompt still guards actions. Embeds canonicalize to their full post detail URL.
 Profiles remain behind the existing login flow and are noindex, even when their
 safe public profile fields are used for signed-in page metadata.
 
-`/robots.txt` and `/sitemap.xml` bypass login. The sitemap includes home/legal pages
-and up to 1,000 recent public root posts. Submit `/sitemap.xml` in your search engine
+`/robots.txt` and `/sitemap.xml` bypass login. The sitemap currently includes only the homepage and legal pages. Submit `/sitemap.xml` in your search engine
 console after deployment. Draft, hidden, restricted, deleted and private-author
 posts are excluded. SEO metadata fetches time out safely rather than failing pages.
 Deploy kwonserver and its migration before kwonweb so public previews use the new
@@ -388,22 +387,17 @@ refresh layouts. No new database migration is required.
 
 ### Search-engine discovery and sitemap publishing
 
-`/sitemap.xml` is the public sitemap index. It lists `/sitemaps/static/sitemap.xml`
-(home and legal pages) and `/sitemaps/posts/0.xml`, `/sitemaps/posts/1.xml`, etc.
-Each post sitemap contains up to 1,000 currently public posts, including older
-content. URLs use the current author handle and canonical post detail path. Update
-stamps come from stored `updatedAt`; malformed/future timestamps are omitted.
-Private profiles, restricted/draft/hidden/deleted posts, unpublished schedules and
-inactive/private authors are excluded by the API. Protected account/profile/catalog
-pages remain outside the sitemap; listing an auth-only URL would not make it
-indexable. Embed previews carry noindex plus their canonical post URL.
+`/sitemap.xml` is the public sitemap index. For now it lists only
+`/sitemaps/static/sitemap.xml`, containing `/`, `/privacy-policy` and
+`/terms-of-service`. Both sitemap routes and robots.txt bypass login and require
+no API, database or session lookup. robots.txt advertises `/sitemap.xml`.
 
-Sitemap routes and robots.txt do not require login or session refresh. Public API
-fetches omit credentials; visibility is rechecked for every sitemap request.
-Responses are not cached, and backend outages return 503/Retry-After rather than
-publishing an incomplete index. robots.txt advertises `/sitemap.xml`. The index is
-bounded to the protocol's 50,000-sitemap limit; larger sites need another index
-level. Offset pagination may shift while content changes; later crawls refresh it.
+Dynamic post sitemaps are temporarily disabled in kwonweb only. Previously
+advertised `/sitemaps/posts/<page>.xml` routes return 404 without fetching posts.
+The backend inventory endpoints and XML/API helpers remain available for future
+re-enablement. To restore post inventory, restore the root route's count lookup
+and the post-shard route's validated page lookup, then update the route tests.
+Protected pages remain excluded; public post metadata is unchanged by this pause.
 
 The homepage includes WebSite/Organization JSON-LD. Public post pages already have
 canonical, Open Graph and Twitter metadata; private account pages retain noindex.
@@ -412,15 +406,13 @@ variables GOOGLE_SITE_VERIFICATION and BING_SITE_VERIFICATION emit ownership met
 tags; copy only the verification token from each search-console account, not OAuth
 credentials. No verification token is required when ownership is verified by DNS.
 
-Deploy kwonserver first, then kwonweb. No database migration is required. Verify
+Deploy kwonweb only for this static-only change. No backend deployment or database migration is required. Verify
 public 200 XML responses from `/sitemap.xml` and its child URLs, then submit
 `https://kwonnet.com/sitemap.xml` in Google Search Console and Bing Webmaster Tools.
-Use their URL inspection tools on a public post and check subsequent crawl errors.
+Use their URL inspection tools on the homepage and check subsequent crawl errors.
 A sitemap aids discovery; indexing/ranking is decided by the search engine and
 cannot be guaranteed. Reference: [Google's sitemap guidance](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap).
 
-Sitemap validation passed: 153 web tests, production build/type checks and scoped
-lint, plus a built-server smoke test returning unauthenticated HTTP 200 for robots,
-the index, the static sitemap and a post shard. Backend checks passed with 1,160
-unit tests and five SEO/database integration tests, including 1,001 historical
-public posts spanning multiple sitemap pages and private-content exclusion.
+Sitemap tests cover static inventory, robots discovery, availability without the
+API, and disabled post shards making no post requests. Retained XML and public API
+helpers are tested for future re-enablement.
