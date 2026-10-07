@@ -28,7 +28,21 @@ export const metadata = {
     ],
   },
   twitter: {
-    ...pageMetadata('Kwonnet - Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet', '/', true).twitter, title: 'Kwonnet — Connecting the dots and nodes, discover and play'
+    ...pageMetadata('Kwonnet - Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet', '/', true).twitter, 
+    title: 'Kwonnet — Connecting the dots and nodes, discover and play',
+    site: "@kwonnet45",
+    creator: "@torver213",
+    card: "summary_large_image",
+    images: [
+      {
+        url: 'https://kwonnet.com/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Kwonnet — Connecting the dots and nodes, discover and play',
+        
+      },
+      
+    ],
   }
 };
 
