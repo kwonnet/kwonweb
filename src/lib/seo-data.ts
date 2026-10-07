@@ -13,7 +13,7 @@ export const postMetadata = cache(async (username: string, id: string, _embed = 
   const post = await getPublicPostMetadata(id);
   const handle = post?.user?.username || username.replace(/^@/, '');
   const path = `/@${encodeURIComponent(handle)}/feed/${encodeURIComponent(id)}`;
-  return pageMetadata(post ? `${post.user.name} on Kwonnet` : 'Post', plainDescription(post?.content, 'View this post on Kwonnet.'), path, !!post, post?.media?.[0]?.thumbnailUrl || (post?.media?.[0]?.fileType?.startsWith('image/') ? post.media[0].url : undefined));
+  return pageMetadata(post ? `${post.user.name} on Kwonnet` : 'Post', plainDescription(post?.content, 'View this post on Kwonnet.'), path, !!post && !_embed, post?.media?.[0]?.thumbnailUrl || (post?.media?.[0]?.fileType?.startsWith('image/') ? post.media[0].url : undefined));
 });
 export const publicPostIndex = getPublicPostMetadataIndex;
 

@@ -2,7 +2,7 @@ import { publicEnv } from "@/config/public-env";
 export const constant = {
   siteName: "Kwonnet", //"Torazon" | "Kuonnet" | "Kounnet",
   siteDescription:
-    "A revolutionary social networking platform that connects people from all walks of life, fostering meaningful connections and empowering individuals to achieve their dreams.",
+    "Discover fresh conversations, connect with creators, play rewarding games, and grow your community by sharing what matters on Kwonnet.",
 };
 
 export const siteUrl = publicEnv("NEXT_PUBLIC_APP_URL")

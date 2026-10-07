@@ -385,3 +385,42 @@ the current username. NextAuth broadcasts the update to other tabs; the existing
 provider synchronizes their cached records and refreshes server-rendered content
 when identity/country changes. Routine token renewal does not sweep caches or
 refresh layouts. No new database migration is required.
+
+### Search-engine discovery and sitemap publishing
+
+`/sitemap.xml` is the public sitemap index. It lists `/sitemaps/static/sitemap.xml`
+(home and legal pages) and `/sitemaps/posts/0.xml`, `/sitemaps/posts/1.xml`, etc.
+Each post sitemap contains up to 1,000 currently public posts, including older
+content. URLs use the current author handle and canonical post detail path. Update
+stamps come from stored `updatedAt`; malformed/future timestamps are omitted.
+Private profiles, restricted/draft/hidden/deleted posts, unpublished schedules and
+inactive/private authors are excluded by the API. Protected account/profile/catalog
+pages remain outside the sitemap; listing an auth-only URL would not make it
+indexable. Embed previews carry noindex plus their canonical post URL.
+
+Sitemap routes and robots.txt do not require login or session refresh. Public API
+fetches omit credentials; visibility is rechecked for every sitemap request.
+Responses are not cached, and backend outages return 503/Retry-After rather than
+publishing an incomplete index. robots.txt advertises `/sitemap.xml`. The index is
+bounded to the protocol's 50,000-sitemap limit; larger sites need another index
+level. Offset pagination may shift while content changes; later crawls refresh it.
+
+The homepage includes WebSite/Organization JSON-LD. Public post pages already have
+canonical, Open Graph and Twitter metadata; private account pages retain noindex.
+Set NEXT_PUBLIC_APP_URL=https://kwonnet.com in production. Optional server runtime
+variables GOOGLE_SITE_VERIFICATION and BING_SITE_VERIFICATION emit ownership meta
+tags; copy only the verification token from each search-console account, not OAuth
+credentials. No verification token is required when ownership is verified by DNS.
+
+Deploy kwonserver first, then kwonweb. No database migration is required. Verify
+public 200 XML responses from `/sitemap.xml` and its child URLs, then submit
+`https://kwonnet.com/sitemap.xml` in Google Search Console and Bing Webmaster Tools.
+Use their URL inspection tools on a public post and check subsequent crawl errors.
+A sitemap aids discovery; indexing/ranking is decided by the search engine and
+cannot be guaranteed. Reference: [Google's sitemap guidance](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap).
+
+Sitemap validation passed: 153 web tests, production build/type checks and scoped
+lint, plus a built-server smoke test returning unauthenticated HTTP 200 for robots,
+the index, the static sitemap and a post shard. Backend checks passed with 1,160
+unit tests and five SEO/database integration tests, including 1,001 historical
+public posts spanning multiple sitemap pages and private-content exclusion.

@@ -1,9 +1,14 @@
-import { pageMetadata } from '@/lib/seo';
+import { pageMetadata, siteOrigin } from '@/lib/seo';
 import ServerFeed from "@/components/post/ServerFeed";
 import { FeedTypeEnum } from "@/types/post";
 
 export default function Page() {
-  return <ServerFeed feed={FeedTypeEnum.FORYOU} />;
+  const origin = siteOrigin();
+  const schema = {'@context': 'https://schema.org', '@graph': [
+    {'@type': 'Organization', '@id': `${origin}/#organization`, name: 'Kwonnet', url: origin, logo: `${origin}/android-chrome-512x512.png`},
+    {'@type': 'WebSite', '@id': `${origin}/#website`, name: 'Kwonnet', url: origin, publisher: {'@id': `${origin}/#organization`}},
+  ]};
+  return <><script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(schema).replace(/</g, '\\u003c')}} /><ServerFeed feed={FeedTypeEnum.FORYOU} /></>;
 }
 
 export const metadata = {

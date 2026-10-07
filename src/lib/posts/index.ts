@@ -320,9 +320,9 @@ export async function getPublicPostMetadata(id: string): Promise<{id: string; co
     return response.ok ? await response.json() : null;
   } catch {return null;}
 }
-export async function getPublicPostMetadataIndex(): Promise<{id: string; updatedAt: string; user: {username: string}}[] | null> {
+export async function getPublicPostMetadataIndex(page = 0): Promise<{id: string; updatedAt: string; user: {username: string}}[] | null> {
   try {
-    const response = await fetch(`${apiUrl}/posts/metadata-index`, {cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(2000)});
+    const response = await fetch(`${apiUrl}/posts/metadata-index?page=${page}`, {cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(10000)});
     return response.ok ? await response.json() : null;
   } catch {return null;}
 }
@@ -330,4 +330,13 @@ export async function getPublicPostMetadataIndex(): Promise<{id: string; updated
 export async function getPostBoostStatus(id:string,token:string): Promise<{target:number;confirmed:number;expiresAt:string;state: string}|null> {
  const response=await fetch(`${apiUrl}/posts/${encodeURIComponent(id)}/boost`,{headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
  if(response.status===404)return null; if(!response.ok)throw new Error('Boost status unavailable'); return response.json();
+}
+
+export async function getPublicPostSitemapCount(): Promise<number | null> {
+  try {
+    const response = await fetch(`${apiUrl}/posts/metadata-index/count`, {cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(10000)});
+    if (!response.ok) return null;
+    const data = await response.json();
+    return Number.isSafeInteger(data.pages) && data.pages >= 0 && data.pages < 50000 ? data.pages : null;
+  } catch {return null;}
 }

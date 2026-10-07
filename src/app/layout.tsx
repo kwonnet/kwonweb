@@ -29,6 +29,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
   title: {default: constant.siteName, template: '%s | Kwonnet'},
   applicationName: 'Kwonnet',
+  verification: {google: process.env.GOOGLE_SITE_VERIFICATION, other: process.env.BING_SITE_VERIFICATION ? {'msvalidate.01': process.env.BING_SITE_VERIFICATION} : undefined},
   robots: {index: false, follow: false},
   openGraph: {siteName: 'Kwonnet', type: 'website', title: 'Kwonnet', description: constant.siteDescription, images: ['/android-chrome-512x512.png']},
   twitter: {card: 'summary_large_image', title: 'Kwonnet', description: constant.siteDescription, images: ['/android-chrome-512x512.png']},

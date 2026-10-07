@@ -35,7 +35,7 @@ test('dynamic previews never forward session credentials and fall back safely wh
  try {
   global.fetch = async (url, options) => {calls.push({url, options}); return new Response(JSON.stringify({id: 'post', content: 'Public post', user: {name: 'Author',username:'author'},media:[]}));};
   const metadata = await data.postMetadata('@wrong-handle','post',true);
-  assert.equal(metadata.robots.index,true); assert.equal(metadata.alternates.canonical,`${seo.siteOrigin()}/@author/feed/post`);
+  assert.equal(metadata.robots.index,false); assert.equal(metadata.alternates.canonical,`${seo.siteOrigin()}/@author/feed/post`);
   assert.equal(calls[0].options.headers,undefined); assert.equal(calls[0].options.cache,'no-store'); assert.equal(calls[0].options.credentials,'omit');
   global.fetch = async () => new Response(null,{status:404});
   const hidden = await data.postMetadata('@author','private',true); assert.equal(hidden.robots.index,false); assert.equal(hidden.description,'View this post on Kwonnet.');
