@@ -1,5 +1,5 @@
 "use client";
-import { AppBar, Box, Divider, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Tooltip, Typography, useTheme } from "@mui/material";
+import { AppBar, Box, Divider, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Tooltip, Typography, useColorScheme, useTheme } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import Link from "next/link";
@@ -17,7 +17,7 @@ export default function CustomLayout({ children, CustomToolbar }: { children: Re
   const [collapsed, setCollapsed] = useState(false);
   const width = collapsed ? 64 : 240;
   const navigation = getNavigationItems(session?.user);
-  const theme = useTheme();
+  const { mode } = useColorScheme();
   const sidebar = (mini: boolean) => (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflowX: "hidden" }}>
       <List aria-label="Main navigation" sx={{ px: 1, flex: 1 }}>
@@ -48,7 +48,7 @@ export default function CustomLayout({ children, CustomToolbar }: { children: Re
       <Toolbar sx={{ minHeight: "64px !important", gap: 1 }}>
         <IconButton aria-label="Open navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(value => !value)} sx={{ display: { md: "none" } }}><MenuIcon /></IconButton>
         <IconButton aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} aria-expanded={!collapsed} onClick={() => setCollapsed(value => !value)} sx={{ display: { xs: "none", md: "inline-flex" } }}><MenuOpenIcon /></IconButton>
-        <Link href="/" aria-label={`${constant.siteName} home`}><Box component="img" src={theme.palette.mode === "dark" ? "/logo-white-320x320.png" : "/logo-black-320x320.png"} alt="" sx={{ height: 25, display: "block" }} /></Link>
+        <Link href="/" aria-label={`${constant.siteName} home`}><Box component="img" src={mode === "light" ? "/logo-black-320x320.png" : "/logo-white-320x320.png"} alt="" sx={{ height: 25, display: "block" }} /></Link>
         <Box sx={{ flex: 1, display: {xs: 'block', lg: 'none'} }} />
         {CustomToolbar}
       </Toolbar>
