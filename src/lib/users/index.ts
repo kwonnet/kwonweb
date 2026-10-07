@@ -6,6 +6,23 @@ import { FollowAction, UserAccountStatus, UserConnection, UserMiniProfile, UserS
 import { composeUrlQuery, getErrorMessage } from "@/utils"
 import { cache } from "react";
 
+export async function getAuthorPostNotifications(authorId: string, token: string) {
+  const response = await fetch(`${apiUrl}/notifications/authors/${encodeURIComponent(authorId)}`, {
+    headers: {Authorization: `Bearer ${token}`}, cache: 'no-store', signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) throw new Error('Unable to load post notification preferences.');
+  return response.json() as Promise<{subscribed: boolean}>;
+}
+
+export async function setAuthorPostNotifications(authorId: string, enabled: boolean, token: string) {
+  const response = await fetch(`${apiUrl}/notifications/authors/${encodeURIComponent(authorId)}`, {
+    method: 'PUT', headers: {Authorization: `Bearer ${token}`, 'Content-Type': 'application/json'},
+    body: JSON.stringify({enabled}), signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) throw new Error(await response.text() || 'Unable to save post notification preferences.');
+  return response.json() as Promise<{subscribed: boolean}>;
+}
+
 type SearchUser = {
     id: string
     username: string

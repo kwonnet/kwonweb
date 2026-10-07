@@ -34,6 +34,9 @@ import VerifiedIcon from "@mui/icons-material/Verified";
 import { getConnBtnInfo, getFollowStatus } from "@/utils/connections";
 import MailOutlinedIcon from "@mui/icons-material/MailOutlined";
 import NotificationAddOutlinedIcon from "@mui/icons-material/NotificationAddOutlined";
+import NotificationsActiveOutlinedIcon from '@mui/icons-material/NotificationsActiveOutlined';
+import useSWR from 'swr';
+import { subscribeUserToPush } from '@/utils/pushClient';
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import PersonRemoveAlt1OutlinedIcon from "@mui/icons-material/PersonRemoveAlt1Outlined";
 import AssistantOutlinedIcon from "@mui/icons-material/AssistantOutlined";
@@ -42,7 +45,7 @@ import MoreTimeOutlinedIcon from "@mui/icons-material/MoreTimeOutlined";
 import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
 import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import CelebrationOutlinedIcon from "@mui/icons-material/CelebrationOutlined";
-import { blockUser, updateAccountState, updateUserFollower } from "@/lib/users";
+import { blockUser, updateAccountState, updateUserFollower, getAuthorPostNotifications, setAuthorPostNotifications } from "@/lib/users";
 import { getUserConnInfo } from "@/utils/connections";
 import { useNotifications } from "@/providers/NotificationsProvider";
 import PageHeader from "@/components/common/PageHeader";
@@ -102,6 +105,30 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
   const visitedUser = state.visitedUser;
 
   const isCurrentUser = user?.id === visitedUser?.id;
+  const [notificationBusy, setNotificationBusy] = useState(false);
+  const {data: postNotifications, error: notificationError, isLoading: notificationLoading, mutate: refreshPostNotifications} = useSWR(
+    token && user?.id && visitedUser?.id && !isCurrentUser ? ['author-post-notifications', user.id, visitedUser.id, token] : null,
+    () => getAuthorPostNotifications(visitedUser.id, token!),
+  );
+  const notificationLabel = postNotifications?.subscribed ? 'Turn off post notifications' : 'Notify me about new posts';
+  const togglePostNotifications = async () => {
+    if (!token || notificationBusy || !postNotifications) return;
+    setNotificationBusy(true);
+    try {
+      const enabled = !postNotifications.subscribed;
+      // Request permission from the explicit bell click, never on profile load.
+      const push = enabled ? await subscribeUserToPush(token) : null;
+      const result = await setAuthorPostNotifications(visitedUser.id, enabled, token);
+      await refreshPostNotifications(result, {revalidate: false});
+      notif.show(enabled
+        ? push?.status === 200 ? `Post notifications enabled for @${visitedUser.username}` : `Post notifications enabled in Kwonnet. ${push?.message}`
+        : `Post notifications disabled for @${visitedUser.username}`, {
+          severity: enabled && push?.status !== 200 ? 'warning' : 'success', autoHideDuration: 6000,
+        });
+    } catch (error) {
+      notif.show(getErrorMessage(error), {severity: 'error', autoHideDuration: 5000});
+    } finally {setNotificationBusy(false);}
+  };
 
   const badgeColor = useBadgeColor(visitedUser?.meta?.color);
 
@@ -457,14 +484,20 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
                   </IconButton>
                 </Tooltip>
               )}
-              {canAccess && (
-                <>
-                  <Tooltip title="Notification">
-                    <IconButton disabled={disabled} size="small">
-                      <NotificationAddOutlinedIcon />
+              {!isCurrentUser && (canAccess || postNotifications?.subscribed) && (
+                  <Tooltip title={notificationError ? 'Could not load preferences. Click to retry.' : notificationLabel}>
+                    <IconButton disabled={(disabled && !postNotifications?.subscribed) || notificationBusy || notificationLoading || !token}
+                      size="small" aria-label={notificationLabel} aria-pressed={!!postNotifications?.subscribed}
+                      color={postNotifications?.subscribed ? 'primary' : 'default'}
+                      onClick={() => notificationError
+                        ? void refreshPostNotifications().catch(error => notif.show(getErrorMessage(error), {severity: 'error', autoHideDuration: 5000}))
+                        : void togglePostNotifications()}>
+                      {postNotifications?.subscribed ? <NotificationsActiveOutlinedIcon /> : <NotificationAddOutlinedIcon />}
                     </IconButton>
                   </Tooltip>
-
+              )}
+              {canAccess && (
+                <>
                   <Tooltip title="Send Anon Message">
                     <IconButton
                       disabled={disabled}

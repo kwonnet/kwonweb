@@ -385,6 +385,22 @@ provider synchronizes their cached records and refreshes server-rendered content
 when identity/country changes. Routine token renewal does not sweep caches or
 refresh layouts. No new database migration is required.
 
+### Author post notification bell
+
+The profile bell loads the signed-in viewer's preference with SWR and saves an
+explicit enabled/disabled state through the existing users API module. Enabled
+preferences show an active bell; pending requests prevent duplicate clicks.
+Unsubscribing remains available after access to a private account is lost.
+Browser push permission is requested only from an enable click. If permission is
+denied or unavailable, the author preference still enables in-app notifications
+and the feedback explains that browser push is unavailable. Turning off an
+author's notifications does not unsubscribe the browser from other notifications.
+
+The server's publication outbox covers immediate posts, quotes, drafts published
+later, and scheduled posts when they go live. Deploy the API/worker migration
+before this web feature, with the existing matching VAPID keys and HTTPS setup.
+See the server's `docs/post-notifications.md` for delivery guarantees and operations.
+
 ### Search-engine discovery and sitemap publishing
 
 `/sitemap.xml` directly lists `/`, `/privacy-policy` and `/terms-of-service`
