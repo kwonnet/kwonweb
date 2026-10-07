@@ -346,6 +346,12 @@ and retains the author AvatarGroup.
 
 ### Game reconnects and interrupted SSE responses
 
+The room handles `game_action_rejected` as warning feedback without navigating
+away, leaving the socket room or resetting game state. Late answers and closed
+rounds therefore allow the player to continue into the next round. Refund wallet
+updates still apply; `game_error_notify`, manual exit and idle-session expiry keep
+their existing behavior. The matching server update is required.
+
 Room-page rejoin emits the same `{roomId, mode}` contract as initial room selection.
 A successful rejoin updates joined state and keeps the player in the game page.
 Game socket connect/disconnect events reset joined state so the active page can

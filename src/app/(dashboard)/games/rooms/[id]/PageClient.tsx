@@ -252,16 +252,23 @@ const PageClient = ({
       notifRef.current.show(msg, {severity: "warning", autoHideDuration: 3000});
       routerRef.current.back();
     };
+    const actionRejectedCallback = (msg: string) => {
+      // A round can close while an answer is in flight. Keep the joined room
+      // and its event listeners alive so the player can play the next round.
+      notifRef.current.show(msg, {severity: "warning", autoHideDuration: 3000});
+    };
     const achievementCallback = (payload: any) => {      
       notifRef.current.show(payload.description, {severity: "success", autoHideDuration: 5000});
     }
     // listen to error callback
     socketIo?.on(GameEventEnum.GAME_ERROR_NOTIFY, errorCallback);
+    socketIo?.on(GameEventEnum.GAME_ACTION_REJECTED, actionRejectedCallback);
     // listen to room achievement
     socketIo?.on(GameEventEnum.GAME_ROOM_ACHIEVEMENT, achievementCallback);
     return () => {
       socketIo?.emit(GameEventEnum.DISCONNECTED, room.id);
       socketIo?.off(GameEventEnum.GAME_ERROR_NOTIFY, errorCallback);
+      socketIo?.off(GameEventEnum.GAME_ACTION_REJECTED, actionRejectedCallback);
       socketIo?.off(GameEventEnum.GAME_ROOM_ACHIEVEMENT, achievementCallback);
       resetState();
       // updateSocketState({messages: []})

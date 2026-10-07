@@ -244,6 +244,7 @@ export enum GameEventEnum {
   GAME_ROOM_PARTICIPANTS = "game_room_participants",
   GAME_TOTAL_PLAYERS = "game_total_players",
   GAME_ERROR_NOTIFY = "game_error_notify",
+  GAME_ACTION_REJECTED = "game_action_rejected",
   GAME_PLAYER_DATA = "game_player_data",
   GAME_PLAYER_ENERGY = "game_player_energy",
   GAME_PLAYER_WALLET_UPDATE = "game_player_wallet_update",
