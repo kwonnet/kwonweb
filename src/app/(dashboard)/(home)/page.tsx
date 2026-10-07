@@ -7,22 +7,22 @@ export default function Page() {
 }
 
 export const metadata = {
-  ...pageMetadata('Connecting the dots and nodes, discover, share and play', 'Discover fresh conversations, connect with creators, play rewarding games, and grow your community by sharing what matters on Kwonnet.', '/', true), title: { absolute: 'Kwonnet — Connecting the dots and nodes, discover, share and play', template: '%s — Kwonnet' },
+  ...pageMetadata('Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, and grow your community by sharing what matters on Kwonnet.', '/', true), title: { absolute: 'Kwonnet — Connecting the dots and nodes, discover and play', template: '%s — Kwonnet' },
   openGraph: {
-    ...pageMetadata('Connecting the dots and nodes, discover, share and play', 'Discover fresh conversations, connect with creators, play rewarding games, and grow your community by sharing what matters on Kwonnet.', '/', true).openGraph,
-    title: 'Kwonnet — Connecting the dots and nodes, discover, share and play',
+    ...pageMetadata('Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, and grow your community by sharing what matters on Kwonnet.', '/', true).openGraph,
+    title: 'Kwonnet — Connecting the dots and nodes, discover and play',
     url: 'https://kwonnet.com/',
     images: [
       {
         url: 'https://kwonnet.com/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Kwonnet — Connecting the dots and nodes, discover, share and play',
+        alt: 'Kwonnet — Connecting the dots and nodes, discover and play',
       },
     ],
   },
   twitter: {
-    ...pageMetadata('Connecting the dots and nodes, discover, share and play', 'Discover fresh conversations, connect with creators, play rewarding games, and grow your community by sharing what matters on Kwonnet.', '/', true).twitter, title: 'Kwonnet — Connecting the dots and nodes, discover, share and play'
+    ...pageMetadata('Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, and grow your community by sharing what matters on Kwonnet.', '/', true).twitter, title: 'Kwonnet — Connecting the dots and nodes, discover and play'
   }
 };
 
