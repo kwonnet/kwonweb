@@ -387,16 +387,18 @@ refresh layouts. No new database migration is required.
 
 ### Search-engine discovery and sitemap publishing
 
-`/sitemap.xml` is the public sitemap index. For now it lists only
-`/sitemaps/static/sitemap.xml`, containing `/`, `/privacy-policy` and
-`/terms-of-service`. Both sitemap routes and robots.txt bypass login and require
-no API, database or session lookup. robots.txt advertises `/sitemap.xml`.
+`/sitemap.xml` directly lists `/`, `/privacy-policy` and `/terms-of-service`
+using Next.js's native metadata sitemap convention. It is the single URL to submit
+in Search Console. `/sitemaps/static/sitemap.xml` remains available for existing
+submissions and uses the same `staticSitemapEntries()` source, so lists cannot drift.
+Neither sitemap uses the API, database or session lookup. robots.txt advertises
+only `/sitemap.xml`.
 
 Dynamic post sitemaps are temporarily disabled in kwonweb only. Previously
 advertised `/sitemaps/posts/<page>.xml` routes return 404 without fetching posts.
 The backend inventory endpoints and XML/API helpers remain available for future
-re-enablement. To restore post inventory, restore the root route's count lookup
-and the post-shard route's validated page lookup, then update the route tests.
+re-enablement. To restore post inventory, replace the root metadata sitemap with an index using the count lookup
+and restore the post-shard route’s validated page lookup, then update the route tests.
 Protected pages remain excluded; public post metadata is unchanged by this pause.
 
 The homepage includes WebSite/Organization JSON-LD. Public post pages already have

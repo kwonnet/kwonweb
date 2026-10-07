@@ -1,4 +1,7 @@
 import {siteOrigin} from './seo';
+export function staticSitemapEntries() {
+  return ['/', '/privacy-policy', '/terms-of-service'].map(path => ({url: siteOrigin() + path}));
+}
 export const xmlEscape = (value: string) => value.replace(/[<>&"']/g, char => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[char]!));
 export function sitemapIndex(pages: number) {
   const urls = ['/sitemaps/static/sitemap.xml', ...Array.from({length: pages}, (_, page) => `/sitemaps/posts/${page}.xml`)];

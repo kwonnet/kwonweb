@@ -25,12 +25,10 @@ test('post sitemaps use canonical current handles, deduplicate URLs and omit inv
 });
 test('static-only sitemap stays available without any API or database calls',async()=>{
  const unavailable = {getPublicPostSitemapCount:async()=>{throw new Error('API must not be called');}};
- const route = load('src/app/sitemap.xml/route.ts',{'@/lib/posts':unavailable,'@/lib/sitemap':xml});
- const response = await route.GET();assert.equal(response.status,200);
- assert.equal(response.headers.get('content-type'),'application/xml; charset=utf-8');
- const value=await response.text();assert.equal(value,xml.sitemapIndex(0));assert.ok(!value.includes('/sitemaps/posts/'));
- const pages=load('src/app/sitemaps/static/sitemap.ts',{'@/lib/seo':seo}).default();
+ const pages=load('src/app/sitemap.ts',{'@/lib/posts':unavailable,'@/lib/sitemap':xml}).default();
  assert.deepEqual(pages.map(page=>page.url),['/','/privacy-policy','/terms-of-service'].map(path=>seo.siteOrigin()+path));
+ const compatibility=load('src/app/sitemaps/static/sitemap.ts',{'@/lib/sitemap':xml}).default();
+ assert.deepEqual(compatibility,pages);
  const robots=load('src/app/robots.ts',{'@/lib/seo':seo}).default();
  assert.equal(robots.sitemap,seo.siteOrigin()+'/sitemap.xml');
 });

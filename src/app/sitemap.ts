@@ -2,6 +2,5 @@ import type {MetadataRoute} from 'next';
 import {staticSitemapEntries} from '@/lib/sitemap';
 export const dynamic = 'force-dynamic';
 export default function sitemap(): MetadataRoute.Sitemap {
-  // Compatibility for an already submitted URL; the root sitemap is canonical.
   return staticSitemapEntries();
 }
