@@ -20,7 +20,7 @@ export default function PageClient() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
-  const {data: account, error: accountError, mutate: refreshAccount} = useSWR(token && user ? ['account-settings', user.id, token] : null, ([, , accessToken]) => getAccountSettings(accessToken), {revalidateOnFocus: false});
+  const {data: account, error: accountError, mutate: refreshAccount} = useSWR(token && user ? ['account-settings', user.id, token] : null, ([, , accessToken]) => getAccountSettings(accessToken), {revalidateOnMount: true, revalidateOnFocus: true});
   const saveUsername = async (event: React.FormEvent) => {
     event.preventDefault(); if (saving) return;
     setSaving(true);
@@ -40,7 +40,7 @@ export default function PageClient() {
     finally {setSaving(false);}
   };
   const savePassword = async (event: React.FormEvent) => {
-    event.preventDefault(); if (saving || !token) return;
+    event.preventDefault(); if (saving || !token || !account) return;
     if (newPassword !== confirmPassword) {notif.show('Passwords do not match.', {severity: 'error'}); return;}
     setSaving(true);
     try {
@@ -100,7 +100,7 @@ export default function PageClient() {
     <Typography variant="h5" sx={{mb: 2}}>Settings</Typography>
     <Paper variant="outlined" sx={{p: {xs: 2, sm: 3}, mb: 3}}>
       <Typography variant="h6">Account</Typography>
-      {accountError && <Alert severity="error">Unable to load account settings.</Alert>}
+      {accountError && <Alert severity="error" action={<Button onClick={() => void refreshAccount()}>Retry</Button>}>Unable to load account settings.</Alert>}
       <Box component="form" onSubmit={saveUsername} sx={{mt: 2}}>
         <TextField fullWidth label="New username" value={username} onChange={event => setUsername(event.target.value)} autoComplete="username" helperText={`Current: @${account?.username || user?.username || ''}. Use 3–30 letters, numbers or underscores.`} slotProps={{htmlInput: {minLength: 3, maxLength: 30, pattern: '[A-Za-z0-9_]{3,30}'}}} required />
         <Button type="submit" disabled={saving || !account || !username.trim()} sx={{mt: 1}}>Update username</Button>
