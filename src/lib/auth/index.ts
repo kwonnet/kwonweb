@@ -53,3 +53,15 @@ export async function changePassword(token: string, currentPassword: string | un
   if (!response.ok) throw new Error(result?.error || (response.status === 401 ? 'Sign in again before updating your password.' : 'Unable to update password. Please try again.'));
   return {reloginRequired: result?.reloginRequired === true};
 }
+
+export async function registerCredentialAccount(input: {name: string; email: string; password: string; refId?: string | null}) {
+  const response = await fetch(`${apiUrl}/auth/signup`, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(input), signal: AbortSignal.timeout(15000), cache: 'no-store'});
+  if (!response.ok) throw new Error(await response.text());
+  return response.json() as Promise<{verificationRequired: boolean; message: string}>;
+}
+export async function requestAccountEmail(action: 'forgot-password' | 'resend-verification' | 'verify-email' | 'reset-password', input: {email?: string; token?: string; newPassword?: string}) {
+  const response = await fetch(`${apiUrl}/auth/${action}`, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(input), signal: AbortSignal.timeout(15000), cache: 'no-store'});
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.message || 'Unable to process this request.');
+  return result as {message: string};
+}

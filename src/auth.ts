@@ -105,44 +105,6 @@ const authRuntime = NextAuth(async request => {
       },
     }),
     Credentials({
-      id: "credentials-up",
-      name: "Credentials",
-      credentials: {
-        name: { label: "Name", type: "text" },
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        try {
-          const body = SignUpSchema.parse(credentials);
-          // if(body) throw new NextAuthError("Ref ID not provided")
-          const res = await fetch(`${apiUrl}/auth/signup`, {
-            method: "POST",
-            body: JSON.stringify(body),
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json", ...contextHeaders,
-            },
-          });
-
-          if (!res.ok) {
-            throw new NextAuthError(await res.text());
-          }
-          const data = await res.json();
-          const { user, accessToken } = data;
-
-          return { ...user, image: user?.avatar, accessToken };
-        } catch (error: any) {
-          let message = error.message;
-          if (error instanceof ZodError) {
-            const issues = error.issues;
-            message = issues.map((issue) => issue.message).join(", ");
-          }
-          throw new NextAuthError(message);
-        }
-      },
-    }),
-    Credentials({
       id: "credentials-in",
       name: "Credentials",
       credentials: {
@@ -184,7 +146,7 @@ const authRuntime = NextAuth(async request => {
       const isLoggedIn = !!session?.user;
       const isPublicPage = nextUrl.pathname.startsWith("/public");
 
-      if (isPublicPostPath(nextUrl.pathname) || isPublicLegalPath(nextUrl.pathname) || isPublicPage || isLoggedIn || nextUrl.pathname === "/" || nextUrl.pathname === "/auth/signin") {
+      if (isPublicPostPath(nextUrl.pathname) || isPublicLegalPath(nextUrl.pathname) || isPublicPage || isLoggedIn || nextUrl.pathname === "/" || nextUrl.pathname.startsWith("/auth/")) {
         return true;
       }
 

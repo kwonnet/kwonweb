@@ -21,6 +21,7 @@ test('authentication preserves input when switching modes and sends the correct 
       TextField: props => { fields[props.name] = props; return React.createElement('input', { name: props.name, value: props.value, readOnly: true }); },
       Button: ({ loading, variant, size, ...props }) => React.createElement('button', props),
     },
+    '@/lib/auth': {registerCredentialAccount: (...args) => {calls.push(['register',...args]); return new Promise(resolve => {resolveSignIn = resolve;}).then(result => {if(result.error)throw new Error(result.code);return result;});},requestAccountEmail:async()=>({message:'Check email'})},
     'next-auth/react': { signIn: (...args) => { calls.push(args); return new Promise(resolve => { resolveSignIn = resolve; }); } },
   };
   function load(path) {
@@ -41,7 +42,7 @@ test('authentication preserves input when switching modes and sends the correct 
     await React.act(async () => root.render(React.createElement(AuthForm)));
     assert.equal(document.querySelector('input[name="name"]'), null, 'login is the default view');
     assert.match(document.body.textContent, /Welcome back/);
-    await React.act(async () => document.querySelector('button[type="button"]').click());
+    await React.act(async () => [...document.querySelectorAll('button')].find(b => /New to Kwonnet|Already have an account/.test(b.textContent)).click());
     await React.act(async () => {
       fields.name.onChange({ target: { value: 'Ada' } });
       fields.email.onChange({ target: { value: 'ada@example.invalid' } });
@@ -49,12 +50,12 @@ test('authentication preserves input when switching modes and sends the correct 
     });
     let pending;
     await React.act(async () => { pending = form.onSubmit({ preventDefault() {} }); });
-    assert.deepEqual(calls[0], ['credentials-up', { email: 'ada@example.invalid', password: 'test-only-password', name: 'Ada', refId: 'friend', redirectTo: 'https://kwonnet.com/wallet', redirect: false }]);
+    assert.deepEqual(calls[0], ['register', { email: 'ada@example.invalid', password: 'test-only-password', name: 'Ada', refId: 'friend' }]);
     await React.act(async () => form.onSubmit({ preventDefault() {} }));
     assert.equal(calls.length, 1, 'pending submissions must not be duplicated');
     await React.act(async () => { resolveSignIn({ error: 'CredentialsSignin', code: 'Account already exists' }); await pending; });
     assert.match(document.body.textContent, /Account already exists/);
-    await React.act(async () => document.querySelector('button[type="button"]').click());
+    await React.act(async () => [...document.querySelectorAll('button')].find(b => /New to Kwonnet|Already have an account/.test(b.textContent)).click());
     assert.equal(fields.email.value, 'ada@example.invalid');
     assert.equal(fields.password.value, 'test-only-password');
     assert.equal(document.querySelector('input[name="name"]'), null);
@@ -65,6 +66,13 @@ test('authentication preserves input when switching modes and sends the correct 
     await React.act(async () => { resolveSignIn(undefined); await pending; });
     assert.match(document.body.textContent, /Unable to sign in/);
     assert.equal(document.querySelector('button[type="submit"]').disabled, false, 'failed authentication can be retried');
+    await React.act(async () => [...document.querySelectorAll('button')].find(b => /New to Kwonnet/.test(b.textContent)).click());
+    await React.act(async () => {pending = form.onSubmit({preventDefault() {}});});
+    await React.act(async () => {resolveSignIn({verificationRequired:true,message:'Check your email for verification'});await pending;});
+    assert.equal(calls[2][0], 'register');assert.equal(calls.length,3);
+    assert.match(document.body.textContent,/Check your email for verification/);
+    assert.equal(fields.password.value,'');assert.equal(document.querySelector('input[name="name"]'),null);
+
   } finally { await React.act(async () => root.unmount()); dom.window.close(); }
 });
 
@@ -77,6 +85,7 @@ test('configured Google authentication starts OAuth with the safe application re
     "next/link": {__esModule: true, default: ({children, href}) => React.createElement("a", {href}, children)},
     '@mui/material': {Box: element, Stack: element, Typography: element, Alert: element,
       TextField: () => null, Button: ({children, onClick, disabled, type}) => React.createElement('button', {onClick, disabled, type}, children)},
+    '@/lib/auth': {},
     'next-auth/react': {getProviders: async () => ({google: {id: 'google'}}), signIn: async (...args) => {calls.push(args);}},
   };
   function load(file) {

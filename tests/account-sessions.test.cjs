@@ -231,7 +231,7 @@ test('real Auth.js callbacks replace the active account cookie and the next sess
   const accessToken = `header.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600, iat: Math.floor(Date.now() / 1000) })).toString('base64url')}.signature`;
   global.fetch = async () => new Response(JSON.stringify({ user: { id: identity, name: identity, username: identity, bio: 'x'.repeat(6000) }, accessToken }));
   try {
-    for (const provider of ['credentials-up', 'credentials-in', 'saved-account']) {
+    for (const provider of ['credentials-in', 'saved-account']) {
       // A response generated for the previous account may arrive after sign-in.
       const lateSession = await handlers.GET(new NextRequest('https://kwonnet.test/api/auth/session', { headers: { cookie: cookie() } }));
       const csrf = await handlers.GET(new NextRequest('https://kwonnet.test/api/auth/csrf', { headers: { cookie: cookie() } }));

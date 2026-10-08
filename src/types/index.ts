@@ -77,6 +77,9 @@ export type User = {
 };
 
 export type CurrentAuthUser = {
+  emailVerifiedAt?: string | null;
+  identityVerifiedAt?: string | null;
+  accountVerifiedAt?: string | null;
   id: string;
   name: string;
   telId: string;
