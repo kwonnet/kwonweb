@@ -42,7 +42,7 @@ export async function revokeActiveSession(token: string, id: string) {
   if (!response.ok && response.status !== 404) throw new Error('Unable to revoke this session.');
 }
 
-export async function getAccountSettings(token: string): Promise<{username: string; hasPassword: boolean}> {
+export async function getAccountSettings(token: string): Promise<{username: string; hasPassword: boolean; passwordSetupVerifiedUntil: string | null}> {
   const response = await fetch(`${apiUrl}/auth/settings`, {headers: {Authorization: `Bearer ${token}`}, cache: 'no-store', signal: AbortSignal.timeout(15_000)});
   if (!response.ok) throw new Error('Unable to load account settings');
   return response.json();

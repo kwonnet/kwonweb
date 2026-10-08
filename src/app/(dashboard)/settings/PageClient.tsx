@@ -20,7 +20,16 @@ export default function PageClient() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
+  const [now, setNow] = useState(Date.now);
   const {data: account, error: accountError, mutate: refreshAccount} = useSWR(token && user ? ['account-settings', user.id, token] : null, ([, , accessToken]) => getAccountSettings(accessToken), {revalidateOnMount: true, revalidateOnFocus: true});
+  const verificationExpiresAt = account?.passwordSetupVerifiedUntil ? Date.parse(account.passwordSetupVerifiedUntil) : 0;
+  const googleVerified = verificationExpiresAt > now;
+  useEffect(() => {
+    setNow(Date.now());
+    if (!verificationExpiresAt) return;
+    const timer = setTimeout(() => setNow(Date.now()), Math.max(0, verificationExpiresAt - Date.now()));
+    return () => clearTimeout(timer);
+  }, [verificationExpiresAt]);
   const saveUsername = async (event: React.FormEvent) => {
     event.preventDefault(); if (saving) return;
     setSaving(true);
@@ -107,7 +116,9 @@ export default function PageClient() {
       </Box>
       <Box component="form" onSubmit={savePassword} sx={{mt: 3}}>
         <Typography variant="subtitle1" sx={{mb: 1}}>Password</Typography>
-        {account && !account.hasPassword && <Alert severity="info" sx={{mb: 2}} action={<Button disabled={saving} onClick={() => void signIn("google", {redirectTo: "/settings"}).catch(() => notif.show("Unable to verify with Google. Please try again.", {severity: "error"}))}>Verify with Google</Button>}>Verify your account with Google, then set a password within five minutes.</Alert>}
+        {account && !account.hasPassword && (googleVerified
+          ? <Alert severity="success" sx={{mb: 2}}>Google verification complete. You can now set your password.</Alert>
+          : <Alert severity="info" sx={{mb: 2}} action={<Button disabled={saving} onClick={() => void signIn("google", {redirectTo: "/settings"}).catch(() => notif.show("Unable to verify with Google. Please try again.", {severity: "error"}))}>Verify with Google</Button>}>Verify your account with Google, then set a password within five minutes.</Alert>)}
         <Stack spacing={2}>
           {account?.hasPassword && <TextField type="password" label="Current password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} autoComplete="current-password" required />}
           <TextField type="password" label="New password" value={newPassword} onChange={event => setNewPassword(event.target.value)} autoComplete="new-password" helperText="Use 8–32 characters." slotProps={{htmlInput: {minLength: 8, maxLength: 32}}} required />

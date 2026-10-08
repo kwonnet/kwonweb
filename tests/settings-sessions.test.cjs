@@ -13,7 +13,7 @@ test('settings paginates account-scoped sessions and revokes only the selected s
  const Box = props => {if (props.component === 'form' && props.sx?.mt === 3) passwordForm = props; return React.createElement('div', null, props.children);};
  const Button = ({children, onClick, disabled}) => React.createElement('button', {onClick, disabled}, children);
  const mocks = {
-  react: React, '@mui/material': {Alert: Box, Box, Button, Chip: ({label}) => React.createElement('span', null, label), CircularProgress: Box, Container: Box, FormControlLabel: Box, Paper: Box, Stack: Box, Switch: Box, TextField: props => {fields[props.label] = props;return null;}, Typography: Box},
+  react: React, '@mui/material': {Alert: ({children, action}) => React.createElement('div', null, children, action), Box, Button, Chip: ({label}) => React.createElement('span', null, label), CircularProgress: Box, Container: Box, FormControlLabel: Box, Paper: Box, Stack: Box, Switch: Box, TextField: props => {fields[props.label] = props;return null;}, Typography: Box},
   'next-auth/react': {useSession: () => ({update: async () => {}})},
   '@/lib/profile-actions': {saveProfile: async () => ({})},
   '@/hooks/useRefreshProfileIdentity': {__esModule: true, default: () => async () => {}},
@@ -39,12 +39,18 @@ test('settings paginates account-scoped sessions and revokes only the selected s
   account = undefined;
   await React.act(async () => root.render(React.createElement(module.exports.default)));
   assert.equal([...document.querySelectorAll('button')].find(button => button.textContent === 'Update password').disabled, true);
-  account = {username: 'owner', hasPassword: false};
+  account = {username: 'owner', hasPassword: false, passwordSetupVerifiedUntil: new Date(Date.now() + 300000).toISOString()};
   await React.act(async () => root.render(React.createElement(module.exports.default)));
+  assert.match(document.body.textContent, /Google verification complete/);
+  assert.equal([...document.querySelectorAll('button')].find(button => button.textContent === 'Verify with Google'), undefined);
   assert.equal([...document.querySelectorAll('button')].find(button => button.textContent === 'Update password').disabled, false, 'passwordless Google accounts can submit once their settings load');
   await React.act(async () => {fields['New password'].onChange({target: {value: 'new-password'}});fields['Confirm new password'].onChange({target: {value: 'new-password'}});});
   await React.act(async () => passwordForm.onSubmit({preventDefault() {}}));
   assert.deepEqual(passwordUpdates, [['test-token', undefined, 'new-password']]);
   assert.ok(notices.includes('Password updated. Other sessions have been signed out.'));
+  account = {...account, passwordSetupVerifiedUntil: new Date(Date.now() - 1000).toISOString()};
+  await React.act(async () => root.render(React.createElement(module.exports.default)));
+  assert.ok([...document.querySelectorAll('button')].find(button => button.textContent === 'Verify with Google'), 'expired verification restores the prompt');
+  assert.doesNotMatch(document.body.textContent, /Google verification complete/);
  } finally {await React.act(async () => root.unmount()); global.window = previous.window; global.document = previous.document; global.IS_REACT_ACT_ENVIRONMENT = previous.act; dom.window.close();}
 });
