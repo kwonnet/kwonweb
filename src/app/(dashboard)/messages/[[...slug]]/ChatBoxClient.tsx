@@ -42,6 +42,7 @@ export default function ChatBoxClient({ params }: {
     const incoming = pending && convo?.responder.id === user.id;
     const confirmed = messages.filter(m => m.conversation === convo?.id);
     const chats = confirmed.concat(outgoing.filter(m => !confirmed.some(saved => saved.eventId === m.eventId)));
+    const waitingAcceptance = !!pending && !incoming && (!!convo?.requestMessageSent || chats.some(message => message.fromUserId === user.id && message.sendingState !== 'failed'));
     useEffect(() => {
         setOutgoing(previous => previous.filter(m => !messages.some(saved => saved.eventId === m.eventId)));
     }, [messages]);
@@ -163,7 +164,7 @@ export default function ChatBoxClient({ params }: {
         return created;
     };
     const send = async (content?: Content) => {
-        if (sending.current || incoming || (!content && !text.trim() && !files.length)) return;
+        if (sending.current || incoming || waitingAcceptance || (!content && !text.trim() && !files.length)) return;
         const submittedText = text.trim(), submittedFiles = files.slice();
         const quoted = reply ? { targetId: reply.event.eventId, targetHash: reply.hash } : undefined;
         try { if (!content) validateImageUploads(submittedFiles); }
@@ -186,6 +187,7 @@ export default function ChatBoxClient({ params }: {
             else if (submittedFiles.length) await sendMedia(user.id, token, peer.id, active.id, submittedFiles, submittedText, quoted, eventId);
             else await sendContent(user.id, token, peer.id, active.id, { kind: 'text', text: submittedText, reply: quoted }, eventId);
             setOutgoing(previous => previous.map(m => m.eventId === eventId ? { ...m, conversation: active!.id, sendingState: 'sent' } : m));
+            if (active.state === 'PENDING_REQUEST') setConvo(previous => previous ? { ...previous, requestMessageSent: true } : previous);
             socket?.emit('typing:stop', { conversationId: active.id });
             refreshInbox?.();
         }
@@ -275,7 +277,7 @@ export default function ChatBoxClient({ params }: {
         target?.animate?.([{ backgroundColor: 'rgba(100,181,246,.3)' }, { backgroundColor: 'transparent' }], { duration: 1200 });
     }}/></Box>)}</Box>
   {incoming ? <Paper sx={{ p: 2 }}><Typography>Preview privately. No delivered or read receipts are sent until you accept.</Typography><Stack direction="row" spacing={1}><Button disabled={busy} onClick={() => resolve('accept')}>Accept</Button><Button disabled={busy} onClick={() => resolve('reject')}>Reject</Button><Button disabled={busy} color="error" onClick={() => resolve('block')}>Block</Button></Stack></Paper> : <Box sx={{ p: 1, flexShrink: 0, pb: 'max(8px, env(safe-area-inset-bottom))' }}>
-   {pending && <Typography variant="caption">Message request sent. Receipts appear after acceptance.</Typography>}
+   {waitingAcceptance && <Typography variant="caption" role="status">Message request sent. Wait for this person to accept before sending more messages.</Typography>}
    {!pending && typingUntil > now && <Typography variant="caption">{peer.name} is typing…</Typography>}
    {reply && <Alert onClose={() => setReply(undefined)}>Replying to: {reply.content.slice(0, 100)}</Alert>}
    {files.length > 0 && <Alert onClose={() => setFiles([])}>{files.map(f => f.name).join(', ')}</Alert>}
@@ -284,7 +286,7 @@ export default function ChatBoxClient({ params }: {
                 try { validateImageUploads(selected); setFiles(selected); setError(''); }
                 catch (error) { setError((error as Error).message); }
                 e.target.value = '';
-            }}/><IconButton disabled={busy} onClick={() => fileInput.current?.click()} aria-label="Attach images up to 500 KB"><AttachFile /></IconButton><TextField fullWidth size="small" multiline maxRows={3} value={text} placeholder="Message" slotProps={{ htmlInput: { maxLength: 10000 }, input: { sx: { fontSize: 16, borderRadius: 6 } } }} onChange={e => {
+            }}/><IconButton disabled={busy || waitingAcceptance} onClick={() => fileInput.current?.click()} aria-label="Attach images up to 500 KB"><AttachFile /></IconButton><TextField fullWidth size="small" multiline maxRows={3} value={text} disabled={waitingAcceptance} placeholder={waitingAcceptance ? "Waiting for acceptance" : "Message"} slotProps={{ htmlInput: { maxLength: 10000 }, input: { sx: { fontSize: 16, borderRadius: 6 } } }} onChange={e => {
                 setText(e.target.value);
                 if (convo && !pending)
                     socket?.emit('typing:start', { conversationId: convo.id });
@@ -294,7 +296,7 @@ export default function ChatBoxClient({ params }: {
                     if (text.trim() || files.length)
                         void send();
                 }
-            }}/><IconButton aria-label="Send message" disabled={busy || (!text.trim() && !files.length)} onClick={() => send()}><SendOutlined /></IconButton></Stack>
+            }}/><IconButton aria-label="Send message" disabled={busy || waitingAcceptance || (!text.trim() && !files.length)} onClick={() => send()}><SendOutlined /></IconButton></Stack>
   </Box>}
  </Stack>;
 }

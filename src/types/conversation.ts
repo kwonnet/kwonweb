@@ -11,6 +11,7 @@ export interface Conversation {
   id: string;
   state: 'PENDING_REQUEST' | 'ACCEPTED';
   epoch: number;
+  requestMessageSent?: boolean;
   kind: ConvoKind;
   initiator: Participant;
   responder: Participant;

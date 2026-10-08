@@ -52,6 +52,7 @@ test('receipt acknowledgement refreshes account badges immediately and keyboard 
  const root=require('react-dom/client').createRoot(document.getElementById('root'));
  try{
   await React.act(async()=>root.render(React.createElement(provider.default,null,React.createElement(Child))));
+  const buttons=[...document.querySelectorAll('button')];assert.ok(buttons.findIndex(button=>button.textContent==='Unlock')<buttons.findIndex(button=>button.textContent==='Reset messaging on this browser'),'destructive reset follows unlock');
   await React.act(async()=>password.onChange({target:{value:'twelve-plus-characters'}}));
   await React.act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Unlock').click());
   assert.ok(document.querySelector('[data-height="736px"]'));pathname='/foryou';await React.act(async()=>root.render(React.createElement(provider.default,null,React.createElement(Child))));assert.equal(context.ready,true);pathname='/messages';await React.act(async()=>root.render(React.createElement(provider.default,null,React.createElement(Child))));assert.equal(context.ready,true,'returning to messaging does not prompt again');

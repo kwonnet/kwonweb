@@ -166,6 +166,7 @@ export async function loadMedia(userId: string, token: string, conversationId: s
 }
 async function eventHash(event: MessagingEvent) { return base64(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(event))))); }
 export interface SyncResult {
+    accountTotals?: { totalUnreadMsg: number; totalUnseenMsg: number };
     messages: MessagingWire[];
     receipts: {
         id: string;

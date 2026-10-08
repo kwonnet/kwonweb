@@ -1,5 +1,4 @@
 "use client";
-import NewConversationButton from "./NewConversationButton";
 import { MessagingOptionsButton } from "@/context/ConvoSocketIoContext";
 import * as React from "react";
 import Box from "@mui/material/Box";
@@ -102,7 +101,6 @@ export default function ChatListHeader() {
           ]}
         >
 
-          <Box sx={{ display: { xs: "none", md: "block" } }}><NewConversationButton /></Box>
           <Box sx={{ display: "flex", alignItems: "center" }}><Tabs
             value={value}
             onChange={handleChange}
