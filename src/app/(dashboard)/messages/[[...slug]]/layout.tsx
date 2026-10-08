@@ -1,4 +1,3 @@
-import ConvoSocketIoProvider from "@/context/ConvoSocketIoContext";
 import { Box, Grid, Paper } from "@mui/material";
 import React, { use } from "react";
 import ChatListServer from "./ChatListServer";
@@ -29,7 +28,6 @@ const Layout = async ({
 
   return (
     <React.Fragment>
-      <ConvoSocketIoProvider>
         <Box
           sx={{
             height: "100%",
@@ -83,7 +81,6 @@ const Layout = async ({
             </Grid>
           </Grid>
         </Box>
-      </ConvoSocketIoProvider>
     </React.Fragment>
   );
 };

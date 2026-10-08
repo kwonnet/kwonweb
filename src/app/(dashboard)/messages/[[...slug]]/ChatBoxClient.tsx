@@ -82,7 +82,7 @@ export default function ChatBoxClient({ params }: {
     useEffect(() => {
         if (!convo || pending)
             return;
-        const received = (processed ?? chats.map(m => ({ id: m.id, fromUserId: m.fromUserId, action: false }))).filter(m => m.fromUserId !== user.id);
+        const received = (processed?.filter(m => m.conversationId === convo.id) ?? chats.map(m => ({ id: m.id, fromUserId: m.fromUserId, action: false }))).filter(m => m.fromUserId !== user.id);
         const focused = document.visibilityState === 'visible' && document.hasFocus();
         for (const m of received) {
             const status = focused && (m.action || visible.current.has(m.id)) && !read.current.has(m.id) ? 'READ' : !delivered.current.has(m.id) ? 'DELIVERED' : undefined;

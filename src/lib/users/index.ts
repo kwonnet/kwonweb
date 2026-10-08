@@ -39,14 +39,23 @@ export const searchUser = async(query: string, accessToken?: string)=> {
     }
 }
 
-export const searchUsers = async(args: {query: string, page?: number, limit?: number}, accessToken?: string) => {
-  const response = await fetch(`${apiUrl}/users/search?${new URLSearchParams({ q: args.query, page: String(args.page ?? 1), limit: String(args.limit ?? 21) })}`, {
+export const searchUsers = async(args: {query: string, page?: number, limit?: number, scope?: 'messaging'}, accessToken?: string) => {
+  const response = await fetch(`${apiUrl}/users/search?${new URLSearchParams({ q: args.query, page: String(args.page ?? 1), limit: String(args.limit ?? 21), ...(args.scope ? {scope: args.scope} : {}) })}`, {
     cache: 'no-store', headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}, signal: AbortSignal.timeout(15_000),
   });
   if (!response.ok) throw new Error('Unable to search people. Please try again.');
   const people = await response.json() as { id: string; name: string; username: string; avatar: string | null; bio: string | null }[];
   return people.map(person => ({ ...person, avatar: person.avatar ?? "" }));
 };
+
+export async function getMessagingFriends(userId: string, page: number, token: string) {
+  const response = await fetch(`${apiUrl}/users/${encodeURIComponent(userId)}/friends?${new URLSearchParams({page: String(page), limit: '20'})}`, {
+    cache: 'no-store', headers: {Authorization: `Bearer ${token}`}, signal: AbortSignal.timeout(15_000),
+  });
+  if (response.status === 404) return [] as UserConnection[];
+  if (!response.ok) throw new Error('Unable to load friends. Please try again.');
+  return await response.json() as UserConnection[];
+}
 
 export const getUserAchievements = async(args:{limit: number, page: number, catId?: string | null, userId: string}, accessToken?: string)=> {
     try {

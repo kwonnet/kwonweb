@@ -17,6 +17,7 @@ type State = {
     processed: {
         id: string;
         fromUserId: string;
+        conversationId: string;
         action: boolean;
     }[];
     refresh: (conversationId: string, peerId: string) => Promise<SyncResult | undefined>;
@@ -34,6 +35,7 @@ export default function ConvoSocketIoProvider({ children }: {
     const [processed, setProcessed] = useState<{
         id: string;
         fromUserId: string;
+        conversationId: string;
         action: boolean;
     }[]>([]);
     const [liveReady, setLiveReady] = useState(false);
@@ -47,6 +49,7 @@ export default function ConvoSocketIoProvider({ children }: {
         lockMessaging();
         setReady(false);
         setMessages([]);
+        setProcessed([]);
         setPassphrase('');
         setConfirmation('');
         if (userId)
@@ -105,8 +108,10 @@ export default function ConvoSocketIoProvider({ children }: {
                     result = await syncMessages(userId, token, conversationId, cursor, receiptCursor);
                 }
                 catch (error) {
-                    if (epoch === generation.current)
-                        setMessages(await localConversation(userId, conversationId, peerId));
+                    if (epoch === generation.current) {
+                        const cached = await localConversation(userId, conversationId, peerId);
+                        if (epoch === generation.current) setMessages(previous => previous.filter(message => message.conversation !== conversationId).concat(cached));
+                    }
                     throw error;
                 }
                 for (const wire of result.messages) {
@@ -145,8 +150,9 @@ export default function ConvoSocketIoProvider({ children }: {
             const local = await localConversation(userId, conversationId, peerId);
             if (epoch !== generation.current)
                 return;
-            setMessages(local);
-            setProcessed(await r.vault.atomic(async (draft) => Object.entries(draft.records).filter(([key]) => key.startsWith('wire:')).map(([, value]) => JSON.parse(value)).filter(wire => wire.conversation === conversationId && !draft.records[`failed:${wire.id}`] && new Date(wire.createdAt).getTime()>Date.now()-90*86400000 && !(JSON.parse(draft.records[`hidden:${conversationId}`]??'[]') as string[]).includes(wire.id)).map(wire => { const event = JSON.parse(draft.records[`event:${wire.eventId}`]); return { id: wire.id, fromUserId: wire.fromUserId, action: event.content.kind !== 'text' && event.content.kind !== 'media' }; })));
+            setMessages(previous => previous.filter(message => message.conversation !== conversationId).concat(local));
+            const processedMessages = await r.vault.atomic(async (draft) => Object.entries(draft.records).filter(([key]) => key.startsWith('wire:')).map(([, value]) => JSON.parse(value)).filter(wire => wire.conversation === conversationId && !draft.records[`failed:${wire.id}`] && new Date(wire.createdAt).getTime()>Date.now()-90*86400000 && !(JSON.parse(draft.records[`hidden:${conversationId}`]??'[]') as string[]).includes(wire.id)).map(wire => { const event = JSON.parse(draft.records[`event:${wire.eventId}`]); return { id: wire.id, fromUserId: wire.fromUserId, conversationId, action: event.content.kind !== 'text' && event.content.kind !== 'media' }; }));
+            if (epoch === generation.current) setProcessed(previous => previous.filter(message => message.conversationId !== conversationId).concat(processedMessages));
             return result;
         })();
         inFlight.current.set(conversationId, work);
