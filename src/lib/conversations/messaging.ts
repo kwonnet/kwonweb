@@ -31,8 +31,16 @@ async function socketRequest<T>(userId: string, event: string, body: unknown): P
 }
 export async function sendReceiptBatch(userId: string, token: string, conversationId: string, deliveredIds: string[], readIds: string[]) { const body = { conversationId, deliveredIds, readIds }; return await socketRequest<{
     suppressed: boolean;
+    unreadCount?: number;
+    unseenCount?: number;
+    totalUnreadMsg?: number;
+    totalUnseenMsg?: number;
 }>(userId, 'receipts:batch', body) ?? messagingAPI<{
     suppressed: boolean;
+    unreadCount?: number;
+    unseenCount?: number;
+    totalUnreadMsg?: number;
+    totalUnseenMsg?: number;
 }>(userId, token, '/receipts/batch', 'POST', body); }
 export async function syncMessages(userId: string, token: string, conversationId: string, after: string, receiptAfter: string): Promise<SyncResult> { return await socketRequest<SyncResult>(userId, 'messages:sync', { conversationId, after, receiptAfter }) ?? messagingAPI<SyncResult>(userId, token, `/${conversationId}/messages?after=${after}&receiptAfter=${receiptAfter}`); }
 export async function messagingAPI<T>(userId: string, token: string, path: string, method = 'GET', body?: unknown): Promise<T> {
@@ -202,6 +210,18 @@ export async function localConversation(userId: string, conversationId: string, 
     const hidden = new Set(JSON.parse(records.hidden) as string[]);
     const messages: LocalMessage[] = [];
     const map = new Map<string, LocalMessage>();
+    const receiptMap = new Map<string, { userId: string; deliveredAt: string; readAt?: string }[]>();
+    for (const [key, value] of Object.entries(records.events)) {
+        if (!key.startsWith('receipt:')) continue;
+        const receipt = JSON.parse(value);
+        if (receipt.conversationId === conversationId) receiptMap.set(receipt.id, [...(receiptMap.get(receipt.id) ?? []), receipt]);
+    }
+    for (const wire of records.wires) {
+        for (const receipt of receiptMap.get(wire.id) ?? []) {
+            wire.seen = wire.seen.filter(value => value.userId !== receipt.userId).concat({ userId: receipt.userId, seenAt: receipt.deliveredAt });
+            if (receipt.readAt) wire.read = wire.read.filter(value => value.userId !== receipt.userId).concat({ userId: receipt.userId, readAt: receipt.readAt });
+        }
+    }
     for (const wire of records.wires.sort((a, b) => BigInt(a.serverSequence) < BigInt(b.serverSequence) ? -1 : 1)) {
         const event = eventSchema.parse(JSON.parse(records.events[`event:${wire.eventId}`]));
         const c = event.content;
@@ -255,6 +275,7 @@ export async function forgetConversation(userId: string, conversationId: string)
         for (const [key, value] of Object.entries(draft.records)) {
             if (key.startsWith('session:') && key.includes(`:${conversationId}.`))
                 delete draft.records[key];
+            if (key.startsWith('receipt:') && JSON.parse(value).conversationId === conversationId) delete draft.records[key];
             if ((key.startsWith('wire:') || key.startsWith('failed:')) && JSON.parse(value).conversation === conversationId)
                 delete draft.records[key];
             if (key.startsWith('event:') && JSON.parse(value).conversationId === conversationId) {

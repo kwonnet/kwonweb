@@ -27,3 +27,39 @@ test('receipt revision refreshes every loaded conversation page and its badges t
   assert.equal(document.querySelector('[data-id="1-0"]').textContent,'0');assert.equal(document.querySelector('[data-id="2-0"]').textContent,'0');
  }finally{await React.act(async()=>root.unmount());dom.window.close();}
 });
+test('receipt acknowledgement refreshes account badges immediately and keyboard viewport keeps the composer above its bottom',async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'https://kwonnet.test/messages'});global.window=dom.window;global.document=dom.window.document;global.IS_REACT_ACT_ENVIRONMENT=true;
+ const viewport=new dom.window.EventTarget();viewport.height=800;viewport.offsetTop=0;Object.defineProperty(window,'visualViewport',{value:viewport});
+ const own=['/v1/users/user/stats','token'],other=['/v1/users/other/stats','token'];const stats=new Map([[own,{totalUnreadMsg:5,totalUnseenMsg:5,totalAwards:2}],[other,{totalUnreadMsg:9,totalUnseenMsg:9}]]);
+ let password,context;
+ const box=({children,sx,...props})=>React.createElement('div',{'data-height':typeof sx?.height==='string'?sx.height:undefined},children);
+ const button=({children,onClick,disabled,...props})=>React.createElement('button',{onClick,disabled,'aria-label':props['aria-label']},children);
+ const provider=load('src/context/ConvoSocketIoContext.tsx',{
+  '@/components/common/PasswordTextField':{__esModule:true,default:props=>{password=props;return null;}},
+  '@/components/common/MessagingHistoryTransfer':{__esModule:true,default:()=>null},
+  '@mui/icons-material/MoreVert':{__esModule:true,default:()=>null},
+  '@mui/material':{Alert:box,Box:box,Button:button,Dialog:({open,children})=>open?box({children}):null,DialogContent:box,DialogTitle:box,Paper:box,Stack:box,Typography:box,IconButton:button,Menu:({open,children})=>open?box({children}):null,MenuItem:button},
+  '@/hooks':{useAuthSession:()=>({user:{id:'user'},token:'token'})},
+  './SocketIoContext':{useSocketIoContext:()=>({})},
+  '@/lib/signal/deviceManager':{hasMessagingVault:async()=>true,unlockMessaging:async()=>{},lockMessaging:()=>{}},
+  '@/lib/conversations/messaging':{enroll:async()=>{},messagingAPI:async()=>[]},
+  'swr':{useSWRConfig:()=>({mutate:async(filter,update)=>{for(const [key,value] of stats)if(filter(key)&&update)stats.set(key,update(value));}})}
+ });
+ function Child(){context=provider.useConvoSocketIoContext();return React.createElement('div',null,'Chat');}
+ const root=require('react-dom/client').createRoot(document.getElementById('root'));
+ try{
+  await React.act(async()=>root.render(React.createElement(provider.default,null,React.createElement(Child))));
+  await React.act(async()=>password.onChange({target:{value:'twelve-plus-characters'}}));
+  await React.act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Unlock').click());
+  assert.ok(document.querySelector('[data-height="736px"]'));
+  await React.act(async()=>{viewport.height=400;viewport.offsetTop=60;viewport.dispatchEvent(new dom.window.Event('resize'));});
+  assert.ok(document.querySelector('[data-height="396px"]'),'container ends at visual viewport bottom after keyboard/panning');
+  await React.act(async()=>context.refreshInbox('room',{unreadCount:0,unseenCount:0,totalUnreadMsg:1,totalUnseenMsg:0}));
+  assert.deepEqual(stats.get(own),{totalUnreadMsg:1,totalUnseenMsg:0,totalAwards:2});assert.equal(stats.get(other).totalUnreadMsg,9);
+  assert.deepEqual(context.receiptTotals.room,{unreadCount:0,unseenCount:0});
+  assert.doesNotMatch(document.body.textContent,/Messaging devices|Lock messages/);
+  await React.act(async()=>document.querySelector('[aria-label="Messaging options"]').click());
+  assert.match(document.body.textContent,/Messaging devices/);assert.match(document.body.textContent,/Lock messages/);
+  await React.act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Lock messages').click());assert.match(document.body.textContent,/Unlock encrypted messages/);
+ }finally{await React.act(async()=>root.unmount());dom.window.close();}
+});

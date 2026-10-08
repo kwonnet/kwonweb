@@ -40,8 +40,8 @@ test('start message lists mutual friends, searches all users and opens a non-fri
   const Container = ({children}) => React.createElement('div', null, children);
   const Button = ({children, onClick, disabled}) => React.createElement('button', {onClick, disabled}, children);
   const mocks = {
-    '@mui/icons-material': {Add: () => null, Close: () => null},
-    '@mui/material': {Alert: Container, Avatar: () => null, Box: Container, Button, CircularProgress: () => null, Dialog: ({open, children}) => open ? React.createElement('div', null, children) : null,
+    '@mui/icons-material': {Add: () => null, Close: () => null, ChatBubbleOutlined: () => null},
+    '@mui/material': {Alert: Container, Avatar: () => null, Box: Container, Button, Fab: Button, CircularProgress: () => null, Dialog: ({open, children}) => open ? React.createElement('div', null, children) : null,
       DialogContent: Container, DialogTitle: Container, IconButton: Button, List: Container, ListItemButton: Button, ListItemAvatar: Container,
       ListItemText: ({primary, secondary}) => React.createElement('span', null, primary, secondary), Typography: Container,
       TextField: props => {field = props; return null;}},

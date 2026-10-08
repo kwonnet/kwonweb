@@ -15,7 +15,7 @@ const ChatClientList = ({convoList, slug}: { convoList: EncryptedConversation[];
 
     const { token, user } = useAuthSession();
 
-    const {liveReady, revision}=useConvoSocketIoContext();
+    const {liveReady, revision, receiptTotals}=useConvoSocketIoContext();
     const userId = user.id
 
   const getKey = (pageIndex: number, previousPageData?: any[]) => {
@@ -33,18 +33,19 @@ const ChatClientList = ({convoList, slug}: { convoList: EncryptedConversation[];
   const { data, error, isLoading, isValidating, size, mutate, setSize } =
     useSWRInfinite(getKey, (args) => getUserChatConversations(args, token), {
       keepPreviousData: false,
+      revalidateAll: true,
       refreshInterval: liveReady ? 120000 : 30000,
       refreshWhenOffline: false,
       fallbackData: convoList.length > 0 ? [convoList] : undefined,
     });
 
-  const flatData = data ? data?.flat() : [];
+  const flatData = data ? data.flat() : [];
 
   React.useEffect(() => {
     // SWRInfinite owns an aggregate cache in addition to its page caches.
     // Its bound mutate refreshes every loaded page when receipt totals change.
-    if (revision) void mutate().catch(() => {});
-  }, [revision, mutate]);
+    if (revision) void mutate(pages => pages?.map(page => page.map(item => ({ ...item, ...receiptTotals?.[item.id] }))), { revalidate: true }).catch(() => {});
+  }, [revision, mutate, receiptTotals]);
 
   const isReachingEnd =
     (data && data[data.length - 1]?.length < PAGE_SIZE) || !!error;

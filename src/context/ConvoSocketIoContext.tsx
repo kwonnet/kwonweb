@@ -1,8 +1,9 @@
 'use client';
 import PasswordTextField from '@/components/common/PasswordTextField';
+import MoreVert from '@mui/icons-material/MoreVert';
 import MessagingHistoryTransfer from '@/components/common/MessagingHistoryTransfer';
 import { createContext, useContext, useEffect, useCallback, useRef, useState, type ReactNode } from 'react';
-import { Alert, Box, Button, Dialog, DialogContent, DialogTitle, Paper, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Dialog, DialogContent, DialogTitle, Paper, Stack, Typography, IconButton, Menu, MenuItem } from '@mui/material';
 import { useAuthSession } from '@/hooks';
 import { useSocketIoContext } from './SocketIoContext';
 import { hasMessagingVault, unlockMessaging, lockMessaging, resetMessagingDevice, currentMessagingRuntime, signMessaging } from '@/lib/signal/deviceManager';
@@ -15,7 +16,8 @@ type State = {
     ready: boolean;
     revision: number;
     liveReady: boolean;
-    refreshInbox: () => void;
+    refreshInbox: (conversationId?: string, totals?: { unreadCount?: number; unseenCount?: number; totalUnreadMsg?: number; totalUnseenMsg?: number }) => void;
+    receiptTotals: Record<string, { unreadCount: number; unseenCount: number }>;
     processed: {
         id: string;
         fromUserId: string;
@@ -24,7 +26,7 @@ type State = {
     }[];
     refresh: (conversationId: string, peerId: string) => Promise<SyncResult | undefined>;
 };
-const Context = createContext<State>({ messages: [], ready: false, revision: 0, liveReady: false, processed: [], refresh: async () => undefined, refreshInbox: () => {} });
+const Context = createContext<State>({ messages: [], ready: false, revision: 0, liveReady: false, processed: [], refresh: async () => undefined, refreshInbox: () => {}, receiptTotals: {} });
 export const useConvoSocketIoContext = () => useContext(Context);
 export default function ConvoSocketIoProvider({ children }: {
     children: ReactNode;
@@ -34,13 +36,16 @@ export default function ConvoSocketIoProvider({ children }: {
     const userId = user?.id ?? '';
     const { convoSocketIo } = useSocketIoContext();
     const { mutate } = useSWRConfig();
+    const [receiptTotals, setReceiptTotals] = useState<Record<string, { unreadCount: number; unseenCount: number }>>({});
+    const [optionsAnchor, setOptionsAnchor] = useState<HTMLElement | null>(null);
     const [viewportHeight, setViewportHeight] = useState<number>();
     useEffect(() => {
-        const resize = () => setViewportHeight(window.visualViewport?.height ?? window.innerHeight);
+        const resize = () => setViewportHeight(window.visualViewport ? window.visualViewport.height + window.visualViewport.offsetTop : window.innerHeight);
         resize();
         window.visualViewport?.addEventListener('resize', resize);
+        window.visualViewport?.addEventListener('scroll', resize);
         window.addEventListener('resize', resize);
-        return () => { window.visualViewport?.removeEventListener('resize', resize); window.removeEventListener('resize', resize); };
+        return () => { window.visualViewport?.removeEventListener('resize', resize); window.visualViewport?.removeEventListener('scroll', resize); window.removeEventListener('resize', resize); };
     }, []);
     const [ready, setReady] = useState(false), [existing, setExisting] = useState(false), [passphrase, setPassphrase] = useState(''), [confirmation, setConfirmation] = useState(''), [busy, setBusy] = useState(false), [error, setError] = useState('');
     const [processed, setProcessed] = useState<{
@@ -55,11 +60,17 @@ export default function ConvoSocketIoProvider({ children }: {
     const inFlight = useRef(new Map<string, Promise<SyncResult | undefined>>());
     const generation = useRef(0);
     const dirty = useRef(new Set<string>());
-    const refreshInbox = useCallback(() => {
+    const refreshInbox = useCallback((conversationId?: string, totals?: { unreadCount?: number; unseenCount?: number; totalUnreadMsg?: number; totalUnseenMsg?: number }) => {
+        if (conversationId && typeof totals?.unreadCount === 'number' && typeof totals?.unseenCount === 'number') {
+            setReceiptTotals(previous => ({ ...previous, [conversationId]: { unreadCount: totals.unreadCount!, unseenCount: totals.unseenCount! } }));
+        }
         setRevision(value => value + 1);
         // Receipts have already committed; refresh authoritative totals directly,
         // including when the socket hint is delayed or HTTP fallback was used.
-        void mutate(key => Array.isArray(key) && key[0] === `/v1/users/${userId}/stats`).catch(() => {});
+        const statsKey = (key: unknown) => Array.isArray(key) && key[0] === `/v1/users/${userId}/stats`;
+        if (typeof totals?.totalUnreadMsg === 'number' && typeof totals?.totalUnseenMsg === 'number') {
+            void mutate(statsKey, (current: any) => current ? { ...current, totalUnreadMsg: totals.totalUnreadMsg, totalUnseenMsg: totals.totalUnseenMsg } : current, { revalidate: true }).catch(() => {});
+        } else void mutate(statsKey).catch(() => {});
     }, [mutate, userId]);
     useEffect(() => {
         generation.current++;
@@ -67,6 +78,7 @@ export default function ConvoSocketIoProvider({ children }: {
         setReady(false);
         setMessages([]);
         setProcessed([]);
+        setReceiptTotals({});
         setPassphrase('');
         setConfirmation('');
         if (userId)
@@ -143,6 +155,11 @@ export default function ConvoSocketIoProvider({ children }: {
                 // Receipt state and catch-up cursor persist only after every envelope in this page commits.
                 await r.vault.atomic(async (draft) => {
                     for (const receipt of result!.receipts) {
+                        // A receipt can arrive before its message page. Persist it independently
+                        // so advancing the receipt cursor never loses delivery/read state.
+                        const receiptKey = `receipt:${receipt.id}:${receipt.userId}`;
+                        const prior = JSON.parse(draft.records[receiptKey] ?? 'null');
+                        draft.records[receiptKey] = JSON.stringify({ ...receipt, conversationId, readAt: receipt.readAt ?? prior?.readAt ?? null });
                         for (const [key, value] of Object.entries(draft.records)) {
                             if (!key.startsWith('wire:'))
                                 continue;
@@ -202,7 +219,7 @@ export default function ConvoSocketIoProvider({ children }: {
         void enroll(userId, token).then(() => convoSocketIo.emit('device:challenge')).catch(() => setError('Device enrollment failed; unlock messaging again'));
         let hintTimer: ReturnType<typeof setTimeout> | undefined;
         const available = () => { if (hintTimer)
-            return; hintTimer = setTimeout(() => { hintTimer = undefined; refreshInbox(); }, 100); };
+            return; hintTimer = setTimeout(() => { hintTimer = undefined; setReceiptTotals({}); refreshInbox(); }, 100); };
         const disconnected = () => { setMessagingSocket(userId); setLiveReady(false); };
         const connected = () => convoSocketIo.emit('device:challenge');
         convoSocketIo.on('connect', connected);
@@ -262,5 +279,5 @@ export default function ConvoSocketIoProvider({ children }: {
                         setError(e instanceof Error ? e.message : 'Unable to reset local messaging');
                     }
                 }}>Reset messaging on this browser</Button>}<Button loading={busy} variant="contained" disabled={passphrase.length < 12} onClick={unlock}>{existing ? 'Unlock' : 'Set up messaging'}</Button></Stack></Paper></Box>;
-    return <Context.Provider value={{ convoSocketIo, messages, ready, revision, liveReady, processed, refresh, refreshInbox }}><Box sx={{ display: 'flex', flexDirection: 'column', height: viewportHeight ? `${Math.max(0, viewportHeight - 64)}px` : 'calc(100dvh - 64px)', minHeight: 0, overflow: 'hidden' }}>{error && <Alert severity="error">{error}</Alert>}<Box sx={{ display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}><Button size="small" onClick={listDevices}>Messaging devices</Button><Button size="small" onClick={() => { generation.current++; lockMessaging(); setReady(false); setMessages([]); }}>Lock messages</Button></Box><Dialog open={showDevices} onClose={() => setShowDevices(false)}><DialogTitle>Messaging devices</DialogTitle><DialogContent><Typography>Each browser keeps separate keys. New devices receive future messages automatically; transfer older history below. Revoke devices you no longer use.</Typography>{devices.map(d => <Box key={d.deviceId} sx={{ my: 2 }}><Typography variant="body2">{d.deviceId}</Typography><Button color="error" onClick={() => revoke(d.deviceId)}>Revoke device</Button></Box>)}<MessagingHistoryTransfer userId={userId} onRestored={() => setRevision(value => value + 1)} /></DialogContent></Dialog><Box sx={{ flex: 1, minHeight: 0, minWidth: 0 }}>{children}</Box></Box></Context.Provider>;
+    return <Context.Provider value={{ convoSocketIo, messages, ready, revision, liveReady, processed, refresh, refreshInbox, receiptTotals }}><Box sx={{ display: 'flex', flexDirection: 'column', height: viewportHeight ? `${Math.max(0, viewportHeight - 64)}px` : 'calc(100dvh - 64px)', minHeight: 0, overflow: 'hidden' }}>{error && <Alert severity="error">{error}</Alert>}<Box sx={{ display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}><IconButton aria-label="Messaging options" onClick={event => setOptionsAnchor(event.currentTarget)}><MoreVert /></IconButton><Menu anchorEl={optionsAnchor} open={!!optionsAnchor} onClose={() => setOptionsAnchor(null)}><MenuItem onClick={() => { setOptionsAnchor(null); void listDevices(); }}>Messaging devices</MenuItem><MenuItem onClick={() => { setOptionsAnchor(null); generation.current++; lockMessaging(); setReady(false); setMessages([]); }}>Lock messages</MenuItem></Menu></Box><Dialog open={showDevices} onClose={() => setShowDevices(false)}><DialogTitle>Messaging devices</DialogTitle><DialogContent><Typography>Each browser keeps separate keys. New devices receive future messages automatically; transfer older history below. Revoke devices you no longer use.</Typography>{devices.map(d => <Box key={d.deviceId} sx={{ my: 2 }}><Typography variant="body2">{d.deviceId}</Typography><Button color="error" onClick={() => revoke(d.deviceId)}>Revoke device</Button></Box>)}<MessagingHistoryTransfer userId={userId} onRestored={() => setRevision(value => value + 1)} /></DialogContent></Dialog><Box sx={{ flex: 1, minHeight: 0, minWidth: 0 }}>{children}</Box></Box></Context.Provider>;
 }

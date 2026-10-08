@@ -3,6 +3,7 @@ import React from "react";
 import ChatListServer from "./ChatListServer";
 import ChatListHeader from "./ChatListHeader";
 import { getServerSession } from "@/lib/server-session";
+import NewConversationButton from "./NewConversationButton";
 import StartConvo from "./StartConvo";
 
 const Layout = async ({
@@ -54,7 +55,9 @@ const Layout = async ({
               <Paper
                 sx={{
                   // height: "calc(100vh - 20px)",
-                  overflowY: "auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "hidden",
                   height: "100%",
                   p: 1,
                   position: "relative",
@@ -62,7 +65,8 @@ const Layout = async ({
                 elevation={0}
               >
                 <ChatListHeader />
-                <ChatListServer slug={slug} />
+                <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: 9 }}><ChatListServer slug={slug} /></Box>
+                <NewConversationButton />
               </Paper>
             </Grid>
             <Grid

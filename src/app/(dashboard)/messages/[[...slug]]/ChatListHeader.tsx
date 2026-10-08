@@ -9,7 +9,7 @@ import { tabsClasses } from "@mui/material/Tabs";
 import StickyBox from "react-sticky-box";
 import { useAuthSession } from "@/hooks";
 import { getCurrentSegment } from "@/utils";
-import NewConversationButton from "./NewConversationButton";
+
 
 
 
@@ -99,7 +99,7 @@ export default function ChatListHeader() {
             }),
           ]}
         >
-          <NewConversationButton />
+
           <Tabs
             value={value}
             onChange={handleChange}

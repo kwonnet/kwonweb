@@ -10,7 +10,7 @@ test('send appears before network acknowledgement, preserves new input and recon
  class MessageQueuedError extends Error{}
  const mocks={
  '@mui/material':Object.fromEntries(['Alert','Avatar','Box','Button','Dialog','DialogContent','DialogTitle','IconButton','Paper','Stack','TextField','Typography'].map(name=>[name,name==='TextField'?props=>{input=props;return React.createElement('textarea',{value:props.value,onChange:props.onChange});}:name==='IconButton'?({children,onClick,disabled,...props})=>React.createElement('button',{onClick,disabled,'aria-label':props['aria-label']},children):ui])),
- '@mui/icons-material':{ArrowBackIosNewOutlined:ui,AttachFile:ui,SendOutlined:ui},'next/link':{__esModule:true,default:ui},'next/navigation':{useRouter:()=>({})},'@/hooks':{useAuthSession:()=>({user:{id:'user'},token:'token'})},'@/context/ConvoSocketIoContext':{useConvoSocketIoContext:()=>context},'@/lib/conversations':{},'@/lib/signal/attachments':{IMAGE_TYPES:['image/png'],validateImageUploads:()=>{}},
+ '@mui/icons-material':{ArrowBackIosNewOutlined:ui,AttachFile:ui,SendOutlined:ui,LockOutlined:ui},'next/link':{__esModule:true,default:ui},'next/navigation':{useRouter:()=>({})},'@/hooks':{useAuthSession:()=>({user:{id:'user'},token:'token'})},'@/context/ConvoSocketIoContext':{useConvoSocketIoContext:()=>context},'@/lib/conversations':{},'@/lib/signal/attachments':{IMAGE_TYPES:['image/png'],validateImageUploads:()=>{}},
  '@/lib/conversations/messaging':{MessageQueuedError,sendContent:(...args)=>{calls.push(args);return new Promise((resolve,reject)=>{resolveSend=resolve;rejectSend=reject;});}},
  './ChatBubble':{__esModule:true,default:({message})=>React.createElement('span',{'data-event-id':message.eventId},`${message.content}:${message.sendingState??'confirmed'}`)}};
  const Chat=compile('src/app/(dashboard)/messages/[[...slug]]/ChatBoxClient.tsx',mocks),root=require('react-dom/client').createRoot(document.getElementById('root'));
@@ -31,7 +31,7 @@ test('send appears before network acknowledgement, preserves new input and recon
 });
 test('sender receipts distinguish sent, delivered, read, sending and failures with accessible labels',()=>{
  const ui=({children,...props})=>React.createElement('div',{'aria-label':props['aria-label'],style:props.sx?.color?{color:props.sx.color}:undefined},children);
- const mocks={'@mui/material':Object.fromEntries(['Box','Button','Chip','Paper','Stack','Typography'].map(name=>[name,ui])),'@mui/icons-material':{DoneAllOutlined:ui,CheckOutlined:ui},'@/lib/conversations/messaging':{}};
+ const mocks={'@mui/material':Object.fromEntries(['Box','Button','Chip','Paper','Stack','Typography','IconButton','Menu','MenuItem','Popover'].map(name=>[name,ui])),'@mui/icons-material':{DoneAllOutlined:ui,CheckOutlined:ui,AddReactionOutlined:ui},'@/lib/conversations/messaging':{}};
  const Bubble=compile('src/app/(dashboard)/messages/[[...slug]]/ChatBubble.tsx',mocks),{renderToStaticMarkup}=require('react-dom/server');
  const message={createdAt:new Date().toISOString(),toUserId:'peer',content:'hello',seen:[],read:[],event:{eventId:'id'},reactions:[]};
  const render=m=>renderToStaticMarkup(React.createElement(Bubble,{message:m,isSender:true}));

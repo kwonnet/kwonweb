@@ -13,3 +13,14 @@ test('encrypted event projection enforces original hashes, authors, monotonic ed
  store(event('bob',{kind:'reaction',...target,emoji:'👍',remove:true}));store(event('alice',{kind:'delete',...target,signature:base64(new Uint8Array(64))}));projected=await localConversation('alice',room,'bob');assert.equal(projected[0].deleted,false);assert.equal(projected[0].reactions.length,0);
  const deletion=event('alice',{kind:'delete',...target,signature:''});deletion.content.signature=base64(new Uint8Array(await crypto.subtle.sign('Ed25519',keys.privateKey,deleteSigningBytes(deletion,target.targetId,target.targetHash))));store(deletion);projected=await localConversation('alice',room,'bob');assert.equal(projected[0].deleted,true);assert.equal(projected[0].content,'Message deleted');
 });
+
+test('receipt snapshots survive arriving before their wire and arbitrary picker emojis remain encrypted content',async()=>{
+ const room=crypto.randomUUID(),device=crypto.randomUUID(),id=crypto.randomUUID(),eventId=crypto.randomUUID();
+ draft.records[`receipt:${id}:bob`]=JSON.stringify({id,conversationId:room,userId:'bob',deliveredAt:'2026-10-08T00:00:00.000Z',readAt:'2026-10-08T00:01:00.000Z'});
+ const event=eventSchema.parse({v:2,eventId,conversationId:room,senderId:'alice',senderDeviceId:device,createdAt:new Date().toISOString(),content:{kind:'text',text:'hello'}});
+ draft.records[`event:${eventId}`]=JSON.stringify(event);
+ draft.records[`wire:${id}`]=JSON.stringify({id,eventId,conversation:room,fromUserId:'alice',fromDeviceId:device,serverSequence:'1',createdAt:event.createdAt,seen:[],read:[]});
+ const [message]=await localConversation('alice',room,'bob');assert.deepEqual(message.seen,[{userId:'bob',seenAt:'2026-10-08T00:00:00.000Z'}]);assert.deepEqual(message.read,[{userId:'bob',readAt:'2026-10-08T00:01:00.000Z'}]);
+ for(const emoji of ['🧑🏽‍💻','🇳🇬','1️⃣','❤️','😎'])assert.ok(eventSchema.safeParse({...event,eventId:crypto.randomUUID(),content:{kind:'reaction',targetId:eventId,targetHash:'A'.repeat(44),emoji,remove:false}}).success,emoji);
+ assert.equal(eventSchema.safeParse({...event,content:{kind:'reaction',targetId:eventId,targetHash:'A'.repeat(44),emoji:'not emoji',remove:false}}).success,false);
+});

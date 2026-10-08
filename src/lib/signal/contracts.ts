@@ -5,7 +5,7 @@ const target = { targetId: id, targetHash: z.string().length(44) };
 const content = z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('text'), text: z.string().max(10000), reply: z.object(target).strict().optional() }).strict(),
     z.object({ kind: z.literal('media'), text: z.string().max(10000), attachments: z.array(attachmentSchema).min(1).max(10), reply: z.object(target).strict().optional() }).strict(),
-    z.object({ kind: z.literal('reaction'), ...target, emoji: z.enum(['👍', '❤️', '😂', '😮', '😢', '🙏']), remove: z.boolean() }).strict(),
+    z.object({ kind: z.literal('reaction'), ...target, emoji: z.string().min(1).max(32).regex(/^(?=.*[\p{Extended_Pictographic}\p{Regional_Indicator}])[\p{Extended_Pictographic}\p{Emoji_Component}\u200d\ufe0f]+$|^[0-9#*]\ufe0f?\u20e3$/u), remove: z.boolean() }).strict(),
     z.object({ kind: z.literal('edit'), ...target, text: z.string().min(1).max(10000), revision: z.number().int().min(1) }).strict(),
     z.object({ kind: z.literal('delete'), ...target, signature: z.string().max(100) }).strict(),
 ]);

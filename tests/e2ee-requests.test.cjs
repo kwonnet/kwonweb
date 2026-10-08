@@ -6,7 +6,7 @@ test('a pending request previews silently, accepts only processed/visible IDs, a
  const context={messages:[chat,{...chat,id:'expired-id',createdAt:'2000-01-01T00:00:00.000Z',content:'archived expired preview'}],refresh:async()=>({conversation:convo}),revision:0,convoSocketIo:{on:()=>{},off:()=>{},emit:(...args)=>socketCalls.push(args)}};
  const mocks={
   '@mui/material':Object.fromEntries(['Alert','Avatar','Box','Paper','Stack','Typography','Dialog','DialogContent','DialogTitle','IconButton','TextField','Button'].map(name=>[name,name==='Button'?({children,onClick,disabled})=>React.createElement('button',{onClick,disabled},children):elements])),
-  '@mui/icons-material':{ArrowBackIosNewOutlined:elements,AttachFile:elements,SendOutlined:elements},
+  '@mui/icons-material':{ArrowBackIosNewOutlined:elements,AttachFile:elements,SendOutlined:elements,LockOutlined:elements},
   'next/link':{__esModule:true,default:elements},'next/navigation':{useRouter:()=>({replace:path=>routes.push(path),refresh:()=>{}})},
   '@/hooks':{useAuthSession:()=>({user:{id:'a'},token:'token'})},
   '@/context/ConvoSocketIoContext':{useConvoSocketIoContext:()=>context},

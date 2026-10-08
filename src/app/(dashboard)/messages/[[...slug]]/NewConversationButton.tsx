@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Add, Close } from "@mui/icons-material";
-import { Alert, Avatar, Box, Button, CircularProgress, Dialog, DialogContent, DialogTitle, IconButton, List, ListItemButton, ListItemAvatar, ListItemText, TextField, Typography } from "@mui/material";
+import { Add, Close, ChatBubbleOutlined } from "@mui/icons-material";
+import { Alert, Avatar, Box, Button, Fab, CircularProgress, Dialog, DialogContent, DialogTitle, IconButton, List, ListItemButton, ListItemAvatar, ListItemText, TextField, Typography } from "@mui/material";
 import { useAuthSession } from "@/hooks";
 import { getMessagingFriends, searchUsers } from "@/lib/users";
 
@@ -73,7 +73,7 @@ export default function NewConversationButton() {
   };
 
   return <>
-    <Button startIcon={<Add />} onClick={() => { setQuery(""); setSearch(""); setOpen(true); }}>Start message</Button>
+    <Fab color="primary" aria-label="Start message" onClick={() => { setQuery(""); setSearch(""); setOpen(true); }} sx={{ position: "absolute", right: 16, bottom: "max(16px, env(safe-area-inset-bottom))", zIndex: 2 }}><ChatBubbleOutlined /><Add sx={{ position: "absolute", right: 8, top: 7, fontSize: 16 }} /></Fab>
     <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm" aria-labelledby="new-conversation-title">
       <DialogTitle id="new-conversation-title" sx={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
         Start a message<IconButton aria-label="Close user search" onClick={() => setOpen(false)}><Close /></IconButton>
