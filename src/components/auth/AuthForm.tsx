@@ -11,6 +11,7 @@ export default function AuthForm({ initialMode = "signin", initialEmail = "" }: 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
+  const [verificationRequired, setVerificationRequired] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -23,7 +24,7 @@ export default function AuthForm({ initialMode = "signin", initialEmail = "" }: 
   }, []);
   async function googleSignIn() {
     if (loading) return;
-    setLoading(true); setMessage("");
+    setLoading(true); setMessage(""); setVerificationRequired(false);
     try {
       const location = new URL(window.location.href);
       await signIn("google", {redirectTo: safeAuthRedirect(location.searchParams.get("callbackUrl"), location.origin)});
@@ -36,6 +37,7 @@ export default function AuthForm({ initialMode = "signin", initialEmail = "" }: 
     setLoading(true);
     setMessage("");
     setSuccess(false);
+    setVerificationRequired(false);
     try {
       const location = new URL(window.location.href);
       const redirectTo = safeAuthRedirect(location.searchParams.get("callbackUrl"), location.origin);
@@ -48,6 +50,7 @@ export default function AuthForm({ initialMode = "signin", initialEmail = "" }: 
         redirectTo, redirect: false,
       });
       if (!result || result.error) {
+        setVerificationRequired(!!result?.code?.includes('Verify your email before signing in.'));
         setMessage(result?.code || "Unable to sign in. Please check your details and try again.");
         return;
       }
@@ -72,20 +75,20 @@ export default function AuthForm({ initialMode = "signin", initialEmail = "" }: 
       {message && <Alert severity={success ? 'success' : 'error'} role="alert">{message}</Alert>}
       {!isSignIn && <TextField label="Name" name="name" autoComplete="name" value={name} onChange={e => setName(e.target.value)} required fullWidth disabled={loading} />}
       <TextField label={isSignIn ? "Email or username" : "Email"} name="email" type={isSignIn ? "text" : "email"}
-        autoComplete={isSignIn ? "username" : "email"} value={email} onChange={e => setEmail(e.target.value)} required fullWidth disabled={loading} />
+        autoComplete={isSignIn ? "username" : "email"} value={email} onChange={e => {setEmail(e.target.value);setVerificationRequired(false);}} required fullWidth disabled={loading} />
       <TextField label="Password" name="password" type="password" autoComplete={isSignIn ? "current-password" : "new-password"}
         value={password} onChange={e => setPassword(e.target.value)} required fullWidth disabled={loading} />
       <Button type="submit" variant="contained" size="large" loading={loading} disabled={loading}>
         {isSignIn ? "Log in" : "Create account"}
       </Button>
       {isSignIn && <><Button component={Link} href="/auth/reset-password" disabled={loading}>Forgot password?</Button>
-      <Button type="button" disabled={loading || !email} onClick={async () => {
+      {verificationRequired && <Button type="button" disabled={loading || !email} onClick={async () => {
         setLoading(true);setSuccess(false);
         try {const result=await requestAccountEmail('resend-verification',{email});setMessage(result.message);setSuccess(true);}
         catch(error){setMessage(error instanceof Error?error.message:'Unable to send verification email.');}
         finally{setLoading(false);}
-      }}>Resend verification email</Button></>}
-      <Button type="button" disabled={loading} onClick={() => { setMode(isSignIn ? "signup" : "signin"); setMessage(""); }}>
+      }}>Resend verification email</Button>}</>}
+      <Button type="button" disabled={loading} onClick={() => { setMode(isSignIn ? "signup" : "signin"); setMessage(""); setVerificationRequired(false); }}>
         {isSignIn ? "New to Kwonnet? Sign up" : "Already have an account? Log in"}
       </Button>
       {googleEnabled && <Button type="button" variant="outlined" size="large" disabled={loading} onClick={googleSignIn}>

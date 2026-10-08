@@ -42,6 +42,7 @@ test('authentication preserves input when switching modes and sends the correct 
     await React.act(async () => root.render(React.createElement(AuthForm)));
     assert.equal(document.querySelector('input[name="name"]'), null, 'login is the default view');
     assert.match(document.body.textContent, /Welcome back/);
+    assert.doesNotMatch(document.body.textContent, /Resend verification email/);
     await React.act(async () => [...document.querySelectorAll('button')].find(b => /New to Kwonnet|Already have an account/.test(b.textContent)).click());
     await React.act(async () => {
       fields.name.onChange({ target: { value: 'Ada' } });
@@ -66,12 +67,19 @@ test('authentication preserves input when switching modes and sends the correct 
     await React.act(async () => { resolveSignIn(undefined); await pending; });
     assert.match(document.body.textContent, /Unable to sign in/);
     assert.equal(document.querySelector('button[type="submit"]').disabled, false, 'failed authentication can be retried');
+    assert.doesNotMatch(document.body.textContent, /Resend verification email/);
+    await React.act(async () => {pending = form.onSubmit({preventDefault() {}});});
+    await React.act(async () => {resolveSignIn({error: 'CredentialsSignin', code: '"Verify your email before signing in. Check your inbox or resend the verification email."'});await pending;});
+    assert.match(document.body.textContent, /Resend verification email/);
+    await React.act(async () => fields.email.onChange({target: {value: 'another@example.invalid'}}));
+    assert.doesNotMatch(document.body.textContent, /Resend verification email/);
     await React.act(async () => [...document.querySelectorAll('button')].find(b => /New to Kwonnet/.test(b.textContent)).click());
     await React.act(async () => {pending = form.onSubmit({preventDefault() {}});});
     await React.act(async () => {resolveSignIn({verificationRequired:true,message:'Check your email for verification'});await pending;});
-    assert.equal(calls[2][0], 'register');assert.equal(calls.length,3);
+    assert.equal(calls[3][0], 'register');assert.equal(calls.length,4);
     assert.match(document.body.textContent,/Check your email for verification/);
     assert.equal(fields.password.value,'');assert.equal(document.querySelector('input[name="name"]'),null);
+    assert.doesNotMatch(document.body.textContent, /Resend verification email/);
 
   } finally { await React.act(async () => root.unmount()); dom.window.close(); }
 });
