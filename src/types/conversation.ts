@@ -15,6 +15,8 @@ export enum ConvoKind {
 }
 
 export interface Conversation {
+  state?: "PENDING_REQUEST" | "ACCEPTED";
+  epoch?: number;
   id: string;
   kind: ConvoKind,
   initiator: ConvoParticipant

@@ -19,7 +19,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LocalMallOutlinedIcon from "@mui/icons-material/LocalMallOutlined";
 import { useAuthSession } from "@/hooks";
 import { useUserStats } from "@/lib/swrHooks";
-import { updateUserConversations } from "@/lib/conversations";
+
 
 const CustomToolbarActions = (props: {
   NotificationNode?: React.ReactNode;
@@ -32,11 +32,7 @@ const CustomToolbarActions = (props: {
 
   const { data: stats, mutate } = useUserStats({ userId: user?.id, token})
 
-  const updateMsgUnseen = async() => {
-    if (!token || !user?.id || stats?.totalUnseenMsg === 0) return;
-    await updateUserConversations({ userId: user.id, isSeen: true }, token);
-    mutate();
-  }
+
 
 
   return (
@@ -71,7 +67,7 @@ const CustomToolbarActions = (props: {
           </Box>
         </Tooltip>
           <Tooltip title="Messages" suppressHydrationWarning>
-            <IconButton onClick={() => updateMsgUnseen()} size="small" LinkComponent={Link} href="/messages">
+            <IconButton size="small" LinkComponent={Link} href="/messages">
               <Badge
                 color="error"
                 badgeContent={stats?.totalUnseenMsg ?? 0}

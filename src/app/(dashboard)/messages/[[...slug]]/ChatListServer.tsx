@@ -9,7 +9,7 @@ const ChatListServer = async({slug}: { slug: string}) => {
     const user = session?.user
     const result = await fetch(`${apiUrl}/conversations/users/${user?.id}/conversations?kind=${slug}`, {
     method: "GET",
-    next: { revalidate: 60, tags: [`user-${user?.id}-convo`] },
+    cache: "no-store",
     credentials: "include",
     mode: "cors",
     headers: {

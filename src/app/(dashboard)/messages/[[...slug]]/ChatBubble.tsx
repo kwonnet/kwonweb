@@ -1,75 +1,56 @@
-import React from "react";
-import { Box, Typography, Paper, Stack, Avatar } from "@mui/material";
-import { DecryptedChatMessage } from "@/types/conversation";
-import { CheckBoxOutlineBlankTwoTone, CheckOutlined, DoneAllOutlined, FactCheck } from "@mui/icons-material";
-
-
-type ChatBubbleProps = {
-  message: DecryptedChatMessage;
-  isSender: boolean;
-};
-
-const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isSender }) => {
-  const isRecipientRead = !!(message.read.find(el => el.userId === message.toUserId))
-  const isRecipientSeen = !!(message.seen.find(el => el.userId === message.toUserId))
-  const isSeenAndRead = isRecipientRead && isRecipientSeen
-  const isSameUser = message?.fromUserId === message?.toUserId
-
-  const ReceiptMessageIcon = () => {
-    if(!isSender) return null
-    if(isSeenAndRead || isRecipientRead || isSameUser){
-      return (<DoneAllOutlined color="info" sx={{height: 16, width: 16}}  />)
+'use client';
+import { useEffect, useState } from 'react';
+import { Box, Button, Chip, Paper, Stack, Typography } from '@mui/material';
+import { DoneAllOutlined, CheckOutlined } from '@mui/icons-material';
+import type { LocalMessage } from '@/lib/signal/contracts';
+import type { DecryptedChatMessage } from '@/types/conversation';
+import { loadMedia } from '@/lib/conversations/messaging';
+function Media({ secret, message, userId, token }: {
+    secret: NonNullable<LocalMessage['attachments']>[number];
+    message: LocalMessage;
+    userId: string;
+    token: string;
+}) {
+    const [url, setUrl] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false);
+    useEffect(() => () => { if (url)
+        URL.revokeObjectURL(url); }, [url]);
+    const load = async () => { setBusy(true); try {
+        const blob = await loadMedia(userId, token, message.conversation, secret);
+        setUrl(URL.createObjectURL(blob));
     }
-    if(isRecipientSeen){
-      return (<DoneAllOutlined color="disabled" sx={{height: 16, width: 16}}  />)
+    catch (e) {
+        setError(e instanceof Error ? e.message : 'Attachment unavailable');
     }
-    return (<CheckOutlined sx={{height: 16, width: 16}}  />)
-    
-    
-  }
-  return (
-    <Stack
-      direction="row"
-      sx={{
-        justifyContent: isSender ? "flex-end" : "flex-start",
-        marginBottom: 1
-      }}>
-      <Box
-        component={Paper}
-        elevation={1}
-        sx={{
-          padding: 1.5,
-          maxWidth: "70%",
-          backgroundImage: (theme) =>
-            isSender
-              ? theme.vars.palette.gradient.D900
-              : "linear-gradient(135deg, #fafafa, #e0e0e0)",
-          color: isSender ? "white" : "black",
-          borderRadius: isSender ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-        }}
-      >
-        <Stack direction={"row"} spacing={0.5} sx={{
-          alignItems: "center"
-        }}>
-          <Avatar sx={{height: 25, width: 25}} src={message?.sender?.avatar!} alt={message?.sender?.name}>
-            {message?.sender?.name[0]}
-          </Avatar>
-          <Typography
-            variant="subtitle2"
-            sx={{ color: (theme) => theme.vars.palette.tints[300] }}
-          >
-            {message?.sender?.name} •{" "}
-            {new Date(message.createdAt).toLocaleTimeString()}
-          </Typography>
-          <ReceiptMessageIcon />
-        </Stack>
-        <Typography variant="body1">
-          {message?.content} Hello world this is me If you want, I can also modify your server-side socket handlers so that all messages and sessions emitted to the client already have id instead of _id, so the client doesn't need extra mapping. Do you want me to do that next?
-        </Typography>
-      </Box>
-    </Stack>
-  );
-};
-
-export default ChatBubble;
-// new Date().toLocaleTimeString()
+    finally {
+        setBusy(false);
+    } };
+    // Explicit download also avoids a media fetch revealing a pending preview to a sender.
+    if (!url)
+        return <Box><Button onClick={load} loading={busy}>Open {secret.filename}</Button>{error && <Typography color="error">{error}</Typography>}</Box>;
+    if (secret.mime.startsWith('image/'))
+        return <Box component="img" src={url} alt={secret.filename} sx={{ maxWidth: '100%', maxHeight: 300 }}/>;
+    if (secret.mime.startsWith('video/'))
+        return <Box component="video" src={url} controls sx={{ maxWidth: '100%' }}/>;
+    if (secret.mime.startsWith('audio/'))
+        return <audio src={url} controls/>;
+    return <a href={url} download={secret.filename}>Download {secret.filename}</a>;
+}
+type Action = 'reply' | 'edit' | 'delete' | 'hide' | 'reaction';
+export default function ChatBubble({ message, isSender, onAction, disabled, userId, token }: {
+    message: LocalMessage | DecryptedChatMessage;
+    isSender: boolean;
+    onAction?: (kind: Action, value?: string) => void;
+    disabled?: boolean;
+    userId?: string;
+    token?: string;
+}) {
+    const m = 'event' in message ? message : undefined;
+    const seen = message.seen.some(r => r.userId === message.toUserId), read = message.read.some(r => r.userId === message.toUserId);
+    return <Stack sx={{ mb: 1, alignItems: isSender ? 'flex-end' : 'flex-start' }}><Paper sx={{ p: 1.5, maxWidth: '85%', bgcolor: isSender ? 'primary.dark' : 'background.paper' }}><Stack direction="row" spacing={1}><Typography variant="caption">{new Date(message.createdAt).toLocaleTimeString()}{m?.revision ? ' · edited' : ''}</Typography>{isSender && (m?.queued ? <Typography variant="caption">Queued</Typography> : read ? <DoneAllOutlined color="info" fontSize="small"/> : seen ? <DoneAllOutlined color="disabled" fontSize="small"/> : <CheckOutlined fontSize="small"/>)}</Stack>
+ {m?.reply && <Typography variant="caption">Reply to message {m.reply.targetId.slice(0, 8)}</Typography>}
+ <Typography sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{message.content ?? 'This message is unavailable on this device'}</Typography>
+ {m && !m.deleted && userId && token && m.attachments?.map(secret => <Media key={secret.blobId} secret={secret} message={m} userId={userId} token={token}/>)}
+ {m && !m.deleted && <Stack direction="row" spacing={0.5}>{m.reactions.map(r => <Chip key={`${r.userId}:${r.reaction}`} size="small" label={r.reaction}/>)}</Stack>}
+ {onAction && <Stack direction="row" sx={{ flexWrap: "wrap" }}>{!m?.deleted && <><Button size="small" disabled={disabled} onClick={() => onAction('reply')}>Reply</Button><Button size="small" disabled={disabled} onClick={() => onAction('reaction', '👍')}>👍</Button>{isSender && <><Button size="small" disabled={disabled} onClick={() => onAction('edit')}>Edit</Button><Button size="small" disabled={disabled} onClick={() => onAction('delete')}>Delete for everyone</Button></>}</>}<Button size="small" onClick={() => onAction('hide')}>Delete for me</Button></Stack>}
+ </Paper></Stack>;
+}

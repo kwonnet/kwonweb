@@ -159,8 +159,7 @@ const ConvoListItem = ({ item }: { item: DecryptedConversation }) => {
                 }}
               >
                 <Typography variant="caption" color="textSecondary">
-                  {item?.lastMessage?.content} Hello world this is the best time
-                  socket handlers so that all messages and sessions alive
+                  {item?.lastMessage?.content || "Encrypted conversation"}
                 </Typography>
               </Box>
             </Stack>

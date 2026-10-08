@@ -31,6 +31,7 @@ const ChatClientList = ({convoList, slug}: { convoList: EncryptedConversation[];
   const { data, error, isLoading, isValidating, size, mutate, setSize } =
     useSWRInfinite(getKey, (args) => getUserChatConversations(args, token), {
       keepPreviousData: false,
+      refreshInterval: 3000,
       refreshWhenOffline: false,
       fallbackData: convoList.length > 0 ? [convoList] : undefined,
     });

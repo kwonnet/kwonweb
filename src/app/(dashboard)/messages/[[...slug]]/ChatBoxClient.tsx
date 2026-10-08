@@ -1,634 +1,219 @@
-"use client";
-import {
-  Avatar,
-  Box,
-  Button,
-  Fade,
-  Grid,
-  IconButton,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
-import PhoneEnabledOutlinedIcon from "@mui/icons-material/PhoneEnabledOutlined";
-import StickyBox from "react-sticky-box";
-import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
-import MicOutlinedIcon from "@mui/icons-material/MicOutlined";
-import AttachmentOutlinedIcon from "@mui/icons-material/AttachmentOutlined";
-import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
-import { delayExecution, getCurrentSegment, getErrorMessage } from "@/utils";
-import ChatBubble from "./ChatBubble";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import VerifiedIcon from "@mui/icons-material/Verified";
-import { useAuthSession } from "@/hooks";
-import Link from "next/link";
-import { UserPublic } from "@/types/user";
-import {
-  createConversation,
-  getUserChatDevices,
-  updateUserConversations,
-} from "@/lib/conversations";
-import { useNotifications } from "@/providers/NotificationsProvider";
-import { useConvoSocketIoContext } from "@/context/ConvoSocketIoContext";
-import { bootstrapPerDeviceSessions, encryptForAllDevices } from "@/lib/sodium";
-import { ChatDevice } from "@/types/sodium";
-import useSWR from "swr";
-import {
-  Conversation,
-  ConvoKind,
-  EncryptedChatMessage,
-} from "@/types/conversation";
-import { useUserStats } from "@/lib/swrHooks";
-import { ArrowBackIosNewOutlined } from "@mui/icons-material";
-import { usePathname } from "next/navigation";
-
-const ChatBoxClient = ({
-  params,
-}: {
-  params: {
-    recipient: UserPublic;
-    convo?: Conversation;
-    recipientDevices: ChatDevice[];
-    messages: EncryptedChatMessage[];
-  };
-}) => {
-  const { user, token } = useAuthSession();
-
-  const localDeviceId = `d_${user.id?.slice(-10)}`;
-
-  const { recipient } = params;
-
-  const { mutate: mutateStats } = useUserStats({ userId: user.id, token });
-
-  const notif = useNotifications();
-
-  const pathname = usePathname();
-
-  const segment = getCurrentSegment(pathname);
-
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const chatContainerRef = useRef<HTMLDivElement | null>(null);
-  const initialScrollRef = useRef(true);
-  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
-
-  const {
-    convoSocketIo: socketIo,
-    messages,
-    updateMesssages,
-  } = useConvoSocketIoContext();
-
-  const [state, setState] = useState<{
-    message: string;
-    convo?: Conversation;
-  }>({ message: "", convo: params.convo });
-
-  // get recipient devices
-  const { data: recipientDevices } = useSWR(
-    { id: recipient.id, kind: "devices" },
-    (args) => getUserChatDevices(args.id, token),
-    { fallbackData: params.recipientDevices }
-  );
-
-  const updateReadSeenStatus = useCallback(async () => {
-    // update unseen and unread messages
-    if (state.convo) {
-      if (state.convo?.unreadCount > 0 || state.convo.unseenCount > 0) {
-        await updateUserConversations(
-          {
-            convoId: state.convo.id,
-            userId: user.id,
-            isRead: state.convo.unreadCount > 0,
-            isSeen: state.convo.unseenCount > 0,
-          },
-          token
-        );
-        mutateStats(undefined, { revalidate: true, populateCache: true });
-      }
-    }
-  }, [state.convo, user.id, token, mutateStats]);
-
-  useEffect(() => {
-    updateMesssages(params.messages);
-  }, [params.messages, updateMesssages]);
-
-  const convoId = state.convo?.id;
-
-  useEffect(() => {
-    // join convo room
-    if (convoId) {
-      socketIo?.emit("convo:join", { convoId });
-      // Join device-specific room so the server can target this device
-      socketIo?.emit("room:join", {
-        room: `user:${user.id}:device:${localDeviceId}`,
-      });
-    }
-
-    return () => {
-      socketIo?.emit("convo:leave", { convoId });
+'use client';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Avatar, Box, Button, Dialog, DialogContent, DialogTitle, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
+import { ArrowBackIosNewOutlined, AttachFile, SendOutlined } from '@mui/icons-material';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuthSession } from '@/hooks';
+import { useConvoSocketIoContext } from '@/context/ConvoSocketIoContext';
+import { createConversation } from '@/lib/conversations';
+import { MessageQueuedError, messagingAPI, sendContent, sendMedia, forgetConversation, hideMessage } from '@/lib/conversations/messaging';
+import { ConvoKind, type Conversation, type EncryptedChatMessage } from '@/types/conversation';
+import type { MessagingDevice, LocalMessage, Content } from '@/lib/signal/contracts';
+import type { UserPublic } from '@/types/user';
+import ChatBubble from './ChatBubble';
+export default function ChatBoxClient({ params }: {
+    params: {
+        recipient: UserPublic;
+        convo?: Conversation;
+        recipientDevices: unknown[];
+        messages: EncryptedChatMessage[];
     };
-  }, [socketIo, convoId, user.id, localDeviceId]);
-
-  useEffect(() => {
-    if (state.convo?.responder.acceptedAt) {
-      updateReadSeenStatus();
+}) {
+    const { user, token: authToken } = useAuthSession();
+    const token = authToken ?? '';
+    const { messages, refresh, convoSocketIo: socket, revision } = useConvoSocketIoContext();
+    const router = useRouter();
+    const [convo, setConvo] = useState(params.convo), [text, setText] = useState(''), [files, setFiles] = useState<File[]>([]), [reply, setReply] = useState<LocalMessage>(), [error, setError] = useState(''), [busy, setBusy] = useState(false), [typingUntil, setTypingUntil] = useState(0), [now, setNow] = useState(Date.now());
+    const pane = useRef<HTMLDivElement>(null), visible = useRef(new Set<string>()), viewed = useRef(new Set<string>());
+    const delivered = useRef(new Set<string>()), read = useRef(new Set<string>()), end = useRef<HTMLDivElement>(null), fileInput = useRef<HTMLInputElement>(null);
+    const peer = params.recipient;
+    const [fingerprints, setFingerprints] = useState<{
+        id: string;
+        hash: string;
+    }[]>([]), [showKeys, setShowKeys] = useState(false);
+    const pending = convo?.state === 'PENDING_REQUEST';
+    const incoming = pending && convo?.responder.id === user.id;
+    const chats = messages.filter(m => m.conversation === convo?.id);
+    const sync = useCallback(async () => {
+        if (!convo)
+            return;
+        try {
+            const result = await refresh(convo.id, peer.id);
+            if (result)
+                setConvo(previous => previous ? { ...previous, ...result.conversation } : previous);
+        }
+        catch (e) {
+            setError(e instanceof Error ? e.message : 'Unable to load messages');
+        }
+    }, [convo?.id, refresh, peer.id]);
+    useEffect(() => { void sync(); const id = setInterval(() => { void sync(); setNow(Date.now()); }, 3000); return () => clearInterval(id); }, [sync]);
+    useEffect(() => { if (revision)
+        void sync(); }, [revision, sync]);
+    useEffect(() => { delivered.current.clear(); read.current.clear(); visible.current.clear(); viewed.current.clear(); setReply(undefined); }, [convo?.id]);
+    useEffect(() => {
+        const observer = new IntersectionObserver(entries => { for (const entry of entries) {
+            const id = (entry.target as HTMLElement).dataset.messageId!;
+            if (entry.isIntersecting) {
+                visible.current.add(id);
+                if (document.visibilityState === 'visible' && document.hasFocus())
+                    viewed.current.add(id);
+            }
+            else
+                visible.current.delete(id);
+        } setNow(Date.now()); }, { root: pane.current, threshold: 0.5 });
+        pane.current?.querySelectorAll('[data-message-id]').forEach(element => observer.observe(element));
+        return () => observer.disconnect();
+    }, [messages, convo?.id]);
+    useEffect(() => { if (document.visibilityState === 'visible' && document.hasFocus())
+        visible.current.forEach(id => viewed.current.add(id)); }, [now]);
+    useEffect(() => {
+        if (!convo || pending)
+            return;
+        const send = async (status: 'DELIVERED' | 'READ', ids: string[]) => { if (!ids.length)
+            return; try {
+            await messagingAPI(user.id, token, '/receipts', 'POST', { conversationId: convo.id, messageIds: ids, status });
+            const cache = status === 'READ' ? read.current : delivered.current;
+            ids.forEach(id => cache.add(id));
+        }
+        catch (e) {
+            setError(e instanceof Error ? e.message : 'Unable to save receipt');
+        } };
+        const received = chats.filter(m => m.fromUserId !== user.id && !m.integrityFailed && !m.queued);
+        // READ only while the unlocked chat is visible and focused. Pending previews never send either event.
+        void send('DELIVERED', received.filter(m => !delivered.current.has(m.id)).slice(0, 100).map(m => m.id));
+        if (document.visibilityState === 'visible' && document.hasFocus())
+            void send('READ', received.filter(m => visible.current.has(m.id) && !read.current.has(m.id)).slice(0, 100).map(m => m.id));
+    }, [messages, convo?.id, pending, user.id, token, now]);
+    useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth' }); }, [chats.length]);
+    useEffect(() => {
+        const start = (event: {
+            conversationId: string;
+            userId: string;
+            expiresAt: number;
+        }) => { if (event.conversationId === convo?.id && event.userId === peer.id && !pending)
+            setTypingUntil(event.expiresAt); };
+        const stop = () => setTypingUntil(0);
+        socket?.on('typing:start', start);
+        socket?.on('typing:stop', stop);
+        return () => { socket?.off('typing:start', start); socket?.off('typing:stop', stop); };
+    }, [socket, convo?.id, peer.id, pending]);
+    const verifyKeys = async () => { try {
+        const devices = (await Promise.all([messagingAPI<MessagingDevice[]>(user.id, token, `/users/${user.id}/devices`), messagingAPI<MessagingDevice[]>(user.id, token, `/users/${peer.id}/devices`)])).flat();
+        const hashes = await Promise.all(devices.map(async (d) => ({ id: `${d.userId}: ${d.deviceId}`, hash: Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(['kwonnet-device-fingerprint', 2, d.userId, d.deviceId, d.identityPublic, d.actionSigningPublic]))))).map(v => v.toString(16).padStart(2, '0')).join(' ').replaceAll(' ', '') })));
+        setFingerprints(hashes);
+        setShowKeys(true);
     }
-  }, [state.convo?.id, state.convo?.unreadCount, state.convo?.unseenCount, state.convo?.responder.acceptedAt, updateReadSeenStatus]);
-
-  useLayoutEffect(() => {
-    const timeout = setTimeout(() => {
-      if (initialScrollRef.current && chatContainerRef.current) {
-        chatContainerRef.current.scrollTop =
-          chatContainerRef.current.scrollHeight;
-        initialScrollRef.current = !socketIo?.connected;
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }
-    }, 50);
-    return () => clearTimeout(timeout);
-  }, [messages, socketIo?.connected]);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      const container = chatContainerRef.current;
-      const nearBottom = container
-        ? container.scrollHeight - container.scrollTop - container.clientHeight < 500
-        : false;
-      if (nearBottom) {
-        // If user is near the bottom, auto-scroll to the latest message
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        setShowScrollToBottom(false);
-      } else {
-        // Show the "scroll to bottom" button if the user is not near the bottom
-        setShowScrollToBottom(true);
-      }
-      updateReadSeenStatus();
-    }, 100);
-    return () => clearTimeout(timeout);
-  }, [messages, updateReadSeenStatus]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    setShowScrollToBottom(false);
-  };
-
-  const handleTextChange = (
-    ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setState((prev) => ({ ...prev, message: ev.target.value }));
-  };
-
-  const sendMessage = async () => {
-    try {
-      console.log("conversation state ", state.convo);
-      const bundles = recipientDevices ?? [];
-      if (!state.message) {
-        return notif.show("Please type message", {
-          severity: "error",
-          autoHideDuration: 5000,
-        });
-      }
-      if (!recipient) {
-        notif.show(
-          "No recipient found, you can't send message to this user this time around",
-          { severity: "error", autoHideDuration: 5000 }
-        );
-      }
-      if (recipientDevices.length === 0) {
-        notif.show(
-          "Recipient device not setup, you can't send message to this user this time around",
-          { severity: "error", autoHideDuration: 5000 }
-        );
-      }
-      if (!state.convo) {
-        //1. initiate conversation
-        const convoRes = await createConversation(
-          {
-            senderId: user.id,
-            recipientId: recipient?.id,
-            kind: segment as ConvoKind,
-          },
-          token
-        );
-        console.log("conversation response ", convoRes);
-        // emit join
-        socketIo?.emit("convo:join", { convoId: convoRes.id });
-        // Join device-specific room so the server can target this device
-        socketIo?.emit("room:join", {
-          room: `user:${user.id}:device:${localDeviceId}`,
-        });
-        //2. bootstrap per-device sessions (X3DH → DR)
-        await bootstrapPerDeviceSessions(
-          user.id,
-          localDeviceId,
-          recipient.id,
-          bundles,
-          socketIo!
-        );
-        console.log("bootstrap session done ....");
-        //3. send message to connected devices
-        const envelopes = await encryptForAllDevices(
-          user.id,
-          localDeviceId,
-          recipient?.id,
-          bundles,
-          state.message
-        );
-        console.log("Message encrypted envelops - ", envelopes);
-        // then send the message
-        socketIo?.emit("message:send", {
-          convoId: convoRes.id,
-          envelopes,
-        });
-        setState((prev) => ({ ...prev, message: "", convo: convoRes }));
-      } else {
-        await bootstrapPerDeviceSessions(
-          user.id,
-          localDeviceId,
-          recipient.id,
-          bundles,
-          socketIo!
-        );
-        const envelopes = await encryptForAllDevices(
-          user.id,
-          localDeviceId,
-          recipient?.id,
-          recipientDevices,
-          state.message
-        );
-        // then send the message
-        socketIo?.emit("message:send", {
-          convoId: state?.convo?.id,
-          envelopes,
-        });
-      }
-      setState((prev) => ({
-        ...prev,
-        message: "",
-      }));
-    } catch (error) {
-      notif.show(getErrorMessage(error), {
-        severity: "error",
-        autoHideDuration: 4000,
-      });
-    }
-  };
-
-  const onKeyDown = (ev: React.KeyboardEvent<HTMLDivElement>) => {
-    if (ev.key === "Enter" && state.message) {
-      ev.preventDefault();
-      ev.stopPropagation();
-      sendMessage();
-    }
-  };
-
-  const handleSubmit = async (
-    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => {
-    ev.preventDefault();
-    sendMessage();
-  };
-
-  const isNotEmpty = !!state.message;
-
-  const badgeColor = "info.light";
-
-  const responder = state?.convo?.responder;
-
-  const initiator = state?.convo?.initiator;
-
-  const responderNotAccepted = !!(responder && user.id === responder?.id && !responder.acceptedAt)
-
-  const noRecipientDevice = recipientDevices.length === 0 
-
-  function isUserNearBottom() {
-    throw new Error("Function not implemented.");
-  }
-
- 
-
-  return (
-    <React.Fragment>
-      <Fade in={true} timeout={3000}>
-        <Box
-          sx={{
-            height: "calc(100vh - 60px)",
-            overflow: "hidden",
-            maxHeight: "100%",
-            p: 0,
-            // px: {lg: 1, md: 1, sm: 0, xs: 0},
-            position: "relative",
-          }}
-        >
-          <StickyBox style={{ zIndex: 9999 }}>
-            <Paper elevation={0} sx={{ p: 1 }}>
-              <Stack
-                direction={"row"}
-                sx={{
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  pt: 0.5
-                }}>
-                <Stack
-                  direction={"row"}
-                  spacing={0.5}
-                  sx={{
-                    alignItems: "center",
-                    cursor: "pointer"
-                  }}>
-                  <Stack direction={"row"} spacing={0.1} sx={{
-                    alignItems: "center"
-                  }}>
-                    <Box
-                    // sx={{
-                    //   display: {
-                    //     lg: "none",
-                    //     md: "none",
-                    //     sm: "block",
-                    //     xs: "block",
-                    //   },
-                    // }}
-                    >
-                      <IconButton LinkComponent={Link} href="/messages">
-                        <ArrowBackIosNewOutlined />
-                      </IconButton>
-                    </Box>
-                    <Box>
-                      <Avatar
-                        component={Link}
-                        href={`/@${recipient.username}`}
-                        src={recipient?.avatar!}
-                        alt={recipient?.name}
-                        sx={{
-                          width: { lg: 50, md: 50, sm: 30, xs: 30 },
-                          height: { lg: 50, md: 50, sm: 30, xs: 30 },
-                          borderRadius: "50%",
-                          textDecoration: "none",
-                        }}
-                      >
-                        {recipient?.name[0]}
-                      </Avatar>
-                    </Box>
-                  </Stack>
-                  <div>
-                    <Stack
-                      direction="column"
-                      spacing={-1}
-                      component={Link}
-                      href={`/@${recipient.username}`}
-                      sx={{ textDecoration: "none" }}
-                    >
-                      <Stack
-                        direction={"row"}
-                        spacing={0.3}
-                        sx={{
-                          alignItems: "center"
-                        }}
-                      >
-                        <Typography
-                          color="textSecondary"
-                          sx={{
-                            display: "-webkit-box",
-                            WebkitLineClamp: 1, // Number of lines before truncating
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            maxWidth: "100%",
-                            fontWeight: 800,
-                          }}
-                          // variant={{lg: "h6"}}
-                        >
-                          {recipient.name}
-                        </Typography>
-                        {recipient?.meta?.isPro && (
-                          <IconButton size="small" sx={{ flexShrink: 0 }}>
-                            <VerifiedIcon
-                              sx={{ width: 14, height: 14, color: badgeColor }}
-                            />
-                          </IconButton>
-                        )}
-                      </Stack>
-                      <Typography
-                        variant="caption"
-                        color="textDisabled"
-                        sx={{
-                          display: "-webkit-box",
-                          WebkitLineClamp: 1, // Number of lines before truncating
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                          maxWidth: "100%",
-                        }}
-                      >
-                        @{recipient.username}
-                      </Typography>
-                    </Stack>
-                  </div>
-                </Stack>
-                <Stack direction={"row"} spacing={0.5}>
-                  <Box>
-                    <IconButton size="small">
-                      <VideocamOutlinedIcon />
-                    </IconButton>
-                  </Box>
-                  <Box>
-                    <IconButton size="small">
-                      <PhoneEnabledOutlinedIcon />
-                    </IconButton>
-                  </Box>
-                </Stack>
-              </Stack>
-            </Paper>
-          </StickyBox>
-
-          {/* chat section */}
-          <Box
-            ref={chatContainerRef}
-            sx={{
-              px: 0.5,
-              height: responderNotAccepted ? "calc(100vh - 300px)" : "calc(100vh - 170px)",
-              marginTop: responderNotAccepted ? 12.5 : 0,
-              overflow: "auto", // bgcolor: "background.paper",
-              boxShadow: "inset 0px 0px 5px rgba(0,0,0,0.1)",
-              "&::-webkit-scrollbar": {
-                width: "8px",
-              },
-              "&::-webkit-scrollbar-thumb": {
-                backgroundColor: "rgba(0, 0, 0, 0.2)",
-                borderRadius: "4px",
-              },
-              "&::-webkit-scrollbar-thumb:hover": {
-                backgroundColor: "rgba(0, 0, 0, 0.3)",
-              },
-              "&::-webkit-scrollbar-track": {
-                backgroundColor: "transparent",
-              },
-              scrollbarWidth: "thin", // Firefox
-              scrollbarColor: "rgba(0, 0, 0, 0.2) transparent",
-            }}
-            // onScroll={() => setShowScrollToBottom(!isUserNearBottom())}
-            
-          >
-            {messages.map((chat, index) => (
-              <ChatBubble
-                key={index}
-                isSender={chat.fromUserId === user.id}
-                message={chat}
-              />
-            ))}
-            <div ref={messagesEndRef} />
-          </Box>
-          <Box sx={{ position: "relative" }}>
-            <Fade in={showScrollToBottom}>
-              <IconButton
-                onClick={scrollToBottom}
-                sx={{
-                  position: "absolute",
-                  bottom: 20,
-                  right: 15,
-                  bgcolor: "primary.dark",
-                  // color: "text.primary",
-                  "&:hover": { bgcolor: "primary.dark" },
-                }}
-              >
-                <KeyboardArrowDownIcon />
-              </IconButton>
-            </Fade>
-          </Box>
-
-          <Box sx={{ position: "absolute", width: "100%", bottom: responderNotAccepted ? -100 : 0, px: 1 }}>
-            {/* initiator && responder && !responder.acceptedAt ? (
-              <Typography textAlign={"center"} sx={{ py: 1 }}>
-                {recipient?.name} has to accept your conversation first
-                before you can chat with them.
-              </Typography>
-            ) : */}
-            {responderNotAccepted &&  <Paper
-                elevation={0}
-                sx={{
-                  p: 0.5,
-                  py: 1,
-                  width: "100%",
-                  justifyContent: "center",
-                  display: "flex",
-                  flexDirection: "column",
-                  // alignItems: "center"
-                }}
-              >
-                <Typography
-                  sx={{
-                    textAlign: "center",
-                    py: 1
-                  }}>
-                  This user is texting you for the first time, you can choose to
-                  accept or reject and they won't know if you've read the chat.
-                </Typography>
-                <Grid
-                  container
-                  spacing={1}
-                  sx={{ width: "100%", justifyContent: "center" }}
-                >
-                  <Grid size={{ lg: 3, md: 3, sm: 3, xs: 3 }}>
-                    <Button
-                      size="small"
-                      sx={{ borderRadius: 30 }}
-                      variant="outlined"
-                      color="info"
-                    >
-                      Accept
-                    </Button>
-                  </Grid>
-                  <Grid size={{ lg: 3, md: 3, sm: 3, xs: 3 }}>
-                    <Button
-                      size="small"
-                      sx={{ borderRadius: 30 }}
-                      variant="outlined"
-                      color="warning"
-                    >
-                      Reject
-                    </Button>
-                  </Grid>
-                  <Grid size={{ lg: 6, md: 6, sm: 6, xs: 6 }}>
-                    <Button
-                      size="small"
-                      sx={{ borderRadius: 30 }}
-                      variant="outlined"
-                      color="error"
-                    >
-                      Block & Report
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Paper>}
-
-              {noRecipientDevice && (
-              <Typography
-                color="warning"
-                sx={{
-                  textAlign: "center",
-                  p: 1
-                }}>
-                Sorry, you can't send message to this user right now until they
-                setup their device.
-              </Typography>)}
-            {noRecipientDevice ? null : (
-              <Stack
-                direction={"row"}
-                sx={{
-                  justifyContent: "space-between",
-                  width: "100%"
-                }}>
-                <Stack
-                  direction={"row"}
-                  sx={{
-                    alignItems: "center",
-                    width: "100%"
-                  }}>
-                  <Box>
-                    <IconButton>
-                      <EmojiEmotionsOutlinedIcon />
-                    </IconButton>
-                  </Box>
-                  <TextField
-                    size="small"
-                    variant="outlined"
-                    placeholder="Type message"
-                    fullWidth={true}
-                    multiline={true}
-                    maxRows={2}
-                    onChange={(ev) => handleTextChange(ev)}
-                    onKeyDown={(ev) => onKeyDown(ev)}
-                    value={state.message}
-                    sx={{ borderRadius: 30 }}
-                    slotProps={{
-                      input: {
-                        sx: {
-                          borderRadius: 10,
-                        },
-                      },
-                    }}
-                  />
-                </Stack>
-                <Stack direction={"row"} spacing={1} sx={{
-                  alignItems: "center"
-                }}>
-                  <Box>
-                    <IconButton>
-                      <AttachmentOutlinedIcon />
-                    </IconButton>
-                  </Box>
-                  <Box>
-                    <IconButton onClick={(ev) => handleSubmit(ev)}>
-                      {isNotEmpty ? <SendOutlinedIcon /> : <MicOutlinedIcon />}
-                    </IconButton>
-                  </Box>
-                </Stack>
-              </Stack>
-            )}
-          </Box>
-        </Box>
-      </Fade>
-    </React.Fragment>
-  );
-};
-
-export default ChatBoxClient;
+    catch (e) {
+        setError(e instanceof Error ? e.message : 'Unable to load identities');
+    } };
+    const ensureConversation = async () => { if (convo)
+        return convo; const created = await createConversation({ senderId: user.id, recipientId: peer.id, kind: ConvoKind.CHAT }, token); setConvo(created); return created; };
+    const send = async (content?: Content) => {
+        if (busy || incoming)
+            return;
+        setBusy(true);
+        setError('');
+        try {
+            const c = await ensureConversation();
+            const quoted = reply ? { targetId: reply.event.eventId, targetHash: reply.hash } : undefined;
+            if (content)
+                await sendContent(user.id, token, peer.id, c.id, content);
+            else if (files.length)
+                await sendMedia(user.id, token, peer.id, c.id, files, text, quoted);
+            else if (text.trim())
+                await sendContent(user.id, token, peer.id, c.id, { kind: 'text', text: text.trim(), reply: quoted });
+            setText('');
+            setFiles([]);
+            setReply(undefined);
+            socket?.emit('typing:stop', { conversationId: c.id });
+            await refresh(c.id, peer.id);
+        }
+        catch (e) {
+            if (e instanceof MessageQueuedError) {
+                setText('');
+                setFiles([]);
+                setReply(undefined);
+                if (convo)
+                    await refresh(convo.id, peer.id).catch(() => { });
+            }
+            setError(e instanceof Error ? e.message : 'Unable to send message');
+        }
+        finally {
+            setBusy(false);
+        }
+    };
+    const resolve = async (action: 'accept' | 'reject' | 'block') => {
+        if (!convo)
+            return;
+        setBusy(true);
+        setError('');
+        try {
+            const received = chats.filter(m => m.fromUserId !== user.id && !m.integrityFailed && !m.queued).slice(-100).map(m => m.id);
+            await messagingAPI(user.id, token, `/${convo.id}/request`, 'POST', { action, deliveredIds: action === 'accept' ? received : [], readIds: action === 'accept' && document.visibilityState === 'visible' && document.hasFocus() ? received.filter(id => viewed.current.has(id)) : [] });
+            if (action === 'accept') {
+                setConvo({ ...convo, state: 'ACCEPTED', responder: { ...convo.responder, acceptedAt: new Date().toISOString() } });
+                await sync();
+                router.replace(`/messages/${peer.id}/chat`);
+            }
+            else {
+                await forgetConversation(user.id, convo.id);
+                router.replace(`/messages/${user.id}/requests/list`);
+            }
+            router.refresh();
+        }
+        catch (e) {
+            setError(e instanceof Error ? e.message : 'Unable to resolve request');
+        }
+        finally {
+            setBusy(false);
+        }
+    };
+    const action = async (m: LocalMessage, kind: 'reply' | 'edit' | 'delete' | 'hide' | 'reaction', value?: string) => {
+        if (kind === 'reply') {
+            setReply(m);
+            return;
+        }
+        if (kind === 'hide') {
+            try {
+                await hideMessage(user.id, token, m.conversation, m.id);
+                await sync();
+            }
+            catch (e) {
+                setError(e instanceof Error ? e.message : 'Unable to hide message');
+            }
+            return;
+        }
+        const target = { targetId: m.event.eventId, targetHash: m.hash };
+        if (kind === 'reaction')
+            return send({ ...target, kind: 'reaction', emoji: value as '👍', remove: m.reactions.some(r => r.userId === user.id && r.reaction === value) });
+        if (kind === 'edit') {
+            const next = window.prompt('Edit message', m.content);
+            if (next?.trim())
+                await send({ ...target, kind: 'edit', text: next.trim(), revision: m.revision + 1 });
+        }
+        if (kind === 'delete')
+            await send({ ...target, kind: 'delete', signature: '' });
+    };
+    return <Stack sx={{ height: 'calc(100vh - 100px)', minHeight: 400 }}>
+  <Paper sx={{ p: 1 }} elevation={0}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><IconButton component={Link} href="/messages"><ArrowBackIosNewOutlined /></IconButton><Avatar src={peer.avatar ?? undefined}/><Box><Typography sx={{ fontWeight: 700 }}>{peer.name}</Typography><Typography variant="caption">@{peer.username} · End-to-end encrypted</Typography></Box><Button size="small" onClick={verifyKeys}>Verify keys</Button></Stack></Paper>
+  <Dialog open={showKeys} onClose={() => setShowKeys(false)}><DialogTitle>Verify device identities</DialogTitle><DialogContent><Typography>Compare these fingerprints with your contact through a trusted channel. First-use trust alone does not prove who owns a key.</Typography>{fingerprints.map(f => <Box key={f.id} sx={{ my: 2, overflowWrap: 'anywhere' }}><Typography variant="caption">{f.id}</Typography><Typography sx={{ fontFamily: 'monospace' }}>{f.hash}</Typography></Box>)}</DialogContent></Dialog>
+  {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
+  <Box ref={pane} sx={{ flex: 1, overflowY: 'auto', p: 1 }}>{chats.map(m => <Box key={m.id} data-message-id={m.id}><ChatBubble message={m} isSender={m.fromUserId === user.id} onAction={(kind, value) => action(m, kind, value)} disabled={busy || !!pending || !!m.queued || !!m.integrityFailed} userId={user.id} token={token}/></Box>)}<div ref={end}/></Box>
+  {incoming ? <Paper sx={{ p: 2 }}><Typography>Preview privately. No delivered or read receipts are sent until you accept.</Typography><Stack direction="row" spacing={1}><Button disabled={busy} onClick={() => resolve('accept')}>Accept</Button><Button disabled={busy} onClick={() => resolve('reject')}>Reject</Button><Button disabled={busy} color="error" onClick={() => resolve('block')}>Block</Button></Stack></Paper> : <Box sx={{ p: 1 }}>
+   {pending && <Typography variant="caption">Message request sent. Receipts appear after acceptance.</Typography>}
+   {!pending && typingUntil > now && <Typography variant="caption">{peer.name} is typing…</Typography>}
+   {reply && <Alert onClose={() => setReply(undefined)}>Replying to: {reply.content.slice(0, 100)}</Alert>}
+   {files.length > 0 && <Alert onClose={() => setFiles([])}>{files.map(f => f.name).join(', ')}</Alert>}
+   <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><input hidden ref={fileInput} type="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,audio/mpeg,application/pdf" onChange={e => { const selected = Array.from(e.target.files ?? []); if (selected.length > 10 || selected.some(f => f.size > 8388608))
+            setError('Select up to 10 files, each under 8 MB');
+        else
+            setFiles(selected); e.target.value = ''; }}/><IconButton disabled={busy} onClick={() => fileInput.current?.click()} aria-label="Attach encrypted file"><AttachFile /></IconButton><TextField fullWidth size="small" multiline maxRows={3} value={text} placeholder="Message" disabled={busy} onChange={e => { setText(e.target.value); if (convo && !pending)
+            socket?.emit('typing:start', { conversationId: convo.id }); }} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (text.trim() || files.length)
+                void send();
+        } }}/><IconButton aria-label="Send message" disabled={busy || (!text.trim() && !files.length)} onClick={() => send()}><SendOutlined /></IconButton></Stack>
+  </Box>}
+ </Stack>;
+}
