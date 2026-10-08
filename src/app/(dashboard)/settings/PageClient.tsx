@@ -1,4 +1,5 @@
 'use client';
+import PasswordTextField from '@/components/common/PasswordTextField';
 import React, {useEffect, useState} from 'react';
 import {Alert, Box, Button, Chip, CircularProgress, Container, FormControlLabel, Paper, Stack, Switch, TextField, Typography} from '@mui/material';
 import useSWR from 'swr';
@@ -120,9 +121,9 @@ export default function PageClient() {
           ? <Alert severity="success" sx={{mb: 2}}>Google verification complete. You can now set your password.</Alert>
           : <Alert severity="info" sx={{mb: 2}} action={<Button disabled={saving} onClick={() => void signIn("google", {redirectTo: "/settings"}).catch(() => notif.show("Unable to verify with Google. Please try again.", {severity: "error"}))}>Verify with Google</Button>}>Verify your account with Google, then set a password within five minutes.</Alert>)}
         <Stack spacing={2}>
-          {account?.hasPassword && <TextField type="password" label="Current password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} autoComplete="current-password" required />}
-          <TextField type="password" label="New password" value={newPassword} onChange={event => setNewPassword(event.target.value)} autoComplete="new-password" helperText="Use 8–32 characters." slotProps={{htmlInput: {minLength: 8, maxLength: 32}}} required />
-          <TextField type="password" label="Confirm new password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" required />
+          {account?.hasPassword && <PasswordTextField label="Current password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} autoComplete="current-password" required />}
+          <PasswordTextField label="New password" value={newPassword} onChange={event => setNewPassword(event.target.value)} autoComplete="new-password" helperText="Use 8–32 characters." slotProps={{htmlInput: {minLength: 8, maxLength: 32}}} required />
+          <PasswordTextField label="Confirm new password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" required />
         </Stack>
         <Button type="submit" disabled={saving || !account} sx={{mt: 1}}>Update password</Button>
       </Box>

@@ -39,7 +39,6 @@ import useSWR from 'swr';
 import { subscribeUserToPush } from '@/utils/pushClient';
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import PersonRemoveAlt1OutlinedIcon from "@mui/icons-material/PersonRemoveAlt1Outlined";
-import AssistantOutlinedIcon from "@mui/icons-material/AssistantOutlined";
 import CardGiftcardOutlinedIcon from "@mui/icons-material/CardGiftcardOutlined";
 import MoreTimeOutlinedIcon from "@mui/icons-material/MoreTimeOutlined";
 import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
@@ -509,16 +508,6 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
               )}
               {canAccess && (
                 <>
-                  <Tooltip title="Send Anon Message">
-                    <IconButton
-                      disabled={disabled}
-                      size="small"
-                      LinkComponent={Link}
-                      href={`/messages/${visitedUser?.id}/anonymous`}
-                    >
-                      <AssistantOutlinedIcon />
-                    </IconButton>
-                  </Tooltip>
                   <Tooltip title={`Gift ${visitedUser?.username}`}>
                     <IconButton disabled={disabled} size="small">
                       <CardGiftcardOutlinedIcon />

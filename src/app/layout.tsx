@@ -21,7 +21,6 @@ import "./globals.css";
 import SocketIoProvider from "@/context/SocketIoContext";
 import { constant } from "@/config";
 import SSEContextProvider from "@/context/SSEContext";
-import RegisterDeviceProvider from "@/providers/RegisterDeviceProvider";
 
 export const dynamic = "force-dynamic";
 
@@ -53,11 +52,11 @@ export default async function RootLayout({
           <AppRouterCacheProvider>
             <React.Suspense fallback={<AppLoadingShell />}>
               <NextjsAppProvider session={session}>
-                {publicLegal ? children : <AuthSessionBoundary initiallyAuthenticated={!!session?.user}><RegisterDeviceProvider>
+                {publicLegal ? children : <AuthSessionBoundary initiallyAuthenticated={!!session?.user}>
                 <SocketIoProvider>
                     <SSEContextProvider>{children}</SSEContextProvider>
                 </SocketIoProvider>
-                </RegisterDeviceProvider></AuthSessionBoundary>}
+                </AuthSessionBoundary>}
               </NextjsAppProvider>
             </React.Suspense>
           </AppRouterCacheProvider>

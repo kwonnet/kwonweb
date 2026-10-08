@@ -24,7 +24,8 @@ test('settings paginates account-scoped sessions and revokes only the selected s
   '@/lib/account-actions': {rememberCurrentAccount: async () => {}, logoutCurrentAccount: async () => {logout++;}},
   swr: {__esModule: true, default: currentKey => {if (currentKey?.[0] === 'account-settings') return {data: account, mutate: async () => {}}; key = currentKey; return {data: {sessions: [session], hasMore: currentKey[3] === 1}, mutate: async () => {}};}},
  };
- const module = {exports: {}};
+ mocks['@/components/common/PasswordTextField'] = {__esModule: true, default: mocks['@mui/material'].TextField};
+  const module = {exports: {}};
  const code = ts.transpileModule(readFileSync('src/app/(dashboard)/settings/PageClient.tsx', 'utf8'), {compilerOptions: {module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true}}).outputText;
  new Function('require', 'module', 'exports', code)(id => id in mocks ? mocks[id] : require(id), module, module.exports);
  const root = createRoot(document.getElementById('root'));

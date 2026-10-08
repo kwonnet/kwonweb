@@ -8,7 +8,7 @@ import { useAuthSession } from '@/hooks';
 import { useConvoSocketIoContext } from '@/context/ConvoSocketIoContext';
 import { createConversation } from '@/lib/conversations';
 import { MessageQueuedError, messagingAPI, sendContent, sendMedia, forgetConversation, hideMessage } from '@/lib/conversations/messaging';
-import { ConvoKind, type Conversation, type EncryptedChatMessage } from '@/types/conversation';
+import { type Conversation, type EncryptedChatMessage } from '@/types/conversation';
 import type { MessagingDevice, LocalMessage, Content } from '@/lib/signal/contracts';
 import type { UserPublic } from '@/types/user';
 import ChatBubble from './ChatBubble';
@@ -108,7 +108,7 @@ export default function ChatBoxClient({ params }: {
         setError(e instanceof Error ? e.message : 'Unable to load identities');
     } };
     const ensureConversation = async () => { if (convo)
-        return convo; const created = await createConversation({ senderId: user.id, recipientId: peer.id, kind: ConvoKind.CHAT }, token); setConvo(created); return created; };
+        return convo; const created = await createConversation({ recipientId: peer.id }, token); setConvo(created); return created; };
     const send = async (content?: Content) => {
         if (busy || incoming)
             return;

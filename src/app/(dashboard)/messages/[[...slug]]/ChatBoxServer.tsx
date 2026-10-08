@@ -4,7 +4,7 @@ import React from "react";
 import ChatBoxClient from "./ChatBoxClient";
 import { UserPublic } from "@/types/user";
 import DisplayError from "@/components/common/DisplayError";
-import { ChatDevice } from "@/types/sodium";
+import type {MessagingDevice} from "@/lib/signal/contracts";
 import { Conversation, EncryptedChatMessage } from "@/types/conversation";
 const ChatBoxServer = async ({ recipientId, slug, }: {
     recipientId: string;
@@ -12,8 +12,8 @@ const ChatBoxServer = async ({ recipientId, slug, }: {
 }) => {
     const session = await getServerSession();
     const user = session?.user;
-    if (slug === "anonymous") {
-        return <DisplayError status={501} message="Anonymous messaging requires a separate encrypted identity protocol and is currently unavailable."/>;
+    if (!["chat", "requests"].includes(slug)) {
+        return <DisplayError status={404} message="Messaging page not found."/>;
     }
     // normal chat
     const result = await fetch(`${apiUrl}/conversations/users/${user?.id}/recipients/${recipientId}/messages?slug=${slug}`, {
@@ -32,7 +32,7 @@ const ChatBoxServer = async ({ recipientId, slug, }: {
     const res: {
         recipient: UserPublic;
         convo?: Conversation;
-        recipientDevices: ChatDevice[];
+        recipientDevices: MessagingDevice[];
         messages: EncryptedChatMessage[];
     } = await result.json();
     return <ChatBoxClient params={res}/>;

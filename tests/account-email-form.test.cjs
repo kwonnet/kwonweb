@@ -10,7 +10,8 @@ for(const mode of ['verify-email','reset-password'])test(`${mode} keeps the link
   'next/link':{__esModule:true,default:ui},
   '@/lib/auth':{requestAccountEmail:async(...args)=>{calls.push(args);return {message:'Action completed. Sign in now.'};}},
  };
- const module={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('src/components/auth/AccountEmailForm.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText)(id=>id in mocks?mocks[id]:require(id),module,module.exports);
+ mocks['@/components/common/PasswordTextField'] = {__esModule: true, default: mocks['@mui/material'].TextField};
+  const module={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('src/components/auth/AccountEmailForm.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText)(id=>id in mocks?mocks[id]:require(id),module,module.exports);
  const root=require('react-dom/client').createRoot(document.getElementById('root'));
  try{
   await React.act(async()=>root.render(React.createElement(module.exports.default,{mode})));

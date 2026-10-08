@@ -1,7 +1,6 @@
 import { apiUrl } from "@/config";
 import { axiosAPI } from "@/config/axios";
 import { AppNotification, FeedPost, GameAchievement, ReportReasonCode, Subscription } from "@/types"
-import { EncryptedConversation } from "@/types/conversation";
 import { FollowAction, UserAccountStatus, UserConnection, UserMiniProfile, UserStats } from "@/types/user";
 import { composeUrlQuery, getErrorMessage } from "@/utils"
 import { cache } from "react";

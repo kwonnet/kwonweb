@@ -25,7 +25,8 @@ test('authentication preserves input when switching modes and sends the correct 
     'next-auth/react': { signIn: (...args) => { calls.push(args); return new Promise(resolve => { resolveSignIn = resolve; }); } },
   };
   function load(path) {
-    const module = { exports: {} };
+    mocks['@/components/common/PasswordTextField'] = {__esModule: true, default: mocks['@mui/material'].TextField};
+  const module = { exports: {} };
     const code = ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: {
       module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
     } }).outputText;
@@ -97,7 +98,8 @@ test('configured Google authentication starts OAuth with the safe application re
     'next-auth/react': {getProviders: async () => ({google: {id: 'google'}}), signIn: async (...args) => {calls.push(args);}},
   };
   function load(file) {
-    const module = {exports: {}};
+    mocks['@/components/common/PasswordTextField'] = {__esModule: true, default: mocks['@mui/material'].TextField};
+  const module = {exports: {}};
     const code = ts.transpileModule(readFileSync(file, 'utf8'), {compilerOptions: {module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true}}).outputText;
     new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === '@/lib/auth-redirect' ? load('src/lib/auth-redirect.ts') : require(name), module, module.exports);
     return module.exports;

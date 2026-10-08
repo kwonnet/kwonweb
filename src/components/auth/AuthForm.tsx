@@ -1,4 +1,5 @@
 "use client";
+import PasswordTextField from "@/components/common/PasswordTextField";
 import { useState, useEffect, type FormEvent } from "react";
 import { Alert, Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { signIn, getProviders } from "next-auth/react";
@@ -76,7 +77,7 @@ export default function AuthForm({ initialMode = "signin", initialEmail = "" }: 
       {!isSignIn && <TextField label="Name" name="name" autoComplete="name" value={name} onChange={e => setName(e.target.value)} required fullWidth disabled={loading} />}
       <TextField label={isSignIn ? "Email or username" : "Email"} name="email" type={isSignIn ? "text" : "email"}
         autoComplete={isSignIn ? "username" : "email"} value={email} onChange={e => {setEmail(e.target.value);setVerificationRequired(false);}} required fullWidth disabled={loading} />
-      <TextField label="Password" name="password" type="password" autoComplete={isSignIn ? "current-password" : "new-password"}
+      <PasswordTextField label="Password" name="password" autoComplete={isSignIn ? "current-password" : "new-password"}
         value={password} onChange={e => setPassword(e.target.value)} required fullWidth disabled={loading} />
       <Button type="submit" variant="contained" size="large" loading={loading} disabled={loading}>
         {isSignIn ? "Log in" : "Create account"}

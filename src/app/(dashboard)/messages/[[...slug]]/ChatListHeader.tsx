@@ -45,7 +45,6 @@ const getTabItems= (userId: string) => {
     return [
   { id: "chat", pathname: `/messages`, name: "Chat" },
   { id: "requests", pathname: `/messages/${userId}/requests/list`, name: "Requests" },
-  { id: "anonymous", pathname: `/messages/${userId}/anonymous/list`, name: "Anonymous" },
 ];
 }
 

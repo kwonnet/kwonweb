@@ -40,7 +40,6 @@ test('legal rendering skips session refresh even with an expired session and omi
     '@/providers/NextjsAppProvider': {__esModule: true, default: component},
     '@/context/SocketIoContext': {__esModule: true, default: component},
     '@/context/SSEContext': {__esModule: true, default: component},
-    '@/providers/RegisterDeviceProvider': {__esModule: true, default: component},
     'slick-carousel/slick/slick.css': {}, 'slick-carousel/slick/slick-theme.css': {}, './globals.css': {},
   }).default;
   const legal = {type: 'legal-content'};

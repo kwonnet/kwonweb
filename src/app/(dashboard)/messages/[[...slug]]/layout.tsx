@@ -23,7 +23,7 @@ const Layout = async ({
 
   console.log("messages layout ", _params);
 
-  const isCurrentUser = session?.user?.id === recipientId && (slug === "requests" || slug === "anonymous")
+  const isCurrentUser = session?.user?.id === recipientId && slug === "requests"
 
   const isShowList = !recipientId || _params?.slug?.includes("list")
 
