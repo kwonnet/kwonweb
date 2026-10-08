@@ -1,5 +1,5 @@
 import { Box, Grid, Paper } from "@mui/material";
-import React, { use } from "react";
+import React from "react";
 import ChatListServer from "./ChatListServer";
 import ChatListHeader from "./ChatListHeader";
 import { getServerSession } from "@/lib/server-session";
@@ -20,7 +20,6 @@ const Layout = async ({
 
   const slug = _params?.slug ? _params.slug[1] : "chat";
 
-  console.log("messages layout ", _params);
 
   const isCurrentUser = session?.user?.id === recipientId && slug === "requests"
 
@@ -31,12 +30,13 @@ const Layout = async ({
         <Box
           sx={{
             height: "100%",
-            overflow: "auto",
-            position: "fixed",
+            minHeight: 0,
+            minWidth: 0,
+            overflow: "hidden",
             width: "100%",
           }}
         >
-          <Grid container spacing={1} sx={{ maxWidth: "100vw" }}>
+          <Grid container spacing={1} sx={{ width: "100%", height: "100%", minHeight: 0 }}>
             <Grid
               sx={{
                 display: {
@@ -45,15 +45,17 @@ const Layout = async ({
                   sm: isShowList ? "block" : "none",
                   xs: isShowList ? "block" : "none",
                 },
-                width: "100%",
+                minWidth: 0,
+                minHeight: 0,
+                height: "100%",
               }}
-              size={{ lg: 3.5, md: 3.5 }}
+              size={{ xs: 12, md: 4 }}
             >
               <Paper
                 sx={{
                   // height: "calc(100vh - 20px)",
-                  overflow: "hidden",
-                  maxHeight: "100%",
+                  overflowY: "auto",
+                  height: "100%",
                   p: 1,
                   position: "relative",
                 }}
@@ -72,10 +74,12 @@ const Layout = async ({
                   // xs: recipientId ? "block" : "none",
                   sm: isShowList ? "none" : "block",
                   xs: isShowList ? "none" : "block",
-                  width: "100%",
                 },
+                minWidth: 0,
+                minHeight: 0,
+                height: "100%",
               }}
-              size={{ lg: 6.3, md: 6.3 }}
+              size={{ xs: 12, md: 8 }}
             >
               {isCurrentUser ? <StartConvo /> : children}
             </Grid>

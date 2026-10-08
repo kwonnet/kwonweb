@@ -3,7 +3,7 @@ import { SessionCipher, SignalProtocolAddress } from '@privacyresearch/libsignal
 import { apiUrl } from '@/config';
 import { currentMessagingRuntime, signMessaging } from '@/lib/signal/deviceManager';
 import { DraftSignalStore, encryptBatch, decryptAndCommit, Target } from '@/lib/signal/signal';
-import { base64, unbase64, encryptAttachment, decryptAttachment } from '@/lib/signal/attachments';
+import { base64, unbase64, encryptAttachment, decryptAttachment, validateImageUploads } from '@/lib/signal/attachments';
 import { eventSchema, attachmentSchema, deleteSigningBytes, type MessagingEvent, type MessagingDevice, type MessagingWire, type LocalMessage, type Content } from '@/lib/signal/contracts';
 import type { Conversation } from '@/types/conversation';
 export class MessageQueuedError extends Error {
@@ -97,9 +97,9 @@ export async function flushMessagingOutbox(userId: string, token: string) {
     if (failed.length)
         throw new Error('Some encrypted messages remain queued on this browser');
 }
-export async function sendContent(userId: string, token: string, peerId: string, conversationId: string, content: Content) {
+export async function sendContent(userId: string, token: string, peerId: string, conversationId: string, content: Content, eventId = crypto.randomUUID()) {
     const r = currentMessagingRuntime(userId);
-    const event: MessagingEvent = { v: 2, eventId: crypto.randomUUID(), conversationId, senderId: userId, senderDeviceId: r.deviceId, createdAt: new Date().toISOString(), content };
+    const event: MessagingEvent = { v: 2, eventId, conversationId, senderId: userId, senderDeviceId: r.deviceId, createdAt: new Date().toISOString(), content };
     if (content.kind === 'delete')
         content.signature = await signMessaging(deleteSigningBytes(event, content.targetId, content.targetHash));
     eventSchema.parse(event);
@@ -117,7 +117,8 @@ export async function sendContent(userId: string, token: string, peerId: string,
 export async function sendMedia(userId: string, token: string, peerId: string, conversationId: string, files: File[], text: string, reply?: {
     targetId: string;
     targetHash: string;
-}) {
+}, eventId = crypto.randomUUID()) {
+    validateImageUploads(files);
     const attachments = [];
     for (const file of files) {
         const blobId = crypto.randomUUID();
@@ -137,7 +138,7 @@ export async function sendMedia(userId: string, token: string, peerId: string, c
         }
         attachments.push(attachmentSchema.parse(secret));
     }
-    return sendContent(userId, token, peerId, conversationId, { kind: 'media', text, attachments, reply });
+    return sendContent(userId, token, peerId, conversationId, { kind: 'media', text, attachments, reply }, eventId);
 }
 export async function loadMedia(userId: string, token: string, conversationId: string, secret: NonNullable<LocalMessage['attachments']>[number]) {
     const r = currentMessagingRuntime(userId);

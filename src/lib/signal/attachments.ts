@@ -1,5 +1,7 @@
 /** Attachment secrets stay inside the Signal channel; relay receives ciphertext only. */
-const MAX_FILE_BYTES = 8 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 500 * 1024;
+export const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
+const MAX_FILE_BYTES = 8 * 1024 * 1024; // Keep previously sent attachments readable.
 const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'video/mp4', 'audio/mpeg', 'application/pdf']);
 export interface AttachmentSecret {
     v: 1;
@@ -24,9 +26,17 @@ export function unbase64(value: string): Uint8Array<ArrayBuffer> {
 function aad(conversationId: string, blobId: string): Uint8Array<ArrayBuffer> {
     return new TextEncoder().encode(JSON.stringify(['kwonnet-attachment', 1, conversationId, blobId]));
 }
+export function validateImageUploads(files: File[]) {
+    if (files.length > 10 || files.some(file => file.size === 0 || file.size > MAX_IMAGE_BYTES || !(IMAGE_TYPES as readonly string[]).includes(file.type)))
+        throw new Error('Select up to 10 PNG, JPEG or WebP images, each no larger than 500 KB.');
+}
 export async function encryptAttachment(file: File, conversationId: string, blobId: string) {
-    if (file.size > MAX_FILE_BYTES || !allowedTypes.has(file.type))
-        throw new Error('Unsupported attachment');
+    validateImageUploads([file]);
+    const header = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+    const matches = file.type === 'image/png' ? [137, 80, 78, 71, 13, 10, 26, 10].every((byte, i) => header[i] === byte)
+        : file.type === 'image/jpeg' ? header[0] === 255 && header[1] === 216 && header[2] === 255
+        : String.fromCharCode(...header.slice(0, 4)) === 'RIFF' && String.fromCharCode(...header.slice(8, 12)) === 'WEBP';
+    if (!matches) throw new Error('The selected file is not a valid PNG, JPEG or WebP image.');
     const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: aad(conversationId, blobId), tagLength: 128 }, key, await file.arrayBuffer());

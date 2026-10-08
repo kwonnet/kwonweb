@@ -1,5 +1,6 @@
 'use client';
 import PasswordTextField from '@/components/common/PasswordTextField';
+import MessagingHistoryTransfer from '@/components/common/MessagingHistoryTransfer';
 import { createContext, useContext, useEffect, useCallback, useRef, useState, type ReactNode } from 'react';
 import { Alert, Box, Button, Dialog, DialogContent, DialogTitle, Paper, Stack, Typography } from '@mui/material';
 import { useAuthSession } from '@/hooks';
@@ -7,13 +8,14 @@ import { useSocketIoContext } from './SocketIoContext';
 import { hasMessagingVault, unlockMessaging, lockMessaging, resetMessagingDevice, currentMessagingRuntime, signMessaging } from '@/lib/signal/deviceManager';
 import { setMessagingSocket, syncMessages, resetLocalMessaging, enroll, decryptWire, localConversation, messagingAPI, flushMessagingOutbox, type SyncResult } from '@/lib/conversations/messaging';
 import type { MessagingDevice, LocalMessage } from '@/lib/signal/contracts';
-import { mutate } from 'swr';
+import { useSWRConfig } from 'swr';
 type State = {
     convoSocketIo?: ReturnType<typeof useSocketIoContext>['convoSocketIo'];
     messages: LocalMessage[];
     ready: boolean;
     revision: number;
     liveReady: boolean;
+    refreshInbox: () => void;
     processed: {
         id: string;
         fromUserId: string;
@@ -22,7 +24,7 @@ type State = {
     }[];
     refresh: (conversationId: string, peerId: string) => Promise<SyncResult | undefined>;
 };
-const Context = createContext<State>({ messages: [], ready: false, revision: 0, liveReady: false, processed: [], refresh: async () => undefined });
+const Context = createContext<State>({ messages: [], ready: false, revision: 0, liveReady: false, processed: [], refresh: async () => undefined, refreshInbox: () => {} });
 export const useConvoSocketIoContext = () => useContext(Context);
 export default function ConvoSocketIoProvider({ children }: {
     children: ReactNode;
@@ -31,6 +33,15 @@ export default function ConvoSocketIoProvider({ children }: {
     const token = authToken ?? '';
     const userId = user?.id ?? '';
     const { convoSocketIo } = useSocketIoContext();
+    const { mutate } = useSWRConfig();
+    const [viewportHeight, setViewportHeight] = useState<number>();
+    useEffect(() => {
+        const resize = () => setViewportHeight(window.visualViewport?.height ?? window.innerHeight);
+        resize();
+        window.visualViewport?.addEventListener('resize', resize);
+        window.addEventListener('resize', resize);
+        return () => { window.visualViewport?.removeEventListener('resize', resize); window.removeEventListener('resize', resize); };
+    }, []);
     const [ready, setReady] = useState(false), [existing, setExisting] = useState(false), [passphrase, setPassphrase] = useState(''), [confirmation, setConfirmation] = useState(''), [busy, setBusy] = useState(false), [error, setError] = useState('');
     const [processed, setProcessed] = useState<{
         id: string;
@@ -44,6 +55,12 @@ export default function ConvoSocketIoProvider({ children }: {
     const inFlight = useRef(new Map<string, Promise<SyncResult | undefined>>());
     const generation = useRef(0);
     const dirty = useRef(new Set<string>());
+    const refreshInbox = useCallback(() => {
+        setRevision(value => value + 1);
+        // Receipts have already committed; refresh authoritative totals directly,
+        // including when the socket hint is delayed or HTTP fallback was used.
+        void mutate(key => Array.isArray(key) && key[0] === `/v1/users/${userId}/stats`).catch(() => {});
+    }, [mutate, userId]);
     useEffect(() => {
         generation.current++;
         lockMessaging();
@@ -185,14 +202,14 @@ export default function ConvoSocketIoProvider({ children }: {
         void enroll(userId, token).then(() => convoSocketIo.emit('device:challenge')).catch(() => setError('Device enrollment failed; unlock messaging again'));
         let hintTimer: ReturnType<typeof setTimeout> | undefined;
         const available = () => { if (hintTimer)
-            return; hintTimer = setTimeout(() => { hintTimer = undefined; setRevision(n => n + 1); void mutate(key => Array.isArray(key) ? key[0] === `/v1/users/${userId}/stats` : !!key && typeof key === 'object' && 'type' in key && String(key.type).endsWith('_convo')); }, 100); };
+            return; hintTimer = setTimeout(() => { hintTimer = undefined; refreshInbox(); }, 100); };
         const disconnected = () => { setMessagingSocket(userId); setLiveReady(false); };
         const connected = () => convoSocketIo.emit('device:challenge');
         convoSocketIo.on('connect', connected);
         convoSocketIo.on('disconnect', disconnected);
         convoSocketIo.on('message:available', available);
         return () => { clearTimeout(hintTimer); disconnected(); convoSocketIo.off('connect', connected); convoSocketIo.off('disconnect', disconnected); convoSocketIo.off('device:challenge', bind); convoSocketIo.off('message:available', available); };
-    }, [ready, userId, token, convoSocketIo]);
+    }, [ready, userId, token, convoSocketIo, refreshInbox]);
     useEffect(() => {
         if (!ready)
             return;
@@ -245,5 +262,5 @@ export default function ConvoSocketIoProvider({ children }: {
                         setError(e instanceof Error ? e.message : 'Unable to reset local messaging');
                     }
                 }}>Reset messaging on this browser</Button>}<Button loading={busy} variant="contained" disabled={passphrase.length < 12} onClick={unlock}>{existing ? 'Unlock' : 'Set up messaging'}</Button></Stack></Paper></Box>;
-    return <Context.Provider value={{ convoSocketIo, messages, ready, revision, liveReady, processed, refresh }}>{error && <Alert severity="error">{error}</Alert>}<Box sx={{ display: 'flex', justifyContent: 'flex-end' }}><Button size="small" onClick={listDevices}>Messaging devices</Button><Button size="small" onClick={() => { generation.current++; lockMessaging(); setReady(false); setMessages([]); }}>Lock messages</Button></Box><Dialog open={showDevices} onClose={() => setShowDevices(false)}><DialogTitle>Messaging devices</DialogTitle><DialogContent><Typography>Each browser keeps separate keys. New devices receive future messages. Revoke devices you no longer use.</Typography>{devices.map(d => <Box key={d.deviceId} sx={{ my: 2 }}><Typography variant="body2">{d.deviceId}</Typography><Button color="error" onClick={() => revoke(d.deviceId)}>Revoke device</Button></Box>)}</DialogContent></Dialog>{children}</Context.Provider>;
+    return <Context.Provider value={{ convoSocketIo, messages, ready, revision, liveReady, processed, refresh, refreshInbox }}><Box sx={{ display: 'flex', flexDirection: 'column', height: viewportHeight ? `${Math.max(0, viewportHeight - 64)}px` : 'calc(100dvh - 64px)', minHeight: 0, overflow: 'hidden' }}>{error && <Alert severity="error">{error}</Alert>}<Box sx={{ display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}><Button size="small" onClick={listDevices}>Messaging devices</Button><Button size="small" onClick={() => { generation.current++; lockMessaging(); setReady(false); setMessages([]); }}>Lock messages</Button></Box><Dialog open={showDevices} onClose={() => setShowDevices(false)}><DialogTitle>Messaging devices</DialogTitle><DialogContent><Typography>Each browser keeps separate keys. New devices receive future messages automatically; transfer older history below. Revoke devices you no longer use.</Typography>{devices.map(d => <Box key={d.deviceId} sx={{ my: 2 }}><Typography variant="body2">{d.deviceId}</Typography><Button color="error" onClick={() => revoke(d.deviceId)}>Revoke device</Button></Box>)}<MessagingHistoryTransfer userId={userId} onRestored={() => setRevision(value => value + 1)} /></DialogContent></Dialog><Box sx={{ flex: 1, minHeight: 0, minWidth: 0 }}>{children}</Box></Box></Context.Provider>;
 }

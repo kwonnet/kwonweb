@@ -9,14 +9,14 @@ const source = ts.transpileModule(readFileSync(path.join(__dirname, '../src/lib/
 }).outputText;
 new Function('exports', source)(mod.exports);
 const {encryptAttachment, decryptAttachment} = mod.exports;
-const file = () => new File([new Uint8Array([1, 2, 3, 4])], 'photo.png', {type: 'image/png'});
+const file = () => new File([new Uint8Array([137,80,78,71,13,10,26,10,1,2,3,4])], 'photo.png', {type: 'image/png'});
 test('attachment round trip preserves bytes and uses fresh keys and IVs', async () => {
   const a = await encryptAttachment(file(), 'conversation-a', 'blob-a');
   const b = await encryptAttachment(file(), 'conversation-a', 'blob-b');
   assert.notEqual(a.secret.keyB64, b.secret.keyB64); assert.notEqual(a.secret.ivB64, b.secret.ivB64);
   assert.equal(a.blob.type, 'application/octet-stream');
   const clear = await decryptAttachment(a.secret, await a.blob.arrayBuffer(), 'conversation-a');
-  assert.deepEqual(new Uint8Array(await clear.arrayBuffer()), new Uint8Array([1, 2, 3, 4]));
+  assert.deepEqual(new Uint8Array(await clear.arrayBuffer()), new Uint8Array([137,80,78,71,13,10,26,10,1,2,3,4]));
 });
 test('wrong conversation and blob context cannot decrypt', async () => {
   const a = await encryptAttachment(file(), 'conversation-a', 'blob-a');
@@ -39,4 +39,15 @@ test('invalid key, IV, MIME and plaintext length fail', async () => {
 test('active and oversized attachments are rejected before encryption', async () => {
   await assert.rejects(encryptAttachment(new File(['<script>'], 'x.html', {type: 'text/html'}), 'a', 'b'));
   await assert.rejects(encryptAttachment(new File([new Uint8Array(8 * 1024 * 1024 + 1)], 'x.png', {type: 'image/png'}), 'a', 'b'));
+});
+
+test('only images up to 500 KB can be newly encrypted, including exact boundary and MIME spoof rejection', async () => {
+ const limit = 500 * 1024;
+ const bytes = new Uint8Array(limit);bytes.set([137,80,78,71,13,10,26,10]);
+ const encrypted = await encryptAttachment(new File([bytes], 'limit.png', {type:'image/png'}), 'room', 'blob');
+ assert.equal(encrypted.blob.size, limit+16);
+ await assert.rejects(encryptAttachment(new File([new Uint8Array(limit+1)], 'large.png', {type:'image/png'}), 'room', 'blob'), /500 KB/);
+ for (const type of ['video/mp4','audio/mpeg','application/pdf','image/svg+xml'])
+  await assert.rejects(encryptAttachment(new File(['data'], 'file', {type}), 'room', 'blob'), /500 KB/);
+ await assert.rejects(encryptAttachment(new File(['not an image'], 'fake.png', {type:'image/png'}), 'room', 'blob'), /not a valid/);
 });

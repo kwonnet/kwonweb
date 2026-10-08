@@ -24,7 +24,9 @@ export function currentMessagingRuntime(userId: string) {
 }
 export function lockMessaging() { runtime?.vault.close(); runtime = undefined; }
 export async function hasMessagingVault(userId: string) { return !!await get(`e2-vault:${userId}`); }
-async function passwordKey(passphrase: string, salt: Uint8Array<ArrayBuffer>) {
+export async function messagingPassphraseKey(passphrase: string, salt: Uint8Array<ArrayBuffer>) {
+    if (passphrase.length < 12 || passphrase.length > 1024 || salt.length !== 16)
+        throw new Error('Use a passphrase between 12 and 1024 characters');
     const raw = await new Promise<Uint8Array<ArrayBuffer>>((resolve, reject) => {
         const worker = new Worker(new URL('./password.worker.ts', import.meta.url));
         const timeout = setTimeout(() => { worker.terminate(); reject(new Error('Key derivation timed out')); }, 60000);
@@ -56,7 +58,7 @@ export async function unlockMessaging(userId: string, passphrase: string): Promi
         const salt = config ? unbase64(config.salt) : crypto.getRandomValues(new Uint8Array(16));
         if (salt.length !== 16)
             throw new Error('Invalid vault salt');
-        const wrapping = await passwordKey(passphrase, salt);
+        const wrapping = await messagingPassphraseKey(passphrase, salt);
         const aad = new TextEncoder().encode(JSON.stringify(['kwonnet-vault-key', 2, userId, deviceId]));
         let raw: Uint8Array<ArrayBuffer>;
         if (config) {

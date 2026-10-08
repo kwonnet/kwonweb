@@ -58,7 +58,7 @@ export default function CustomLayout({ children, CustomToolbar }: { children: Re
     <Drawer variant="permanent" sx={{ width, flexShrink: 0, display: { xs: "none", md: "block" } }}
       slotProps={{ paper: { sx: { width, top: 64, height: "calc(100dvh - 64px)" } } }}>{sidebar(collapsed)}</Drawer>
     <Box component="main" id="main-content" sx={{ flex: 1, minWidth: 0, mt: "64px", overflowY: "auto", overflowX: "hidden" }}>
-      <Box sx={{ maxWidth: pathname === "/tasks" ? "none" : 1200, mx: "auto", px: { xs: 0, md: 2 }, pb: { xs: 7, md: 0 } }}>{children}</Box>
+      <Box sx={{ maxWidth: pathname === "/tasks" ? "none" : 1200, mx: "auto", px: { xs: 0, md: 2 }, pb: { xs: pathname.startsWith("/messages") ? 0 : 7, md: 0 } }}>{children}</Box>
     </Box>
   </Box>;
 }

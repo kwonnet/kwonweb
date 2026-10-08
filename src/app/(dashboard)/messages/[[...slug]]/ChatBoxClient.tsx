@@ -12,6 +12,7 @@ import { type Conversation, type EncryptedChatMessage } from '@/types/conversati
 import type { MessagingDevice, LocalMessage, Content } from '@/lib/signal/contracts';
 import type { UserPublic } from '@/types/user';
 import ChatBubble from './ChatBubble';
+import { IMAGE_TYPES, validateImageUploads } from '@/lib/signal/attachments';
 export default function ChatBoxClient({ params }: {
     params: {
         recipient: UserPublic;
@@ -22,9 +23,11 @@ export default function ChatBoxClient({ params }: {
 }) {
     const { user, token: authToken } = useAuthSession();
     const token = authToken ?? '';
-    const { messages, refresh, convoSocketIo: socket, revision, liveReady, processed } = useConvoSocketIoContext();
+    const { messages, refresh, refreshInbox, convoSocketIo: socket, revision, liveReady, processed } = useConvoSocketIoContext();
     const router = useRouter();
     const [convo, setConvo] = useState(params.convo), [text, setText] = useState(''), [files, setFiles] = useState<File[]>([]), [reply, setReply] = useState<LocalMessage>(), [error, setError] = useState(''), [busy, setBusy] = useState(false), [typingUntil, setTypingUntil] = useState(0), [now, setNow] = useState(Date.now());
+    const [outgoing, setOutgoing] = useState<LocalMessage[]>([]);
+    const sending = useRef(false);
     const pane = useRef<HTMLDivElement>(null), visible = useRef(new Set<string>()), viewed = useRef(new Set<string>());
     const receiptEpoch=useRef(0);
     const receiptQueue = useRef(new Map<string, 'READ' | 'DELIVERED'>()), receiptTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined), receiptBusy = useRef(false);
@@ -36,7 +39,11 @@ export default function ChatBoxClient({ params }: {
     }[]>([]), [showKeys, setShowKeys] = useState(false);
     const pending = convo?.state === 'PENDING_REQUEST';
     const incoming = pending && convo?.responder.id === user.id;
-    const chats = messages.filter(m => m.conversation === convo?.id);
+    const confirmed = messages.filter(m => m.conversation === convo?.id);
+    const chats = confirmed.concat(outgoing.filter(m => !confirmed.some(saved => saved.eventId === m.eventId)));
+    useEffect(() => {
+        setOutgoing(previous => previous.filter(m => !messages.some(saved => saved.eventId === m.eventId)));
+    }, [messages]);
     const sync = useCallback(async () => {
         if (!convo)
             return;
@@ -71,7 +78,7 @@ export default function ChatBoxClient({ params }: {
                     visible.current.delete(id);
             }
             setNow(Date.now());
-        }, { root: pane.current, threshold: 0.5 });
+        }, { root: pane.current, threshold: 0 });
         pane.current?.querySelectorAll('[data-message-id]').forEach(element => observer.observe(element));
         return () => observer.disconnect();
     }, [messages, convo?.id]);
@@ -99,13 +106,13 @@ export default function ChatBoxClient({ params }: {
             const reads = batch.filter(([, s]) => s === 'READ').map(([id]) => id), deliveries = batch.filter(([, s]) => s === 'DELIVERED').map(([id]) => id);
             let applied=false;
             void sendReceiptBatch(user.id, token, convo.id, deliveries, reads).then(result => { if (result.suppressed)
-                return; applied=true;batch.forEach(([id, status]) => { if (receiptQueue.current.get(id) === status)
+                return; refreshInbox?.(); if(epoch!==receiptEpoch.current)return; applied=true;batch.forEach(([id, status]) => { if (receiptQueue.current.get(id) === status)
                 receiptQueue.current.delete(id); delivered.current.add(id); if (status === 'READ')
                 read.current.add(id); }); }).catch(e => setError(e instanceof Error ? e.message : 'Unable to save receipts')).finally(() => { receiptBusy.current = false; receiptTimer.current = undefined;if(applied&&epoch===receiptEpoch.current&&receiptQueue.current.size)receiptTimer.current=setTimeout(flush,250); });
         };
         if (!receiptTimer.current && !receiptBusy.current)
             receiptTimer.current = setTimeout(flush, 250);
-    }, [messages, processed, convo?.id, pending, user.id, token, now]);
+    }, [messages, processed, convo?.id, pending, user.id, token, now, refreshInbox]);
     useEffect(() => () => {receiptEpoch.current++;clearTimeout(receiptTimer.current);}, []);
     useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth' }); }, [chats.length]);
     useEffect(() => {
@@ -141,37 +148,47 @@ export default function ChatBoxClient({ params }: {
         return created;
     };
     const send = async (content?: Content) => {
-        if (busy || incoming)
-            return;
+        if (sending.current || incoming || (!content && !text.trim() && !files.length)) return;
+        const submittedText = text.trim(), submittedFiles = files.slice();
+        const quoted = reply ? { targetId: reply.event.eventId, targetHash: reply.hash } : undefined;
+        try { if (!content) validateImageUploads(submittedFiles); }
+        catch (e) { setError((e as Error).message); return; }
+        sending.current = true;
         setBusy(true);
         setError('');
+        const eventId = crypto.randomUUID(), createdAt = new Date().toISOString();
+        // A local projection appears before enrollment, encryption, uploads or network I/O.
+        // The same event ID is used by the durable encrypted outbox and server deduplication.
+        if (!content) {
+            const event: LocalMessage['event'] = { v: 2, eventId, conversationId: convo?.id ?? '', senderId: user.id, senderDeviceId: '', createdAt, content: { kind: 'text', text: submittedText, reply: quoted } };
+            setOutgoing(previous => previous.filter(m => m.sendingState !== 'failed').concat({ id: eventId, eventId, conversation: convo?.id ?? '', fromUserId: user.id, fromDeviceId: '', senderSignalDeviceId: 0, senderActionSigningPublic: '', senderIdentityPublic: '', toUserId: peer.id, toDeviceId: '', serverSequence: '0', createdAt, wireType: 1, ciphertextB64: '', seen: [], read: [], event, hash: '', content: submittedText, reply: quoted, reactions: [], deleted: false, revision: 0, sendingState: 'sending', pendingFilenames: submittedFiles.map(file => file.name) }));
+            setText(''); setFiles([]); setReply(undefined);
+        }
+        let active = convo;
         try {
-            const c = await ensureConversation();
-            const quoted = reply ? { targetId: reply.event.eventId, targetHash: reply.hash } : undefined;
-            if (content)
-                await sendContent(user.id, token, peer.id, c.id, content);
-            else if (files.length)
-                await sendMedia(user.id, token, peer.id, c.id, files, text, quoted);
-            else if (text.trim())
-                await sendContent(user.id, token, peer.id, c.id, { kind: 'text', text: text.trim(), reply: quoted });
-            setText('');
-            setFiles([]);
-            setReply(undefined);
-            socket?.emit('typing:stop', { conversationId: c.id });
-            await refresh(c.id, peer.id);
+            active = await ensureConversation();
+            if (content) await sendContent(user.id, token, peer.id, active.id, content, eventId);
+            else if (submittedFiles.length) await sendMedia(user.id, token, peer.id, active.id, submittedFiles, submittedText, quoted, eventId);
+            else await sendContent(user.id, token, peer.id, active.id, { kind: 'text', text: submittedText, reply: quoted }, eventId);
+            setOutgoing(previous => previous.map(m => m.eventId === eventId ? { ...m, conversation: active!.id, sendingState: 'sent' } : m));
+            socket?.emit('typing:stop', { conversationId: active.id });
+            refreshInbox?.();
         }
         catch (e) {
-            if (e instanceof MessageQueuedError) {
-                setText('');
-                setFiles([]);
-                setReply(undefined);
-                if (convo)
-                    await refresh(convo.id, peer.id).catch(() => { });
+            const queued = e instanceof MessageQueuedError;
+            setOutgoing(previous => previous.map(m => m.eventId === eventId ? { ...m, conversation: active?.id ?? m.conversation, queued, sendingState: queued ? undefined : 'failed' } : m));
+            if (!queued && !content) {
+                setText(current => current || submittedText);
+                setFiles(current => current.length ? current : submittedFiles);
+                setReply(current => current ?? reply);
             }
             setError(e instanceof Error ? e.message : 'Unable to send message');
         }
         finally {
+            sending.current = false;
             setBusy(false);
+            // Sync failure must not mislabel an already accepted message as a failed send.
+            if (active) void refresh(active.id, peer.id).catch(() => {});
         }
     };
     const resolve = async (action: 'accept' | 'reject' | 'block') => {
@@ -180,8 +197,9 @@ export default function ChatBoxClient({ params }: {
         setBusy(true);
         setError('');
         try {
-            const received = chats.filter(m => m.fromUserId !== user.id && !m.integrityFailed && !m.queued).slice(-100).map(m => m.id);
+            const received = chats.filter(m => m.fromUserId !== user.id && !m.integrityFailed && !m.queued && new Date(m.createdAt).getTime() > Date.now() - 90 * 86400000).slice(-100).map(m => m.id);
             await messagingAPI(user.id, token, `/${convo.id}/request`, 'POST', { action, deliveredIds: action === 'accept' ? received : [], readIds: action === 'accept' && document.visibilityState === 'visible' && document.hasFocus() ? received.filter(id => viewed.current.has(id)) : [] });
+            refreshInbox?.();
             if (action === 'accept') {
                 setConvo({ ...convo, state: 'ACCEPTED', responder: { ...convo.responder, acceptedAt: new Date().toISOString() } });
                 await sync();
@@ -226,29 +244,27 @@ export default function ChatBoxClient({ params }: {
         if (kind === 'delete')
             await send({ ...target, kind: 'delete', signature: '' });
     };
-    return <Stack sx={{ height: 'calc(100vh - 100px)', minHeight: 400 }}>
-  <Paper sx={{ p: 1 }} elevation={0}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><IconButton component={Link} href="/messages"><ArrowBackIosNewOutlined /></IconButton><Avatar src={peer.avatar ?? undefined}/><Box><Typography sx={{ fontWeight: 700 }}>{peer.name}</Typography><Typography variant="caption">@{peer.username} · End-to-end encrypted</Typography></Box><Button size="small" onClick={verifyKeys}>Verify keys</Button></Stack></Paper>
+    return <Stack sx={{ height: '100%', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
+  <Paper sx={{ p: 1, flexShrink: 0 }} elevation={0}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><IconButton component={Link} href="/messages"><ArrowBackIosNewOutlined /></IconButton><Avatar src={peer.avatar ?? undefined}/><Box sx={{ flex: 1, minWidth: 0 }}><Typography noWrap sx={{ fontWeight: 700 }}>{peer.name}</Typography><Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>@{peer.username} · End-to-end encrypted</Typography></Box><Button size="small" onClick={verifyKeys}>Verify keys</Button></Stack></Paper>
   <Dialog open={showKeys} onClose={() => setShowKeys(false)}><DialogTitle>Verify device identities</DialogTitle><DialogContent><Typography>Compare these fingerprints with your contact through a trusted channel. First-use trust alone does not prove who owns a key.</Typography>{fingerprints.map(f => <Box key={f.id} sx={{ my: 2, overflowWrap: 'anywhere' }}><Typography variant="caption">{f.id}</Typography><Typography sx={{ fontFamily: 'monospace' }}>{f.hash}</Typography></Box>)}</DialogContent></Dialog>
   {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
-  <Box ref={pane} sx={{ flex: 1, overflowY: 'auto', p: 1 }}>{chats.map(m => <Box key={m.id} data-message-id={m.id}><ChatBubble message={m} isSender={m.fromUserId === user.id} onAction={(kind, value) => action(m, kind, value)} disabled={busy || !!pending || !!m.queued || !!m.integrityFailed} userId={user.id} token={token}/></Box>)}<div ref={end}/></Box>
-  {incoming ? <Paper sx={{ p: 2 }}><Typography>Preview privately. No delivered or read receipts are sent until you accept.</Typography><Stack direction="row" spacing={1}><Button disabled={busy} onClick={() => resolve('accept')}>Accept</Button><Button disabled={busy} onClick={() => resolve('reject')}>Reject</Button><Button disabled={busy} color="error" onClick={() => resolve('block')}>Block</Button></Stack></Paper> : <Box sx={{ p: 1 }}>
+  <Box ref={pane} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', p: 1 }}>{chats.map(m => <Box key={m.id} data-message-id={m.sendingState || m.queued ? undefined : m.id}><ChatBubble message={m} isSender={m.fromUserId === user.id} onAction={(kind, value) => action(m, kind, value)} disabled={busy || !!pending || !!m.queued || !!m.sendingState || !!m.integrityFailed} userId={user.id} token={token}/></Box>)}<div ref={end}/></Box>
+  {incoming ? <Paper sx={{ p: 2 }}><Typography>Preview privately. No delivered or read receipts are sent until you accept.</Typography><Stack direction="row" spacing={1}><Button disabled={busy} onClick={() => resolve('accept')}>Accept</Button><Button disabled={busy} onClick={() => resolve('reject')}>Reject</Button><Button disabled={busy} color="error" onClick={() => resolve('block')}>Block</Button></Stack></Paper> : <Box sx={{ p: 1, flexShrink: 0, pb: 'max(8px, env(safe-area-inset-bottom))' }}>
    {pending && <Typography variant="caption">Message request sent. Receipts appear after acceptance.</Typography>}
    {!pending && typingUntil > now && <Typography variant="caption">{peer.name} is typing…</Typography>}
    {reply && <Alert onClose={() => setReply(undefined)}>Replying to: {reply.content.slice(0, 100)}</Alert>}
    {files.length > 0 && <Alert onClose={() => setFiles([])}>{files.map(f => f.name).join(', ')}</Alert>}
-   <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><input hidden ref={fileInput} type="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,audio/mpeg,application/pdf" onChange={e => {
+   <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><input hidden ref={fileInput} type="file" multiple accept={IMAGE_TYPES.join(',')} onChange={e => {
                 const selected = Array.from(e.target.files ?? []);
-                if (selected.length > 10 || selected.some(f => f.size > 8388608))
-                    setError('Select up to 10 files, each under 8 MB');
-                else
-                    setFiles(selected);
+                try { validateImageUploads(selected); setFiles(selected); setError(''); }
+                catch (error) { setError((error as Error).message); }
                 e.target.value = '';
-            }}/><IconButton disabled={busy} onClick={() => fileInput.current?.click()} aria-label="Attach encrypted file"><AttachFile /></IconButton><TextField fullWidth size="small" multiline maxRows={3} value={text} placeholder="Message" disabled={busy} onChange={e => {
+            }}/><IconButton disabled={busy} onClick={() => fileInput.current?.click()} aria-label="Attach images up to 500 KB"><AttachFile /></IconButton><TextField fullWidth size="small" multiline maxRows={3} value={text} placeholder="Message" slotProps={{ htmlInput: { maxLength: 10000 }, input: { sx: { fontSize: 16 } } }} onChange={e => {
                 setText(e.target.value);
                 if (convo && !pending)
                     socket?.emit('typing:start', { conversationId: convo.id });
             }} onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                     e.preventDefault();
                     if (text.trim() || files.length)
                         void send();

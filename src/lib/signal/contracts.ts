@@ -46,6 +46,8 @@ export interface MessagingWire {
 }
 export interface LocalMessage extends MessagingWire {
     queued?: boolean;
+    sendingState?: 'sending' | 'sent' | 'failed';
+    pendingFilenames?: string[];
     integrityFailed?: boolean;
     event: MessagingEvent;
     content: string;

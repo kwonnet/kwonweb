@@ -15,7 +15,7 @@ const ChatClientList = ({convoList, slug}: { convoList: EncryptedConversation[];
 
     const { token, user } = useAuthSession();
 
-    const {liveReady}=useConvoSocketIoContext();
+    const {liveReady, revision}=useConvoSocketIoContext();
     const userId = user.id
 
   const getKey = (pageIndex: number, previousPageData?: any[]) => {
@@ -39,6 +39,12 @@ const ChatClientList = ({convoList, slug}: { convoList: EncryptedConversation[];
     });
 
   const flatData = data ? data?.flat() : [];
+
+  React.useEffect(() => {
+    // SWRInfinite owns an aggregate cache in addition to its page caches.
+    // Its bound mutate refreshes every loaded page when receipt totals change.
+    if (revision) void mutate().catch(() => {});
+  }, [revision, mutate]);
 
   const isReachingEnd =
     (data && data[data.length - 1]?.length < PAGE_SIZE) || !!error;
