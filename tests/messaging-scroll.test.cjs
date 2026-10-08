@@ -1,0 +1,23 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript'),React=require('react');const {JSDOM}=require('jsdom');
+test('chat scroll is confined to its pane and catch-up, new messages and keyboard resizing do not drag a reader back down',async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'https://kwonnet.test/messages/peer/chat'});global.window=dom.window;global.document=dom.window.document;global.IS_REACT_ACT_ENVIRONMENT=true;document.hasFocus=()=>true;Object.defineProperty(document,'visibilityState',{value:'visible'});
+ global.IntersectionObserver=class{observe(){}disconnect(){}};
+ dom.window.HTMLElement.prototype.scrollIntoView=()=>{throw new Error('Scroll must not move dashboard/page ancestors');};
+ const convo={id:'room',state:'ACCEPTED',initiator:{id:'peer'},responder:{id:'user'}};const message=(id,sender='peer')=>({id,eventId:id,createdAt:new Date().toISOString(),conversation:'room',fromUserId:sender,content:id,seen:[],read:[],event:{eventId:id},hash:'hash'});
+ const context={messages:[message('first'),message('second')],processed:[],revision:0,liveReady:true,viewportHeight:800,refresh:async()=>({conversation:convo})};
+ let pane,top=0,height=2000,scrollCalls=[];const bubbles=new Map();
+ const box=({children,ref,...props})=>React.createElement('div',{'data-event-id':props['data-event-id'],'data-message-id':props['data-message-id'],onScroll:props.onScroll,ref:ref?node=>{ref.current=node;if(node){pane=node;Object.defineProperties(node,{scrollHeight:{configurable:true,get:()=>height},clientHeight:{configurable:true,get:()=>500},scrollTop:{configurable:true,get:()=>top,set:value=>top=Math.max(0,Math.min(value,height-500))}});node.scrollTo=options=>{scrollCalls.push(options);node.scrollTop=options.top;};}}:undefined},children);
+ const mocks={'@mui/material':Object.fromEntries(['Alert','Avatar','Box','Button','Dialog','DialogContent','DialogTitle','IconButton','Paper','Stack','TextField','Typography','CircularProgress'].map(name=>[name,box])),'@mui/icons-material':{ArrowBackIosNewOutlined:box,AttachFile:box,SendOutlined:box,LockOutlined:box},'next/link':{__esModule:true,default:box},'next/navigation':{useRouter:()=>({})},'@/hooks':{useAuthSession:()=>({user:{id:'user'},token:'token'})},'@/context/ConvoSocketIoContext':{useConvoSocketIoContext:()=>context,MessagingOptionsButton:()=>null},'@/lib/conversations':{},'@/lib/signal/attachments':{IMAGE_TYPES:['image/png'],validateImageUploads:()=>{}},'@/lib/conversations/messaging':{sendReceiptBatch:async()=>({suppressed:false})},'./ChatBubble':{__esModule:true,default:props=>{bubbles.set(props.message.id,props);return React.createElement('span',null,props.message.content);}}};
+ const module={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('src/app/(dashboard)/messages/[[...slug]]/ChatBoxClient.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText)(id=>mocks[id]??require(id),module,module.exports);
+ const root=require('react-dom/client').createRoot(document.getElementById('root'));const render=()=>root.render(React.createElement(module.exports.default,{params:{recipient:{id:'peer',name:'Peer',username:'peer'},convo}}));
+ const userScroll=async value=>React.act(async()=>{pane.scrollTop=value;pane.dispatchEvent(new dom.window.Event('scroll'));});
+ try{
+  await React.act(async()=>render());assert.equal(top,1500,'initial position is bottom of the pane');
+  await userScroll(300);height=2200;context.messages=context.messages.concat(message('third'));await React.act(async()=>render());assert.equal(top,300,'new inbound history does not override manual scrolling');
+  context.revision++;context.messages=context.messages.map(m=>({...m}));await React.act(async()=>render());assert.equal(top,300,'refresh does not move the pane');
+  context.viewportHeight=420;await React.act(async()=>render());assert.equal(top,300,'keyboard resize respects history reading');
+  await React.act(async()=>bubbles.get('third').onReplyClick('first'));assert.equal(scrollCalls.length,1);assert.equal(scrollCalls[0].behavior,'smooth');
+  await userScroll(height-500);height=2400;context.messages=context.messages.concat(message('fourth'));await React.act(async()=>render());assert.equal(top,1900,'a reader at the bottom follows new messages');
+  await userScroll(100);height=2600;context.messages=context.messages.concat({...message('my-send','user'),sendingState:'sending'});await React.act(async()=>render());assert.equal(top,2100,'an explicitly sent message is brought into view');
+ }finally{await React.act(async()=>root.unmount());dom.window.close();delete global.IntersectionObserver;}
+});

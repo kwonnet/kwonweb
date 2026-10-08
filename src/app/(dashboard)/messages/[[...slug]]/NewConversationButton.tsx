@@ -55,7 +55,7 @@ function PeopleList({ userId, token, query, onSelect }: {
   </Box>;
 }
 
-export default function NewConversationButton() {
+export default function NewConversationButton({ floating = false }: { floating?: boolean }) {
   const { user, token } = useAuthSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -73,7 +73,7 @@ export default function NewConversationButton() {
   };
 
   return <>
-    <Fab color="primary" aria-label="Start message" onClick={() => { setQuery(""); setSearch(""); setOpen(true); }} sx={{ position: "absolute", right: 16, bottom: "max(16px, env(safe-area-inset-bottom))", zIndex: 2 }}><ChatBubbleOutlined /><Add sx={{ position: "absolute", right: 8, top: 7, fontSize: 16 }} /></Fab>
+    {floating ? <Fab color="primary" aria-label="Start message" onClick={() => { setQuery(""); setSearch(""); setOpen(true); }} sx={{ position: "absolute", right: 16, bottom: "max(16px, env(safe-area-inset-bottom))", zIndex: 2, display: { xs: "inline-flex", md: "none" } }}><ChatBubbleOutlined /><Add sx={{ position: "absolute", right: 8, top: 7, fontSize: 16 }} /></Fab> : <Button startIcon={<Add />} onClick={() => { setQuery(""); setSearch(""); setOpen(true); }}>Start a new conversation</Button>}
     <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm" aria-labelledby="new-conversation-title">
       <DialogTitle id="new-conversation-title" sx={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
         Start a message<IconButton aria-label="Close user search" onClick={() => setOpen(false)}><Close /></IconButton>

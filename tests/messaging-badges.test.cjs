@@ -47,7 +47,8 @@ test('receipt acknowledgement refreshes account badges immediately and keyboard 
   '@/lib/conversations/messaging':{enroll:async()=>{},messagingAPI:async()=>[]},
   'swr':{useSWRConfig:()=>({mutate:async(filter,update)=>{for(const [key,value] of stats)if(filter(key)&&update)stats.set(key,update(value));}})}
  });
- function Child(){context=provider.useConvoSocketIoContext();return React.createElement('div',null,'Chat',React.createElement(provider.MessagingOptionsButton));}
+ const Viewport=load('src/app/(dashboard)/messages/MessagingViewport.tsx',{'@mui/material':{Box:box},'@/context/ConvoSocketIoContext':{useConvoSocketIoContext:()=>provider.useConvoSocketIoContext()}}).default;
+ function Child(){context=provider.useConvoSocketIoContext();return React.createElement(Viewport,null,'Chat',React.createElement(provider.MessagingOptionsButton));}
  const root=require('react-dom/client').createRoot(document.getElementById('root'));
  try{
   await React.act(async()=>root.render(React.createElement(provider.default,null,React.createElement(Child))));
