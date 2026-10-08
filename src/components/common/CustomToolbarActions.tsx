@@ -73,7 +73,7 @@ const CustomToolbarActions = (props: {
             <IconButton size="small" LinkComponent={Link} href="/messages">
               <Badge
                 color="error"
-                badgeContent={stats?.totalUnseenMsg ?? 0}
+                badgeContent={stats?.totalUnreadMsg ?? 0}
                 max={99}
               >
                 <EmailOutlinedIcon />

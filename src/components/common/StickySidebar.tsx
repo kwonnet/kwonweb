@@ -16,6 +16,7 @@ const StickySidebar = ({pathname, TrendingSection, ConnectionSection}:{pathname?
         <Paper sx={{}}>
           <CardMedia
             image="/post.jpg"
+            alt="Friends playing a game"
             component={"img"}
             loading="lazy"
             decoding="async"

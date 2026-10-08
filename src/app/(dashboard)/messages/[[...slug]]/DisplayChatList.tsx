@@ -1,4 +1,5 @@
 "use client";
+import { useConvoSocketIoContext } from "@/context/ConvoSocketIoContext";
 import { useAuthSession } from "@/hooks";
 import type { DecryptedConversation } from "@/types/conversation";
 import { formatRelativeTime } from "@/utils";
@@ -15,7 +16,8 @@ const ConvoListItem = ({ item }: { item: DecryptedConversation }) => {
   const read = last?.read.some(receipt => receipt.userId === peer.id);
   const seen = last?.seen.some(receipt => receipt.userId === peer.id);
   const active = pathname.split('/')[2] === peer.id;
-  const unread = active && item.state === 'ACCEPTED' ? 0 : item.unreadCount;
+  const { activeConversationId } = useConvoSocketIoContext();
+  const unread = activeConversationId === item.id && item.state === 'ACCEPTED' ? 0 : item.unreadCount;
   const open = () => router.push(`/messages/${encodeURIComponent(peer.id)}/${pathname.includes('requests') ? 'requests' : item.kind}`);
   return <Box role="button" tabIndex={0} onClick={open} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); } }} sx={{ display: 'grid', gridTemplateColumns: '48px minmax(0,1fr) 72px', gap: 1, alignItems: 'center', width: '100%', p: 1, borderBottom: 1, borderColor: 'divider', bgcolor: active ? 'action.selected' : undefined, cursor: 'pointer' }}>
     <Avatar src={peer.avatar ?? undefined} alt={peer.name} sx={{ width: 48, height: 48 }}>{peer.name?.[0]}</Avatar>

@@ -16,7 +16,7 @@ for(const state of ['ACCEPTED','PENDING_REQUEST'])for(const source of ['relay','
   'swr':{useSWRConfig:()=>({mutate})}
  };
  const module={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('src/context/ConvoSocketIoContext.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText)(id=>mocks[id]??require(id),module,module.exports);
- function Child(){context=module.exports.useConvoSocketIoContext();React.useEffect(()=>{if(source!=='relay')void context.refresh(room,'peer',{userId:source==='wrong-account'?'another':'user',deviceId:source==='wrong-device'?'another':'device',result:{conversation:convo,messages:[fresh],receipts:[],nextCursor:'2',nextReceiptCursor:'0'}});},[]);return React.createElement('div',null,context.messages.map(message=>message.content).join('|'));}
+ function Child(){context=module.exports.useConvoSocketIoContext();React.useEffect(()=>{if(context.ready&&source!=='relay')void context.refresh(room,'peer',{userId:source==='wrong-account'?'another':'user',deviceId:source==='wrong-device'?'another':'device',result:{conversation:convo,messages:[fresh],receipts:[],nextCursor:'2',nextReceiptCursor:'0'}});},[context.ready]);return React.createElement('div',null,context.messages.map(message=>message.content).join('|'));}
  const root=require('react-dom/client').createRoot(document.getElementById('root'));
  try{
   await React.act(async()=>root.render(React.createElement(module.exports.default,null,React.createElement(Child))));

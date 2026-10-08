@@ -27,7 +27,7 @@ test('start message lists mutual friends, searches all users and opens a non-fri
     '@mui/icons-material': {Add: () => null, Close: () => null, ChatBubbleOutlined: () => null},
     '@mui/material': {Alert: Container, Avatar: () => null, Box: Container, Button, Fab: Button, CircularProgress: () => null, Dialog: ({open, children}) => open ? React.createElement('div', null, children) : null,
       DialogContent: Container, DialogTitle: Container, IconButton: Button, List: Container, ListItemButton: Button, ListItemAvatar: Container,
-      ListItemText: ({primary, secondary}) => React.createElement('span', null, primary, secondary), Typography: Container,
+      ListItemText: ({primary, secondary}) => React.createElement('span', null, primary, secondary), Typography: Container, Tooltip: Container,
       TextField: props => {field = props; return null;}},
     'next/navigation': {useRouter: () => ({push: url => pushed.push(url)})},
     '@/hooks': {useAuthSession: () => ({user: {id: 'me'}, token: 'token'})},

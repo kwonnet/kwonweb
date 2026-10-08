@@ -81,7 +81,7 @@ const SidebarTrendClient = ({trends, initialError = false}: { trends: TrendingTo
           href="/discover"
           variant="outlined"
         >
-          See More
+          Explore more trends
         </Button>
       </Box>
     </Box>

@@ -114,7 +114,7 @@ const ConnectionSection = ({ users, connType }: { users: UserConnection[], connT
             href="/connections"
             variant="outlined"
           >
-            See More
+            Discover people to follow
           </Button>
         </Box>
       </Box>

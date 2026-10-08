@@ -18,6 +18,10 @@ type State = {
     convoSocketIo?: ReturnType<typeof useSocketIoContext>['convoSocketIo'];
     messages: LocalMessage[];
     ready: boolean;
+    messagingRestoring?: boolean;
+    messagingGate?: ReactNode;
+    activeConversationId?: string;
+    setActiveConversationId?: (id?: string) => void;
     viewportHeight?: number;
     revision: number;
     liveReady: boolean;
@@ -30,6 +34,7 @@ type State = {
         id: string;
         fromUserId: string;
         conversationId: string;
+        eventId?: string;
         action: boolean;
     }[];
     refresh: (conversationId: string, peerId: string, initial?: InitialMessagingSync) => Promise<SyncResult | undefined>;
@@ -43,7 +48,16 @@ export function MessagingOptionsButton() {
 export default function ConvoSocketIoProvider({ children }: {
     children: ReactNode;
 }) {
-    const messagingPage = usePathname()?.startsWith('/messages') ?? false;
+    const pathname = usePathname() ?? '';
+    const messagingPage = pathname.startsWith('/messages');
+    const [selectedConversationId, setActiveConversationId] = useState<string>();
+    const [pageVisible, setPageVisible] = useState(true);
+    useEffect(() => {
+        const update = () => setPageVisible(document.visibilityState === 'visible');
+        update();
+        document.addEventListener('visibilitychange', update);
+        return () => document.removeEventListener('visibilitychange', update);
+    }, []);
     const [remember, setRemember] = useState(false), [restoring, setRestoring] = useState(true);
     const previousUser = useRef('');
     const [loadingConversations, setLoadingConversations] = useState<Record<string, boolean>>({});
@@ -70,6 +84,7 @@ export default function ConvoSocketIoProvider({ children }: {
         id: string;
         fromUserId: string;
         conversationId: string;
+        eventId?: string;
         action: boolean;
     }[]>([]);
     const [liveReady, setLiveReady] = useState(false);
@@ -96,7 +111,7 @@ export default function ConvoSocketIoProvider({ children }: {
         const previous = previousUser.current;
         previousUser.current = userId;
         if (previous && previous !== userId) void forgetRememberedMessaging(previous);
-        generation.current++; lockMessaging(); setReady(false); setMessages([]); setProcessed([]); setReceiptTotals({});
+        generation.current++; lockMessaging(); setReady(false); setMessages([]); setProcessed([]); setReceiptTotals({}); setActiveConversationId(undefined);
         inboxSeeded.current = false; initialSyncs.current.clear(); knownConversations.current.clear(); warmQueue.current.clear(); warmWorkers.current = 0; inFlight.current.clear(); setLoadingConversations({}); setPassphrase(''); setConfirmation(''); setRestoring(true);
         const epoch = generation.current;
         if (userId) void (async () => {
@@ -158,7 +173,7 @@ export default function ConvoSocketIoProvider({ children }: {
                 const local = await localConversation(userId, conversationId, peerId);
                 if (epoch !== generation.current) return;
                 setMessages(previous => previous.filter(message => message.conversation !== conversationId).concat(local));
-                const processedMessages = await r.vault.atomic(async draft => Object.entries(draft.records).filter(([key]) => key.startsWith('wire:')).map(([, value]) => JSON.parse(value)).filter(wire => wire.conversation === conversationId && !draft.records[`failed:${wire.id}`] && new Date(wire.createdAt).getTime() > Date.now() - 90 * 86400000 && !(JSON.parse(draft.records[`hidden:${conversationId}`] ?? '[]') as string[]).includes(wire.id)).map(wire => ({ id: wire.id, fromUserId: wire.fromUserId, conversationId, action: !['text','media'].includes(JSON.parse(draft.records[`event:${wire.eventId}`]).content.kind) })));
+                const processedMessages = await r.vault.atomic(async draft => Object.entries(draft.records).filter(([key]) => key.startsWith('wire:')).map(([, value]) => JSON.parse(value)).filter(wire => wire.conversation === conversationId && !draft.records[`failed:${wire.id}`] && new Date(wire.createdAt).getTime() > Date.now() - 90 * 86400000 && !(JSON.parse(draft.records[`hidden:${conversationId}`] ?? '[]') as string[]).includes(wire.id)).map(wire => ({ id: wire.id, fromUserId: wire.fromUserId, conversationId, eventId: wire.eventId, action: !['text','media'].includes(JSON.parse(draft.records[`event:${wire.eventId}`]).content.kind) })));
                 if (epoch === generation.current) setProcessed(previous => previous.filter(message => message.conversationId !== conversationId).concat(processedMessages));
             };
             await publishCache(); // Render cached messages before any relay or outbox work.
@@ -329,11 +344,11 @@ export default function ConvoSocketIoProvider({ children }: {
             setError(e instanceof Error ? e.message : 'Unable to revoke device');
         }
     };
+    let messagingGate: ReactNode;
     if (!userId && messagingPage)
-        return <Alert severity="info">Sign in to use encrypted messaging.</Alert>;
-    if (messagingPage && restoring) return <Box role="status" sx={{ p: 3 }}><Typography>Unlocking encrypted messaging on this browser…</Typography></Box>;
-    if (messagingPage && !ready)
-        return <Box sx={{ p: 3, maxWidth: 600, mx: 'auto' }}><Paper sx={{ p: 3 }}><Stack spacing={2}><Typography variant="h5">{existing ? 'Unlock encrypted messages' : 'Set up encrypted messages'}</Typography><Typography>Your messaging passphrase protects keys on this browser. Use at least 12 characters. Keep it safe: resetting your account password cannot recover these messages.</Typography>{error && <Alert severity="error">{error}</Alert>}<PasswordTextField label="Messaging passphrase" value={passphrase} onChange={e => setPassphrase(e.target.value)} autoComplete={existing ? 'current-password' : 'new-password'}/>{!existing && <PasswordTextField label="Confirm messaging passphrase" value={confirmation} onChange={e => setConfirmation(e.target.value)} autoComplete="new-password"/>}<FormControlLabel control={<Checkbox checked={remember} onChange={event => setRemember(event.target.checked)} />} label="Remember this private browser for 30 days" /><Typography variant="caption">Automatic unlock after sign-in on this browser. Anyone with access to this browser profile can access your local messages. Lock messages or sign out to forget it.</Typography><Button loading={busy} variant="contained" disabled={passphrase.length < 12} onClick={unlock}>{existing ? 'Unlock' : 'Set up messaging'}</Button>{existing && <Button color="warning" onClick={async () => {
+        messagingGate = <Alert severity="info">Sign in to use encrypted messaging.</Alert>;
+    else if (messagingPage && !restoring && !ready)
+        messagingGate = <Box sx={{ p: 3, maxWidth: 600, maxHeight: '100%', overflowY: 'auto', mx: 'auto' }}><Paper sx={{ p: 3 }}><Stack spacing={2}><Typography variant="h5">{existing ? 'Unlock encrypted messages' : 'Set up encrypted messages'}</Typography><Typography>Your messaging passphrase protects keys on this browser. Use at least 12 characters. Keep it safe: resetting your account password cannot recover these messages.</Typography>{error && <Alert severity="error">{error}</Alert>}<PasswordTextField label="Messaging passphrase" value={passphrase} onChange={e => setPassphrase(e.target.value)} autoComplete={existing ? 'current-password' : 'new-password'}/>{!existing && <PasswordTextField label="Confirm messaging passphrase" value={confirmation} onChange={e => setConfirmation(e.target.value)} autoComplete="new-password"/>}<FormControlLabel control={<Checkbox checked={remember} onChange={event => setRemember(event.target.checked)} />} label="Remember this private browser for 30 days" /><Typography variant="caption">Automatic unlock after sign-in on this browser. Anyone with access to this browser profile can access your local messages. Lock messages or sign out to forget it.</Typography><Button loading={busy} variant="contained" disabled={passphrase.length < 12} onClick={unlock}>{existing ? 'Unlock' : 'Set up messaging'}</Button>{existing && <Button color="warning" onClick={async () => {
                     if (!window.confirm('Remove this browser’s messaging keys and history? This cannot be undone. You will need a new device identity.'))
                         return;
                     try {
@@ -345,5 +360,5 @@ export default function ConvoSocketIoProvider({ children }: {
                         setError(e instanceof Error ? e.message : 'Unable to reset local messaging');
                     }
                 }}>Reset messaging on this browser</Button>}</Stack></Paper></Box>;
-    return <Context.Provider value={{ convoSocketIo, messages, ready, viewportHeight, revision, liveReady, processed, refresh, refreshInbox, receiptTotals, loadingConversations, warmConversations, openOptions: setOptionsAnchor }}>{messagingPage && error && <Alert severity="error" sx={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 1300 }} onClose={() => setError('')}>{error}</Alert>}<Menu anchorEl={optionsAnchor} open={!!optionsAnchor} onClose={() => setOptionsAnchor(null)}><MenuItem onClick={() => { setOptionsAnchor(null); void listDevices(); }}>Messaging devices</MenuItem><MenuItem onClick={() => { setOptionsAnchor(null); generation.current++; lockMessaging(); setReady(false); setMessages([]); setProcessed([]); void forgetRememberedMessaging(userId).catch(() => setError('Unable to forget automatic unlock. Clear site storage before leaving a shared browser.')); }}>Lock messages</MenuItem></Menu><Dialog open={showDevices} onClose={() => setShowDevices(false)}><DialogTitle>Messaging devices</DialogTitle><DialogContent><Typography>Each browser keeps separate keys. New devices receive future messages automatically; transfer older history below. Revoke devices you no longer use.</Typography>{devices.map(d => <Box key={d.deviceId} sx={{ my: 2 }}><Typography variant="body2">{d.deviceId}</Typography><Button color="error" onClick={() => revoke(d.deviceId)}>Revoke device</Button></Box>)}<MessagingHistoryTransfer userId={userId} onRestored={() => setRevision(value => value + 1)} /></DialogContent></Dialog>{children}</Context.Provider>;
+    return <Context.Provider value={{ convoSocketIo, messages, ready, activeConversationId: messagingPage && !pathname.split('/').includes('list') && pageVisible && ready && !restoring ? selectedConversationId : undefined, setActiveConversationId, messagingRestoring: restoring, messagingGate, viewportHeight, revision, liveReady, processed, refresh, refreshInbox, receiptTotals, loadingConversations, warmConversations, openOptions: setOptionsAnchor }}>{messagingPage && ready && error && <Alert severity="error" sx={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 1300 }} onClose={() => setError('')}>{error}</Alert>}<Menu anchorEl={optionsAnchor} open={!!optionsAnchor} onClose={() => setOptionsAnchor(null)}><MenuItem onClick={() => { setOptionsAnchor(null); void listDevices(); }}>Messaging devices</MenuItem><MenuItem onClick={() => { setOptionsAnchor(null); generation.current++; lockMessaging(); setReady(false); setMessages([]); setProcessed([]); void forgetRememberedMessaging(userId).catch(() => setError('Unable to forget automatic unlock. Clear site storage before leaving a shared browser.')); }}>Lock messages</MenuItem></Menu><Dialog open={showDevices} onClose={() => setShowDevices(false)}><DialogTitle>Messaging devices</DialogTitle><DialogContent><Typography>Each browser keeps separate keys. New devices receive future messages automatically; transfer older history below. Revoke devices you no longer use.</Typography>{devices.map(d => <Box key={d.deviceId} sx={{ my: 2 }}><Typography variant="body2">{d.deviceId}</Typography><Button color="error" onClick={() => revoke(d.deviceId)}>Revoke device</Button></Box>)}<MessagingHistoryTransfer userId={userId} onRestored={() => setRevision(value => value + 1)} /></DialogContent></Dialog>{children}</Context.Provider>;
 }

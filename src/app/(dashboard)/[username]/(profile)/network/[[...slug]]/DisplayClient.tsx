@@ -14,7 +14,6 @@ import { blockUser, getUserConnections, muteUser, updateUserFollower } from "@/l
 import { FollowAction, UserConn, UserConnection } from "@/types/user";
 import ConnectionCard from "./ConnectionCard";
 import DisplayError from "@/components/common/DisplayError";
-import SkeletonTable from "@/components/common/SkeletonTable";
 import { getFollowStatus } from "@/utils/connections";
 
 
@@ -127,9 +126,8 @@ const DisplayClient = ({
   return (
     <Box sx={{ mx: 1 }}>
         {/* display 404 error */}
-        {(error && !data || flatData.length === 0 ) && <DisplayError status={error?.status ?? 404} message={getErrorMessage(error)} />}
-        {/* display content */}
-        {(!data && isLoading) && <SkeletonTable rows={5} />}
+        {((error && !data) || (data && flatData.length === 0)) && <DisplayError status={error?.status ?? 404} message={getErrorMessage(error)} />}
+        {/* display network content */}
       <Grid container spacing={1}>
         {flatData.length > 0 &&
           flatData?.map((item) => (

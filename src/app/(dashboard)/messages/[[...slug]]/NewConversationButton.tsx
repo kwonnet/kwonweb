@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Add, Close, ChatBubbleOutlined } from "@mui/icons-material";
-import { Alert, Avatar, Box, Button, Fab, CircularProgress, Dialog, DialogContent, DialogTitle, IconButton, List, ListItemButton, ListItemAvatar, ListItemText, TextField, Typography } from "@mui/material";
+import { Alert, Avatar, Box, Button, Fab, CircularProgress, Dialog, DialogContent, DialogTitle, IconButton, List, ListItemButton, ListItemAvatar, ListItemText, TextField, Tooltip, Typography } from "@mui/material";
 import { useAuthSession } from "@/hooks";
 import { getMessagingFriends, searchUsers } from "@/lib/users";
 
@@ -73,7 +73,7 @@ export default function NewConversationButton({ floating = false }: { floating?:
   };
 
   return <>
-    {floating ? <Fab color="primary" aria-label="Start message" onClick={() => { setQuery(""); setSearch(""); setOpen(true); }} sx={{ position: "absolute", right: 16, bottom: "max(16px, env(safe-area-inset-bottom))", zIndex: 2, display: { xs: "inline-flex", md: "none" } }}><ChatBubbleOutlined /><Add sx={{ position: "absolute", right: 8, top: 7, fontSize: 16 }} /></Fab> : <Button startIcon={<Add />} onClick={() => { setQuery(""); setSearch(""); setOpen(true); }}>Start a new conversation</Button>}
+    {floating ? <Fab color="primary" aria-label="Start message" onClick={() => { setQuery(""); setSearch(""); setOpen(true); }} sx={{ position: "absolute", right: 16, bottom: "max(16px, env(safe-area-inset-bottom))", zIndex: 2, display: { xs: "inline-flex", md: "none" } }}><ChatBubbleOutlined /><Add sx={{ position: "absolute", right: 8, top: 7, fontSize: 16 }} /></Fab> : <Tooltip title="Start a new conversation"><IconButton color="primary" size="large" aria-label="Start a new conversation" onClick={() => { setQuery(""); setSearch(""); setOpen(true); }}><Add /></IconButton></Tooltip>}
     <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm" aria-labelledby="new-conversation-title">
       <DialogTitle id="new-conversation-title" sx={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
         Start a message<IconButton aria-label="Close user search" onClick={() => setOpen(false)}><Close /></IconButton>

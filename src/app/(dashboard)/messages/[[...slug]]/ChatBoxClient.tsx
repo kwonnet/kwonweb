@@ -24,10 +24,17 @@ export default function ChatBoxClient({ params }: {
 }) {
     const { user, token: authToken } = useAuthSession();
     const token = authToken ?? '';
-    const { messages, refresh, refreshInbox, convoSocketIo: socket, revision, liveReady, processed, loadingConversations, viewportHeight } = useConvoSocketIoContext();
+    const { activeConversationId, setActiveConversationId, messages, refresh, refreshInbox, convoSocketIo: socket, revision, liveReady, processed, loadingConversations, viewportHeight } = useConvoSocketIoContext();
     const router = useRouter();
     const [convo, setConvo] = useState(params.convo), [text, setText] = useState(''), [files, setFiles] = useState<File[]>([]), [reply, setReply] = useState<LocalMessage>(), [error, setError] = useState(''), [busy, setBusy] = useState(false), [typingUntil, setTypingUntil] = useState(0), [now, setNow] = useState(Date.now());
     const [outgoing, setOutgoing] = useState<LocalMessage[]>([]);
+    const [optimisticReactions, setOptimisticReactions] = useState<Record<string, { messageId: string; emoji: string; remove: boolean; eventId: string; settled: boolean }>>({});
+    const reactionQueue = useRef<Promise<void>>(Promise.resolve());
+    const readActive = useRef(false);
+    useLayoutEffect(() => {
+        readActive.current = activeConversationId === convo?.id;
+        return () => { readActive.current = false; };
+    }, [activeConversationId, convo?.id]);
     const sending = useRef(false), usedInitialSync = useRef(false);
     const pane = useRef<HTMLDivElement>(null), visible = useRef(new Set<string>()), viewed = useRef(new Set<string>());
     const receiptEpoch=useRef(0);
@@ -42,7 +49,34 @@ export default function ChatBoxClient({ params }: {
     const pending = convo?.state === 'PENDING_REQUEST';
     const incoming = pending && convo?.responder.id === user.id;
     const confirmed = messages.filter(m => m.conversation === convo?.id);
-    const chats = confirmed.concat(outgoing.filter(m => !confirmed.some(saved => saved.eventId === m.eventId)));
+    const chats = confirmed.concat(outgoing.filter(m => !confirmed.some(saved => saved.eventId === m.eventId))).map(message => {
+        const changes = Object.values(optimisticReactions).filter(change => change.messageId === message.id);
+        if (!changes.length) return message;
+        let reactions = message.reactions;
+        for (const change of changes) {
+            reactions = reactions.filter(reaction => !(reaction.userId === user.id && reaction.reaction === change.emoji));
+            if (!change.remove) reactions = [...reactions, { userId: user.id, reaction: change.emoji }];
+        }
+        return { ...message, reactions };
+    });
+    useEffect(() => {
+        setActiveConversationId?.(convo?.id);
+        return () => setActiveConversationId?.(undefined);
+    }, [convo?.id, setActiveConversationId]);
+    useEffect(() => {
+        setOptimisticReactions(previous => {
+            const next = { ...previous };
+            let changed = false;
+            for (const [key, change] of Object.entries(previous)) {
+                const saved = messages.find(message => message.id === change.messageId);
+                const acknowledged = change.settled || processed?.some(event => event.eventId === change.eventId);
+                if (acknowledged && saved && (saved.deleted || saved.reactions.some(reaction => reaction.userId === user.id && reaction.reaction === change.emoji) === !change.remove)) {
+                    delete next[key]; changed = true;
+                }
+            }
+            return changed ? next : previous;
+        });
+    }, [messages, processed, user.id]);
     const waitingAcceptance = !!pending && !incoming && (!!convo?.requestMessageSent || chats.some(message => message.fromUserId === user.id && message.sendingState !== 'failed'));
     useEffect(() => {
         setOutgoing(previous => previous.filter(m => !messages.some(saved => saved.eventId === m.eventId)));
@@ -95,7 +129,7 @@ export default function ChatBoxClient({ params }: {
         if (!convo || pending)
             return;
         const received = [...new Map([...(processed?.filter(m => m.conversationId === convo.id) ?? []), ...chats.filter(m => !m.queued && !m.sendingState && !m.integrityFailed && new Date(m.createdAt).getTime() > Date.now() - 90 * 86400000).map(m => ({ id: m.id, fromUserId: m.fromUserId, action: false }))].map(message => [message.id, message])).values()].filter(m => m.fromUserId !== user.id);
-        const focused = document.visibilityState === 'visible';
+        const focused = activeConversationId === convo.id && document.visibilityState === 'visible';
         for (const m of received) {
             // Opening an accepted conversation reads its authenticated history through the latest message.
             const status = focused && !read.current.has(m.id) ? 'READ' : !delivered.current.has(m.id) ? 'DELIVERED' : undefined;
@@ -108,6 +142,10 @@ export default function ChatBoxClient({ params }: {
             if (receiptBusy.current || !receiptQueue.current.size)
                 return;
             receiptBusy.current = true;
+            // A queued read must not fire after the pane becomes hidden or another tab opens.
+            if (!readActive.current || document.visibilityState !== 'visible') {
+                for (const [id, status] of receiptQueue.current) if (status === 'READ') receiptQueue.current.set(id, 'DELIVERED');
+            }
             const batch = [...receiptQueue.current.entries()].slice(0, 100);
             const reads = batch.filter(([, s]) => s === 'READ').map(([id]) => id), deliveries = batch.filter(([, s]) => s === 'DELIVERED').map(([id]) => id);
             let applied=false;
@@ -118,7 +156,7 @@ export default function ChatBoxClient({ params }: {
         };
         if (!receiptTimer.current && !receiptBusy.current)
             receiptTimer.current = setTimeout(flush, 250);
-    }, [messages, processed, convo?.id, pending, user.id, token, now, refreshInbox]);
+    }, [messages, processed, convo?.id, pending, user.id, token, now, refreshInbox, activeConversationId]);
     useEffect(() => () => {receiptEpoch.current++;clearTimeout(receiptTimer.current);}, []);
     const latest = chats.at(-1);
     useLayoutEffect(() => {
@@ -255,8 +293,28 @@ export default function ChatBoxClient({ params }: {
             return;
         }
         const target = { targetId: m.event.eventId, targetHash: m.hash };
-        if (kind === 'reaction')
-            return send({ ...target, kind: 'reaction', emoji: value!, remove: m.reactions.some(r => r.userId === user.id && r.reaction === value) });
+        if (kind === 'reaction') {
+            if (!value || !convo || pending || m.deleted || m.sendingState || m.queued) return;
+            const emoji = value, eventId = crypto.randomUUID(), key = `${m.id}:${emoji}`;
+            const remove = m.reactions.some(reaction => reaction.userId === user.id && reaction.reaction === emoji);
+            setOptimisticReactions(previous => ({ ...previous, [key]: { messageId: m.id, emoji, remove, eventId, settled: false } }));
+            // Serialize toggles in click order; each operation keeps its own durable outbox ID.
+            reactionQueue.current = reactionQueue.current.catch(() => {}).then(async () => {
+                try {
+                    await sendContent(user.id, token, peer.id, convo.id, { ...target, kind: 'reaction', emoji, remove }, eventId);
+                    setOptimisticReactions(previous => previous[key]?.eventId === eventId ? { ...previous, [key]: { ...previous[key], settled: true } } : previous);
+                    refreshInbox?.();
+                    await sync();
+                } catch (e) {
+                    if (!(e instanceof MessageQueuedError)) setOptimisticReactions(previous => {
+                        if (previous[key]?.eventId !== eventId) return previous;
+                        const next = { ...previous }; delete next[key]; return next;
+                    });
+                    setError(e instanceof Error ? e.message : 'Unable to send reaction');
+                }
+            });
+            return reactionQueue.current;
+        }
         if (kind === 'edit') {
             const next = window.prompt('Edit message', m.content);
             if (next?.trim())
