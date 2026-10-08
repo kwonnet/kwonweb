@@ -79,7 +79,7 @@ const buttons = (pathname: string) => {
     },
     {
       id: 7,
-      title: "Connect",
+      title: "Network",
       icon: pathname === paths.people ? <PeopleAltIcon /> : <PeopleAltOutlinedIcon />,
       isSmallOnly: false,
       path: paths.people,

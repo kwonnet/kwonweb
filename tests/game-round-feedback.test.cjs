@@ -6,9 +6,12 @@ const React = require('react');
 const {JSDOM} = require('jsdom');
 const compile = path => ts.transpileModule(fs.readFileSync(path,'utf8'), {compilerOptions: {module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true}}).outputText;
 test('late round feedback preserves membership while fatal errors and explicit exit retain their behavior', async () => {
-  const dom = new JSDOM('<div id="root"></div>');
-  const prior = {window:global.window, document:global.document, act:global.IS_REACT_ACT_ENVIRONMENT};
+  const dom = new JSDOM('<div id="root"></div>', {pretendToBeVisual:true});
+  const prior = {window:global.window, document:global.document, act:global.IS_REACT_ACT_ENVIRONMENT, raf:global.requestAnimationFrame, caf:global.cancelAnimationFrame, observer:global.ResizeObserver};
   global.window=dom.window; global.document=dom.window.document; global.IS_REACT_ACT_ENVIRONMENT=true;
+  global.requestAnimationFrame=dom.window.requestAnimationFrame.bind(dom.window);
+  global.cancelAnimationFrame=dom.window.cancelAnimationFrame.bind(dom.window);
+  global.ResizeObserver=class {observe(){} disconnect(){}};
   const handlers = new Map(), emitted = [], feedback = [];
   let navigations=0, resets=0;
   const socket = {on:(event,handler)=>handlers.set(event,handler), off:(event,handler)=>{if(handlers.get(event)===handler)handlers.delete(event);}, emit:(...args)=>emitted.push(args)};
@@ -52,6 +55,7 @@ test('late round feedback preserves membership while fatal errors and explicit e
     assert.equal(emitted.filter(([event])=>event===GameEventEnum.DISCONNECTED).length,1);
     assert.equal(handlers.has(GameEventEnum.GAME_ACTION_REJECTED),false);
   } finally {
+    global.requestAnimationFrame=prior.raf; global.cancelAnimationFrame=prior.caf; global.ResizeObserver=prior.observer;
     global.window=prior.window; global.document=prior.document; global.IS_REACT_ACT_ENVIRONMENT=prior.act; dom.window.close();
   }
 });

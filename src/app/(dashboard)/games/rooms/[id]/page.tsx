@@ -1,3 +1,4 @@
+import type { Viewport } from "next";
 import {pageMetadata} from '@/lib/seo';
 import React from 'react'
 import PageClient from './PageClient'
@@ -30,3 +31,10 @@ export async function generateMetadata({params}: {params: Promise<{id: string}>}
   const p = await params;
   return pageMetadata('Game rooms', 'View game rooms on Kwonnet.', "/" + 'games' + "/" + 'rooms' + "/" + encodeURIComponent(p.id), false);
 }
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  interactiveWidget: "resizes-content",
+  viewportFit: "cover",
+};

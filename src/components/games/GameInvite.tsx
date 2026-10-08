@@ -1,15 +1,11 @@
 "use client";
-import PaperLayout from "./PaperLayout";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Button,
   Box,
   Typography,
   IconButton,
-  Card,
-  CardContent,
   Stack,
-  CircularProgress,
 } from "@mui/material";
 import { Check, CopyAll as CopyIcon, Share as ShareIcon } from "@mui/icons-material";
 import { toast } from "react-toastify";
@@ -19,6 +15,7 @@ import { formatNumber, getInviteLink } from "@/utils";
 import IosShareOutlinedIcon from '@mui/icons-material/IosShareOutlined';
 import { useUserStats } from "@/lib/swrHooks";
 import { useAuthSession } from "@/hooks";
+import FeedSocialShare from "@/components/post/FeedSocialShare";
 
 const GameInvite = ({
   currentUserId,
@@ -43,46 +40,21 @@ const GameInvite = ({
     }, 700);
   };
 
-  const handleInviteClick = async() => {
-    // if (shareURL.isAvailable()) {
-    //   shareURL(inviteLink, "Join me to play Torazone game and win amazing cash prizes 🎁. Don't miss out. Play, learn & earn!");
-    // }
-    // Handle the invite action logic (e.g., sharing, sending invites, etc.)
-    // await navigator.share({url: inviteLink, text: "Join me to play Torazone game and win amazing cash prizes 🎁. Don't miss out. Play, learn & earn!"});
-    // toast.info("Invite sent!");
-  };
-
-  const handleShareStoryClick = async() => {
-    // if (shareStory.isAvailable()) {
-    //   shareStory(`${process.env.NEXT_PUBLIC_APP_URL}/logo_523_x_523.png`, {
-    //     text: "Join me to play Torazone game and win amazing cash prizes 🎁. Don't miss out. Play, learn & earn!",
-    //     widgetLink: {
-    //       url: inviteLink,
-    //       name: 'Torazone app',
-    //     }
-    //   });
-    // }
-    // if (shareURL.isAvailable()) {
-    //   shareURL(inviteLink, "Join me to play Torazone game and win amazing cash prizes 🎁. Don't miss out. Play, learn & earn!");
-    // }
-    // Handle the invite action logic (e.g., sharing, sending invites, etc.)
-    // await navigator.share({url: inviteLink, text: "Join me to play Torazone game and win amazing cash prizes 🎁. Don't miss out. Play, learn & earn!"});
-    // toast.info("Invite sent!");
-  };
-
-  useEffect(() => {
-    
-    // init()
-    return () => {
-      
-    }
-  }, [])
+  const [shareOpen, setShareOpen] = useState(false);
+  const handleInviteClick = () => setShareOpen(true);
 
   const stats = useUserStats({userId: user.id, token})
   
 
   return (
     <React.Fragment>
+      {shareOpen && <FeedSocialShare
+        isOpen={shareOpen}
+        url={inviteLink}
+        postId=""
+        onSocialClick={() => {}}
+        toggleDrawer={(_event, open) => setShareOpen(open)}
+      />}
       <Box sx={{ p: 2, position: "relative" }}>
         <Stack direction={"row"} sx={{alignItems: "center"}} spacing={0.5}>
         <ShareIcon sx={{ fontSize: 20, color: "#fff" }} />
@@ -194,6 +166,7 @@ const GameInvite = ({
 
             {/* Copy Invite Link Button */}
             <IconButton
+              aria-label="Copy invite link"
               sx={{
                 background: theme =>  theme.vars.palette.gradient.E900,
                 color: "#fff",
@@ -243,10 +216,10 @@ const GameInvite = ({
                   color: theme.vars.palette.gradient.contrastText
                 })
               })]}
-              onClick={() => handleShareStoryClick()}
+              onClick={() => handleInviteClick()}
               startIcon={<IosShareOutlinedIcon />}
             >
-              Share Story
+              Share Invite
             </Button>
           </Box>
         </Box>

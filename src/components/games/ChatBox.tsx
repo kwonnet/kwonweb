@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Box, TextField, Button, IconButton, Fade } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import ChatBubble from "./ChatBubble";
-import { useSocketIoContext } from "@/context/SocketIoContext";
 import AnswersTable from "./AnswersTable";
 import { useGameSocketIoContext } from "@/context/GameSocketIoContext";
 
@@ -36,7 +35,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   useEffect(() => {
     if (isUserNearBottom()) {
       // If user is near the bottom, auto-scroll to the latest message
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      const pane = chatContainerRef.current;
+      pane?.scrollTo({ top: pane.scrollHeight, behavior: "smooth" });
       setShowScrollToBottom(false);
     } else {
       // Show the "scroll to bottom" button if the user is not near the bottom
@@ -52,7 +52,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const pane = chatContainerRef.current;
+    pane?.scrollTo({ top: pane.scrollHeight, behavior: "smooth" });
     setShowScrollToBottom(false);
   };
 
@@ -62,8 +63,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({
         ref={chatContainerRef}
         sx={{
           position: "relative",
-          height: "100%",
+          minHeight: 0,
           flex: 1,
+          overscrollBehavior: "contain",
           overflowY: "auto",
           px: 2,
           pt: 2,
@@ -120,6 +122,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({
           (theme) => ({
             display: hidden ? "none" : "flex",
             alignItems: "center",
+            flexShrink: 0,
+            pb: "max(16px, env(safe-area-inset-bottom))",
             width: "100%",
             p: 2,
             borderTop: `1px solid ${theme.vars.palette.grey[100]}`,
@@ -140,7 +144,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({
           fullWidth
           multiline
           maxRows={4}
-          autoFocus={true}
           sx={{
             borderRadius: 2,
             "& .MuiOutlinedInput-root": {
@@ -174,167 +177,3 @@ const ChatBox: React.FC<ChatBoxProps> = ({
 };
 
 export default ChatBox;
-
-// import React, { useEffect, useRef, useState } from "react";
-// import { Box, Paper, TextField, Button, IconButton, Fade } from "@mui/material";
-// import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-// import ChatBubble from "./ChatBubble";
-
-// type ChatMessage = {
-//   id: string;
-//   createdAt: string;
-//   playerName: string;
-//   playerId: string;
-//   content: string;
-// };
-
-// type ChatBoxProps = {
-//   messages: ChatMessage[];
-//   currentUserId: string;
-//   onSendMessage: (content: string) => void;
-// };
-
-// const ChatBox: React.FC<ChatBoxProps> = ({
-//   messages,
-//   currentUserId,
-//   onSendMessage,
-// }) => {
-//   const [newMessage, setNewMessage] = useState("");
-//   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
-//   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
-//   useEffect(() => {
-//     const handleScroll = () => {
-//       const isNearBottom =
-//         window.innerHeight + window.scrollY >= document.body.scrollHeight - 200;
-//       setShowScrollToBottom(!isNearBottom);
-//     };
-
-//     window.addEventListener("scroll", handleScroll);
-//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-
-//     return () => window.removeEventListener("scroll", handleScroll);
-//   }, [messages]);
-
-//   const handleSendMessage = () => {
-//     if (newMessage.trim()) {
-//       onSendMessage(newMessage);
-//       setNewMessage("");
-//     }
-//   };
-
-//   const scrollToBottom = () =>
-//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-
-//   return (
-//     <Box
-//       sx={{
-//         height: "100vh",
-//         display: "flex",
-//         flexDirection: "column",
-//         alignItems: "center",
-//         bgcolor: "background.paper",
-//       }}
-//     >
-//       {/* Message container */}
-//       <Box
-//         sx={{
-//           display: "flex",
-//           flexDirection: "column",
-//           width: "100%",
-//           maxWidth: "800px",
-//           padding: 2,
-//           position: "relative",
-//           pb: 10,
-//           mb: 10,
-//         }}
-//       >
-//         {/* Messages list */}
-//         <Box sx={{ flex: 1, padding: 2, bgcolor: "background.default" }}>
-//           {messages.map((message) => (
-//             <ChatBubble
-//               key={message.id}
-//               message={message}
-//               isSender={message.playerId === currentUserId}
-//             />
-//           ))}
-//           <div ref={messagesEndRef} />
-//         </Box>
-
-//         {/* Scroll-to-bottom button */}
-//         <Fade in={showScrollToBottom}>
-//           <IconButton
-//             onClick={scrollToBottom}
-//             sx={{
-//               position: "fixed",
-//               bottom: 80,
-//               right: 24,
-//               bgcolor: "primary.main",
-//               color: "white",
-//               "&:hover": { bgcolor: "primary.dark" },
-//             }}
-//           >
-//             <KeyboardArrowDownIcon />
-//           </IconButton>
-//         </Fade>
-//       </Box>
-
-//       {/* Message input box */}
-//       <Box
-//         sx={{
-//           display: "flex",
-//           alignItems: "center",
-//           justifyContent: "center",
-//           maxWidth: "800px",
-//           bgcolor: "background.paper",
-//           position: "sticky",
-//           backgroundColor: "background.paper",
-//           py: 10,
-//         }}
-//       >
-//         <Box
-//           sx={{
-//             position: "fixed",
-//             bottom: 16,
-//             width: "100%",
-//             maxWidth: "800px",
-//             paddingX: 2,
-//             display: "flex",
-//             alignItems: "center",
-//             borderRadius: 4, // Rounded border
-//             zIndex: 9999,
-//           }}
-//         >
-//           <TextField
-//             value={newMessage}
-//             onChange={(e) => setNewMessage(e.target.value)}
-//             placeholder="Type your message"
-//             variant="outlined"
-//             size="small"
-//             fullWidth
-//             multiline
-//             maxRows={10}
-//             sx={{
-//               borderRadius: 4, // Rounded input
-//               "& .MuiOutlinedInput-root": {
-//                 borderRadius: 4, // Ensure TextField input itself is rounded
-//                 backgroundColor: "background.paper",
-//               },
-//             }}
-//             onKeyUp={(e) => e.key === "Enter" && handleSendMessage()}
-//           />
-//           <Button
-//             onClick={() => handleSendMessage()}
-//             variant="contained"
-//             color="primary"
-//             sx={{ marginLeft: 1 }}
-//           >
-//             Send
-//           </Button>
-//         </Box>
-//       </Box>
-//     </Box>
-//   );
-// };
-
-// export default ChatBox;

@@ -47,7 +47,7 @@ export const getNavigationItems = (user?: Session["user"]) => {
     },
     {
       segment: "connections",
-      title: "Connect",
+      title: "Network",
       icon: <GroupAddOutlinedIcon key={100} />,
     },
 

@@ -32,7 +32,7 @@ import {
 } from "@/types";
 import { nanoid } from "nanoid";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Box,
   Container,
@@ -322,12 +322,42 @@ const PageClient = ({
     }
   };
 
-  const boxHeight = !isSmallScreen
-    ? `calc(100vh - 160px)`
-    : `calc(100vh - 220px)`;
-  const layoutBoxHeight = !isSmallScreen
-    ? `calc(100vh - 250px)`
-    : `calc(100vh - 220px)`;
+  const roomViewportRef = useRef<HTMLDivElement>(null);
+  const chatPaperRef = useRef<HTMLDivElement>(null);
+  const [visibleViewport, setVisibleViewport] = useState<{ height: number; top: number; chatHeight: number }>();
+
+  useEffect(() => {
+    let frame = 0;
+    const measure = () => {
+      const viewport = window.visualViewport;
+      const height = viewport?.height ?? window.innerHeight;
+      const top = viewport?.offsetTop ?? 0;
+      const roomTop = roomViewportRef.current?.getBoundingClientRect().top ?? 0;
+      const chatOffset = (chatPaperRef.current?.getBoundingClientRect().top ?? roomTop + 150) - roomTop;
+      const headerHeight = isSmallScreen ? 60 : 70;
+      setVisibleViewport({ height, top, chatHeight: Math.max(0, height - headerHeight - chatOffset - 8) });
+    };
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    };
+    const observer = new ResizeObserver(schedule);
+    if (roomViewportRef.current) observer.observe(roomViewportRef.current);
+    schedule();
+    window.visualViewport?.addEventListener("resize", schedule);
+    window.visualViewport?.addEventListener("scroll", schedule);
+    window.addEventListener("resize", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.visualViewport?.removeEventListener("resize", schedule);
+      window.visualViewport?.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, [isSmallScreen, state.activeTab]);
+
+  const boxHeight = visibleViewport ? `${visibleViewport.chatHeight}px` : "calc(100dvh - 220px)";
+  const layoutBoxHeight = `calc(${visibleViewport ? `${visibleViewport.height}px` : "100dvh"} - ${isSmallScreen ? 220 : 250}px)`;
   return (
     <Box
       sx={[
@@ -341,11 +371,12 @@ const PageClient = ({
     >
       <Container
         maxWidth="xl"
+        ref={roomViewportRef}
         sx={{
-          height: `100vh`,
-          maxHeight: "100vh",
+          height: visibleViewport ? `${Math.max(0, visibleViewport.height - (isSmallScreen ? 60 : 70))}px` : "calc(100dvh - 70px)",
+          maxHeight: "100dvh",
           position: "fixed",
-          top: isSmallScreen ? 60 : 70,
+          top: (visibleViewport?.top ?? 0) + (isSmallScreen ? 60 : 70),
           overflow: "hidden !important",
         }}
       >
@@ -506,12 +537,15 @@ const PageClient = ({
               >
                 {/* Chat Section */}
                 <Paper
+                  ref={chatPaperRef}
                   elevation={3}
                   sx={{
                     position: "relative",
                     borderRadius: 3,
                     boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.1)",
                     height: boxHeight,
+                    minHeight: 0,
+                    overflow: "hidden",
                     display: "flex",
                     flexDirection: "column",
                   }}
