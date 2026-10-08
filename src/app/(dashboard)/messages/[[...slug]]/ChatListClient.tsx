@@ -15,7 +15,7 @@ const ChatClientList = ({convoList, slug}: { convoList: EncryptedConversation[];
 
     const { token, user } = useAuthSession();
 
-    const {liveReady, revision, receiptTotals}=useConvoSocketIoContext();
+    const {liveReady, revision, receiptTotals, messages, warmConversations, ready, loadingConversations}=useConvoSocketIoContext();
     const userId = user.id
 
   const getKey = (pageIndex: number, previousPageData?: any[]) => {
@@ -39,7 +39,8 @@ const ChatClientList = ({convoList, slug}: { convoList: EncryptedConversation[];
       fallbackData: convoList.length > 0 ? [convoList] : undefined,
     });
 
-  const flatData = data ? data.flat() : [];
+  const flatData = data ? data.flat().map(item => ({ ...item, previewLoading: !!loadingConversations?.[item.id], lastMessage: messages?.filter(message => message.conversation === item.id).at(-1) })) : [];
+  React.useEffect(() => { if (ready && data) warmConversations(data.flat()); }, [data, ready, warmConversations]);
 
   React.useEffect(() => {
     // SWRInfinite owns an aggregate cache in addition to its page caches.

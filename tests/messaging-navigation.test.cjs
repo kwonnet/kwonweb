@@ -10,26 +10,10 @@ function load(file, mocks) {
   new Function('require', 'module', 'exports', code)(id => id in mocks ? mocks[id] : require(id), module, module.exports);
   return module.exports.default;
 }
-test('shared messaging layout preserves the unlocked provider across Inbox and Requests', async () => {
-  const dom = new JSDOM('<div id="root"></div>');
-  global.window = dom.window; global.document = dom.window.document; global.IS_REACT_ACT_ENVIRONMENT = true;
-  const {createRoot} = require('react-dom/client');
-  let mounts = 0, locks = 0;
-  function Provider({children}) {
-    const [unlocked, setUnlocked] = React.useState(false);
-    React.useEffect(() => {mounts++; return () => {locks++;};}, []);
-    return React.createElement('div', null, unlocked ? children : React.createElement('button', {onClick: () => setUnlocked(true)}, 'Unlock'));
-  }
-  const Layout = load('src/app/(dashboard)/messages/layout.tsx', {'@/context/ConvoSocketIoContext': {__esModule: true, default: Provider}});
-  const root = createRoot(document.getElementById('root'));
-  try {
-    await React.act(async () => root.render(React.createElement(Layout, null, 'Inbox')));
-    await React.act(async () => document.querySelector('button').click());
-    await React.act(async () => root.render(React.createElement(Layout, null, 'Requests')));
-    assert.equal(document.body.textContent, 'Requests'); assert.equal(mounts, 1); assert.equal(locks, 0);
-    assert.doesNotMatch(readFileSync('src/app/(dashboard)/messages/[[...slug]]/layout.tsx', 'utf8'), /ConvoSocketIoProvider/);
-  } finally {await React.act(async () => root.unmount()); dom.window.close();}
-  assert.equal(locks, 1, 'leaving messaging still closes the vault');
+test('messaging provider lives in the root and chat navigation remounts only the conversation detail',()=>{
+ const root=readFileSync('src/app/layout.tsx','utf8');assert.match(root,/<ConvoSocketIoProvider>/);
+ assert.doesNotMatch(readFileSync('src/app/(dashboard)/messages/layout.tsx','utf8'),/<ConvoSocketIoProvider>/);
+ assert.match(readFileSync('src/app/(dashboard)/messages/[[...slug]]/ChatBoxServer.tsx','utf8'),/key=\{recipientId\}/);
 });
 test('start message lists mutual friends, searches all users and opens a non-friend chat', async () => {
   const dom = new JSDOM('<div id="root"></div>');

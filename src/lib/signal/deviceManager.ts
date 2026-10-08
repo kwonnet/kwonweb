@@ -17,12 +17,13 @@ export interface MessagingRuntime {
     publicBundle: any;
 }
 let runtime: MessagingRuntime | undefined;
+let runtimeGeneration = 0;
 export function currentMessagingRuntime(userId: string) {
     if (runtime?.userId !== userId)
         throw new Error('Unlock encrypted messaging');
     return runtime;
 }
-export function lockMessaging() { runtime?.vault.close(); runtime = undefined; }
+export function lockMessaging() { runtimeGeneration++; runtime?.vault.close(); runtime = undefined; }
 export async function hasMessagingVault(userId: string) { return !!await get(`e2-vault:${userId}`); }
 export async function messagingPassphraseKey(passphrase: string, salt: Uint8Array<ArrayBuffer>) {
     if (passphrase.length < 12 || passphrase.length > 1024 || salt.length !== 16)
@@ -45,7 +46,8 @@ export async function messagingPassphraseKey(passphrase: string, salt: Uint8Arra
     raw.fill(0);
     return key;
 }
-export async function unlockMessaging(userId: string, passphrase: string): Promise<MessagingRuntime> {
+export async function unlockMessaging(userId: string, passphrase: string, remember = false): Promise<MessagingRuntime> {
+    const epoch = runtimeGeneration;
     if (passphrase.length < 12)
         throw new Error('Use a messaging passphrase with at least 12 characters');
     if (!navigator.locks)
@@ -78,6 +80,12 @@ export async function unlockMessaging(userId: string, passphrase: string): Promi
             await set(`e2-vault:${userId}`, config);
         }
         raw.fill(0);
+        if (remember) await set(`e2-trusted:${userId}`, { version: 1, deviceId, key: dek, expiresAt: Date.now() + 30 * 86400000 });
+        else await del(`e2-trusted:${userId}`);
+        return finishUnlock(userId, deviceId, dek, epoch);
+    });
+}
+async function finishUnlock(userId: string, deviceId: string, dek: CryptoKey, epoch: number): Promise<MessagingRuntime> {
         const vault = await DeviceVault.open(userId, deviceId);
         vault.unlock(dek);
         const publicBundle = await vault.atomic(async (draft) => {
@@ -139,11 +147,25 @@ export async function unlockMessaging(userId: string, passphrase: string): Promi
             draft.records['local:signed-at'] = String(Date.now());
             return bundle;
         });
-        runtime?.vault.lock();
+        if (epoch !== runtimeGeneration) { vault.close(); throw new Error('Messaging unlock cancelled'); }
+        runtime?.vault.close();
         runtime = { userId, deviceId, vault, publicBundle };
         return runtime;
-    });
+
 }
+export async function forgetRememberedMessaging(userId: string) { await del(`e2-trusted:${userId}`); }
+export async function restoreRememberedMessaging(userId: string): Promise<MessagingRuntime | undefined> {
+    const epoch = runtimeGeneration;
+    const trusted = await get<{ version: number; deviceId: string; key: CryptoKey; expiresAt: number }>(`e2-trusted:${userId}`);
+    if (!trusted) return;
+    const config = await get<VaultConfig>(`e2-vault:${userId}`);
+    if (trusted.version !== 1 || trusted.expiresAt <= Date.now() || !config || config.version !== 2 || config.deviceId !== trusted.deviceId || trusted.key?.extractable || trusted.key?.algorithm?.name !== 'AES-GCM') {
+        await forgetRememberedMessaging(userId); return;
+    }
+    if (!navigator.locks) return;
+    return navigator.locks.request(`kwonnet-enroll:${userId}`, () => finishUnlock(userId, trusted.deviceId, trusted.key, epoch));
+}
+
 export async function signMessaging(bytes: Uint8Array<ArrayBuffer>) {
     if (!runtime)
         throw new Error('Unlock messaging');
@@ -151,6 +173,7 @@ export async function signMessaging(bytes: Uint8Array<ArrayBuffer>) {
 }
 export async function resetMessagingDevice(userId: string) {
     lockMessaging();
+    await forgetRememberedMessaging(userId);
     const config = await get<VaultConfig>(`e2-vault:${userId}`);
     if (config)
         await new Promise<void>((resolve, reject) => { const request = indexedDB.deleteDatabase(`kwonnet-e2ee:${userId}:${config.deviceId}`); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); request.onblocked = () => reject(new Error('Close other messaging tabs first')); });

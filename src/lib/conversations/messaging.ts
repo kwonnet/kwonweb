@@ -29,19 +29,21 @@ async function socketRequest<T>(userId: string, event: string, body: unknown): P
         throw error;
     }
 }
-export async function sendReceiptBatch(userId: string, token: string, conversationId: string, deliveredIds: string[], readIds: string[]) { const body = { conversationId, deliveredIds, readIds }; return await socketRequest<{
-    suppressed: boolean;
-    unreadCount?: number;
-    unseenCount?: number;
-    totalUnreadMsg?: number;
-    totalUnseenMsg?: number;
-}>(userId, 'receipts:batch', body) ?? messagingAPI<{
-    suppressed: boolean;
-    unreadCount?: number;
-    unseenCount?: number;
-    totalUnreadMsg?: number;
-    totalUnseenMsg?: number;
-}>(userId, token, '/receipts/batch', 'POST', body); }
+export async function sendReceiptBatch(userId: string, token: string, conversationId: string, deliveredIds: string[], readIds: string[]) {
+    const body = { conversationId, deliveredIds, readIds };
+    type Result = { suppressed: boolean; unreadCount?: number; unseenCount?: number; totalUnreadMsg?: number; totalUnseenMsg?: number };
+    const result = await socketRequest<Result>(userId, 'receipts:batch', body) ?? await messagingAPI<Result>(userId, token, '/receipts/batch', 'POST', body);
+    if (!result.suppressed) {
+        const r = currentMessagingRuntime(userId), now = new Date().toISOString();
+        await r.vault.atomic(async draft => {
+            for (const id of new Set([...deliveredIds, ...readIds])) {
+                const key = `receipt:${id}:${userId}`, old = JSON.parse(draft.records[key] ?? 'null');
+                draft.records[key] = JSON.stringify({ id, conversationId, userId, deliveredAt: old?.deliveredAt ?? now, readAt: readIds.includes(id) ? now : old?.readAt ?? null });
+            }
+        });
+    }
+    return result;
+}
 export async function syncMessages(userId: string, token: string, conversationId: string, after: string, receiptAfter: string): Promise<SyncResult> { return await socketRequest<SyncResult>(userId, 'messages:sync', { conversationId, after, receiptAfter }) ?? messagingAPI<SyncResult>(userId, token, `/${conversationId}/messages?after=${after}&receiptAfter=${receiptAfter}`); }
 export async function messagingAPI<T>(userId: string, token: string, path: string, method = 'GET', body?: unknown): Promise<T> {
     const r = currentMessagingRuntime(userId);

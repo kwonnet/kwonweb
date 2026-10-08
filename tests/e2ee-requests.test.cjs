@@ -9,7 +9,7 @@ test('a pending request previews silently, accepts only processed/visible IDs, a
   '@mui/icons-material':{ArrowBackIosNewOutlined:elements,AttachFile:elements,SendOutlined:elements,LockOutlined:elements},
   'next/link':{__esModule:true,default:elements},'next/navigation':{useRouter:()=>({replace:path=>routes.push(path),refresh:()=>{}})},
   '@/hooks':{useAuthSession:()=>({user:{id:'a'},token:'token'})},
-  '@/context/ConvoSocketIoContext':{useConvoSocketIoContext:()=>context},
+  '@/context/ConvoSocketIoContext':{useConvoSocketIoContext:()=>context,MessagingOptionsButton:()=>null},
   '@/lib/signal/attachments':{IMAGE_TYPES:['image/png','image/jpeg','image/webp'],validateImageUploads:()=>{}},'@/lib/conversations':{createConversation:async()=>convo},
   '@/lib/conversations/messaging':{messagingAPI:async(...args)=>{calls.push(args);},sendContent:async()=>{},sendMedia:async()=>{},forgetConversation:async()=>{},hideMessage:async()=>{}},
   '@/types/conversation':{ConvoKind:{CHAT:'chat'}},'./ChatBubble':{__esModule:true,default:({message})=>React.createElement('span',null,message.content)},

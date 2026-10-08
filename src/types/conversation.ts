@@ -18,9 +18,10 @@ export interface Conversation {
   unseenCount: number;
   createdAt: string;
   updatedAt: string;
+  lastSequence?: string;
 }
 // HTTP list metadata and client-decrypted summaries have distinct types.
 export type EncryptedConversation = Conversation;
-export interface DecryptedConversation extends Conversation {lastMessage?: LocalMessage}
+export interface DecryptedConversation extends Conversation {lastMessage?: LocalMessage; previewLoading?: boolean}
 export type EncryptedChatMessage = MessagingWire;
 export type DecryptedChatMessage = LocalMessage;

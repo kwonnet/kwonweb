@@ -1,4 +1,5 @@
 "use client";
+import { MessagingOptionsButton } from "@/context/ConvoSocketIoContext";
 import * as React from "react";
 import Box from "@mui/material/Box";
 import Tabs from "@mui/material/Tabs";
@@ -100,7 +101,7 @@ export default function ChatListHeader() {
           ]}
         >
 
-          <Tabs
+          <Box sx={{ display: "flex", alignItems: "center" }}><Tabs
             value={value}
             onChange={handleChange}
             aria-label="connections action tabs"
@@ -110,6 +111,7 @@ export default function ChatListHeader() {
             scrollButtons="auto"
             allowScrollButtonsMobile={true}
             sx={{
+              flex: 1, minWidth: 0,
               [`& .${tabsClasses.scrollButtons}`]: {
                 "&.Mui-disabled": { opacity: 0.3 },
               },
@@ -127,7 +129,7 @@ export default function ChatListHeader() {
                 selected={value === index}
               />
             ))}
-          </Tabs>
+          </Tabs><MessagingOptionsButton /></Box>
         </Box>
       </StickyBox>
     </React.Fragment>

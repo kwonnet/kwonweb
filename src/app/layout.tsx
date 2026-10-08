@@ -18,6 +18,7 @@ import "slick-carousel/slick/slick-theme.css";
 // import "@vidstack/react/player/styles/plyr/theme.css";
 // global styles
 import "./globals.css";
+import ConvoSocketIoProvider from "@/context/ConvoSocketIoContext";
 import SocketIoProvider from "@/context/SocketIoContext";
 import { constant } from "@/config";
 import SSEContextProvider from "@/context/SSEContext";
@@ -52,11 +53,9 @@ export default async function RootLayout({
           <AppRouterCacheProvider>
             <React.Suspense fallback={<AppLoadingShell />}>
               <NextjsAppProvider session={session}>
-                {publicLegal ? children : <AuthSessionBoundary initiallyAuthenticated={!!session?.user}>
-                <SocketIoProvider>
-                    <SSEContextProvider>{children}</SSEContextProvider>
-                </SocketIoProvider>
-                </AuthSessionBoundary>}
+                {publicLegal ? children : <SocketIoProvider><ConvoSocketIoProvider><SSEContextProvider>
+                  <AuthSessionBoundary initiallyAuthenticated={!!session?.user}>{children}</AuthSessionBoundary>
+                </SSEContextProvider></ConvoSocketIoProvider></SocketIoProvider>}
               </NextjsAppProvider>
             </React.Suspense>
           </AppRouterCacheProvider>

@@ -1,11 +1,11 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Avatar, Box, Button, Dialog, DialogContent, DialogTitle, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Avatar, Box, Button, Dialog, DialogContent, DialogTitle, IconButton, Paper, Stack, TextField, Typography, CircularProgress } from '@mui/material';
 import { ArrowBackIosNewOutlined, AttachFile, SendOutlined, LockOutlined } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthSession } from '@/hooks';
-import { useConvoSocketIoContext } from '@/context/ConvoSocketIoContext';
+import { useConvoSocketIoContext, MessagingOptionsButton } from '@/context/ConvoSocketIoContext';
 import { createConversation } from '@/lib/conversations';
 import { MessageQueuedError, messagingAPI, sendContent, sendMedia, sendReceiptBatch, forgetConversation, hideMessage } from '@/lib/conversations/messaging';
 import { type Conversation, type EncryptedChatMessage } from '@/types/conversation';
@@ -23,7 +23,7 @@ export default function ChatBoxClient({ params }: {
 }) {
     const { user, token: authToken } = useAuthSession();
     const token = authToken ?? '';
-    const { messages, refresh, refreshInbox, convoSocketIo: socket, revision, liveReady, processed } = useConvoSocketIoContext();
+    const { messages, refresh, refreshInbox, convoSocketIo: socket, revision, liveReady, processed, loadingConversations } = useConvoSocketIoContext();
     const router = useRouter();
     const [convo, setConvo] = useState(params.convo), [text, setText] = useState(''), [files, setFiles] = useState<File[]>([]), [reply, setReply] = useState<LocalMessage>(), [error, setError] = useState(''), [busy, setBusy] = useState(false), [typingUntil, setTypingUntil] = useState(0), [now, setNow] = useState(Date.now());
     const [outgoing, setOutgoing] = useState<LocalMessage[]>([]);
@@ -89,7 +89,7 @@ export default function ChatBoxClient({ params }: {
     useEffect(() => {
         if (!convo || pending)
             return;
-        const received = (processed?.filter(m => m.conversationId === convo.id) ?? chats.map(m => ({ id: m.id, fromUserId: m.fromUserId, action: false }))).filter(m => m.fromUserId !== user.id);
+        const received = [...new Map([...(processed?.filter(m => m.conversationId === convo.id) ?? []), ...chats.filter(m => !m.queued && !m.sendingState && !m.integrityFailed && new Date(m.createdAt).getTime() > Date.now() - 90 * 86400000).map(m => ({ id: m.id, fromUserId: m.fromUserId, action: false }))].map(message => [message.id, message])).values()].filter(m => m.fromUserId !== user.id);
         const focused = document.visibilityState === 'visible';
         for (const m of received) {
             // Opening an accepted conversation reads its authenticated history through the latest message.
@@ -247,10 +247,10 @@ export default function ChatBoxClient({ params }: {
             await send({ ...target, kind: 'delete', signature: '' });
     };
     return <Stack sx={{ height: '100%', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
-  <Paper sx={{ p: 1, flexShrink: 0 }} elevation={0}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><IconButton component={Link} href="/messages"><ArrowBackIosNewOutlined /></IconButton><Avatar src={peer.avatar ?? undefined}/><Box sx={{ flex: 1, minWidth: 0 }}><Typography noWrap sx={{ fontWeight: 700 }}>{peer.name}</Typography><Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>@{peer.username} </Typography></Box><IconButton aria-label="Verify E2E encryption" title="End-to-end encrypted · verify keys" onClick={verifyKeys}><LockOutlined fontSize="small" /></IconButton></Stack></Paper>
+  <Paper sx={{ p: 1, flexShrink: 0 }} elevation={0}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><IconButton component={Link} href="/messages"><ArrowBackIosNewOutlined /></IconButton><Avatar src={peer.avatar ?? undefined}/><Box sx={{ flex: 1, minWidth: 0 }}><Typography noWrap sx={{ fontWeight: 700 }}>{peer.name}</Typography><Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>@{peer.username} </Typography></Box><IconButton aria-label="Verify E2E encryption" title="End-to-end encrypted · verify keys" onClick={verifyKeys}><LockOutlined fontSize="small" /></IconButton><MessagingOptionsButton /></Stack></Paper>
   <Dialog open={showKeys} onClose={() => setShowKeys(false)}><DialogTitle>Verify device identities</DialogTitle><DialogContent><Typography>Compare these fingerprints with your contact through a trusted channel. First-use trust alone does not prove who owns a key.</Typography>{fingerprints.map(f => <Box key={f.id} sx={{ my: 2, overflowWrap: 'anywhere' }}><Typography variant="caption">{f.id}</Typography><Typography sx={{ fontFamily: 'monospace' }}>{f.hash}</Typography></Box>)}</DialogContent></Dialog>
   {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
-  <Box ref={pane} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', p: 1 }}>{chats.map(m => <Box key={m.id} data-event-id={m.eventId} data-message-id={m.sendingState || m.queued ? undefined : m.id}><ChatBubble message={m} isSender={m.fromUserId === user.id} onAction={(kind, value) => action(m, kind, value)} disabled={busy || !!pending || !!m.queued || !!m.sendingState || !!m.integrityFailed} userId={user.id} token={token} replyMessage={chats.find(original => original.eventId === m.reply?.targetId && original.hash === m.reply?.targetHash)} onReplyClick={targetId => {
+  <Box ref={pane} aria-busy={!!loadingConversations?.[convo?.id ?? '']} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', p: 1 }}>{loadingConversations?.[convo?.id ?? ''] && <Stack role="status" direction="row" spacing={1} sx={{ p: 1, alignItems: 'center' }}><CircularProgress size={16} /><Typography variant="caption">{chats.length ? 'Syncing messages…' : 'Loading and decrypting messages…'}</Typography></Stack>}{chats.map(m => <Box key={m.id} data-event-id={m.eventId} data-message-id={m.sendingState || m.queued ? undefined : m.id}><ChatBubble message={m} isSender={m.fromUserId === user.id} onAction={(kind, value) => action(m, kind, value)} disabled={busy || !!pending || !!m.queued || !!m.sendingState || !!m.integrityFailed} userId={user.id} token={token} replyMessage={chats.find(original => original.eventId === m.reply?.targetId && original.hash === m.reply?.targetHash)} onReplyClick={targetId => {
         const target = Array.from(pane.current?.querySelectorAll<HTMLElement>('[data-event-id]') ?? []).find(element => element.dataset.eventId === targetId);
         target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         target?.animate?.([{ backgroundColor: 'rgba(100,181,246,.3)' }, { backgroundColor: 'transparent' }], { duration: 1200 });
@@ -265,7 +265,7 @@ export default function ChatBoxClient({ params }: {
                 try { validateImageUploads(selected); setFiles(selected); setError(''); }
                 catch (error) { setError((error as Error).message); }
                 e.target.value = '';
-            }}/><IconButton disabled={busy} onClick={() => fileInput.current?.click()} aria-label="Attach images up to 500 KB"><AttachFile /></IconButton><TextField fullWidth size="small" multiline maxRows={3} value={text} placeholder="Message" slotProps={{ htmlInput: { maxLength: 10000 }, input: { sx: { fontSize: 16 } } }} onChange={e => {
+            }}/><IconButton disabled={busy} onClick={() => fileInput.current?.click()} aria-label="Attach images up to 500 KB"><AttachFile /></IconButton><TextField fullWidth size="small" multiline maxRows={3} value={text} placeholder="Message" slotProps={{ htmlInput: { maxLength: 10000 }, input: { sx: { fontSize: 16, borderRadius: 6 } } }} onChange={e => {
                 setText(e.target.value);
                 if (convo && !pending)
                     socket?.emit('typing:start', { conversationId: convo.id });

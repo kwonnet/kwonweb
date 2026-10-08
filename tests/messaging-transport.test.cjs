@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
 test('connected messaging uses socket RPC and safely falls back to HTTP after a disconnect',async()=>{
  const requests=[],rpc=[];const cache=new Map();
- const mocks={'@/config':{apiUrl:'https://relay.test/api/v1'},'@/lib/signal/deviceManager':{currentMessagingRuntime:()=>({deviceId:'device'})}};
+ const mocks={'@/config':{apiUrl:'https://relay.test/api/v1'},'@/lib/signal/deviceManager':{currentMessagingRuntime:()=>({deviceId:'device',vault:{atomic:async work=>work({records:{}})}})}};
  function load(file){file=path.resolve(file);if(cache.has(file))return cache.get(file);const module={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,esModuleInterop:true}}).outputText)(name=>name in mocks?mocks[name]:name.startsWith('@/')?load('src/'+name.slice(2)+'.ts'):name.startsWith('.')?load(path.join(path.dirname(file),name+'.ts')):require(name),module,module.exports);cache.set(file,module.exports);return module.exports;}
  const messaging=load('src/lib/conversations/messaging.ts');const socket={connected:true,timeout(){return this;},async emitWithAck(event,body){rpc.push([event,body]);return {ok:true,suppressed:false,messageId:'message',messages:[],receipts:[]};}};
  const original=global.fetch;global.fetch=async(...args)=>{requests.push(args);return {ok:true,json:async()=>({messageId:'message',suppressed:false,messages:[],receipts:[]})};};

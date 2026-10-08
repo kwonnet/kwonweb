@@ -25,7 +25,7 @@ export class DeviceVault {
         db.onversionchange = () => db.close();
         return new DeviceVault(db, JSON.stringify([userId, deviceId]));
     }
-    /** Supply a non-extractable DEK unwrapped using the user's passphrase. Never persist this key. */
+    /** Supply a non-extractable DEK unwrapped using the user's passphrase. A trusted-browser opt-in may retain this non-extractable key in account-scoped IndexedDB. */
     unlock(key: CryptoKey) {
         if (key.algorithm.name !== 'AES-GCM' || key.extractable || !key.usages.includes('decrypt') || !key.usages.includes('encrypt'))
             throw new Error('Invalid vault key');
@@ -48,9 +48,13 @@ export class DeviceVault {
                 throw new Error('Unsupported vault version');
             // All Signal store callbacks must operate on this in-memory snapshot.
             // A failed decrypt/validation/identity check discards the entire draft.
+            const before = JSON.stringify(snapshot);
             const result = await work(snapshot);
+            const after = JSON.stringify(snapshot);
+            if (this.epoch !== epoch) throw new Error('Vault locked during operation');
+            if (before === after) return result; // Read-only projections must not rewrite the entire encrypted vault.
             const iv = crypto.getRandomValues(new Uint8Array(12));
-            const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: aad }, key, new TextEncoder().encode(JSON.stringify(snapshot)));
+            const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: aad }, key, new TextEncoder().encode(after));
             if (this.epoch !== epoch)
                 throw new Error('Vault locked during operation');
             await this.write({ iv: base64(iv), ciphertext }); // Resolves on transaction commit, not put success.

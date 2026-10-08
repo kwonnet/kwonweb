@@ -35,6 +35,6 @@ const ChatBoxServer = async ({ recipientId, slug, }: {
         recipientDevices: MessagingDevice[];
         messages: EncryptedChatMessage[];
     } = await result.json();
-    return <ChatBoxClient params={res}/>;
+    return <ChatBoxClient key={recipientId} params={res}/>;
 };
 export default ChatBoxServer;
