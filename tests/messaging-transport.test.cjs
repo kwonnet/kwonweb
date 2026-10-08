@@ -1,0 +1,12 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
+test('connected messaging uses socket RPC and safely falls back to HTTP after a disconnect',async()=>{
+ const requests=[],rpc=[];const cache=new Map();
+ const mocks={'@/config':{apiUrl:'https://relay.test/api/v1'},'@/lib/signal/deviceManager':{currentMessagingRuntime:()=>({deviceId:'device'})}};
+ function load(file){file=path.resolve(file);if(cache.has(file))return cache.get(file);const module={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,esModuleInterop:true}}).outputText)(name=>name in mocks?mocks[name]:name.startsWith('@/')?load('src/'+name.slice(2)+'.ts'):name.startsWith('.')?load(path.join(path.dirname(file),name+'.ts')):require(name),module,module.exports);cache.set(file,module.exports);return module.exports;}
+ const messaging=load('src/lib/conversations/messaging.ts');const socket={connected:true,timeout(){return this;},async emitWithAck(event,body){rpc.push([event,body]);return {ok:true,suppressed:false,messageId:'message',messages:[],receipts:[]};}};
+ const original=global.fetch;global.fetch=async(...args)=>{requests.push(args);return {ok:true,json:async()=>({messageId:'message',suppressed:false,messages:[],receipts:[]})};};
+ try{messaging.setMessagingSocket('user',socket);await messaging.messagingAPI('user','token','/messages','POST',{clientId:'same-id'});assert.equal(requests.length,0);assert.equal(rpc[0][0],'message:send');await messaging.sendReceiptBatch('user','token','room',['a'],['b']);assert.equal(rpc[1][0],'receipts:batch');await messaging.syncMessages('user','token','room','1','2');assert.equal(rpc[2][0],'messages:sync');
+ socket.emitWithAck=async()=>{socket.connected=false;throw new Error('socket has been disconnected');};await messaging.messagingAPI('user','token','/messages','POST',{clientId:'same-id'});assert.equal(JSON.parse(requests[0][1].body).clientId,'same-id');
+ socket.connected=true;socket.emitWithAck=async()=>({ok:false,error:'Permission denied'});await assert.rejects(messaging.messagingAPI('user','token','/messages','POST',{}),/Permission denied/);assert.equal(requests.length,1,'authorization failures do not trigger fallback writes');
+ }finally{messaging.setMessagingSocket('user');global.fetch=original;}
+});

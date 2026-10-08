@@ -1,3 +1,4 @@
+import type { Socket } from 'socket.io-client';
 import { SessionCipher, SignalProtocolAddress } from '@privacyresearch/libsignal-protocol-typescript';
 import { apiUrl } from '@/config';
 import { currentMessagingRuntime, signMessaging } from '@/lib/signal/deviceManager';
@@ -8,8 +9,39 @@ import type { Conversation } from '@/types/conversation';
 export class MessageQueuedError extends Error {
     constructor() { super('Message is saved on this browser and will retry when delivery is available.'); }
 }
+let live: {
+    userId: string;
+    socket: Socket;
+} | undefined;
+export function setMessagingSocket(userId: string, socket?: Socket) { live = socket ? { userId, socket } : undefined; }
+async function socketRequest<T>(userId: string, event: string, body: unknown): Promise<T | undefined> {
+    if (live?.userId !== userId || !live.socket.connected)
+        return undefined;
+    try {
+        const result = await live.socket.timeout(5000).emitWithAck(event, body);
+        if (!result?.ok)
+            throw new Error(result?.error || 'Messaging unavailable');
+        return result;
+    }
+    catch (error) {
+        if (!live?.socket.connected || (error instanceof Error && ['operation has timed out', 'socket has been disconnected'].includes(error.message)))
+            return undefined;
+        throw error;
+    }
+}
+export async function sendReceiptBatch(userId: string, token: string, conversationId: string, deliveredIds: string[], readIds: string[]) { const body = { conversationId, deliveredIds, readIds }; return await socketRequest<{
+    suppressed: boolean;
+}>(userId, 'receipts:batch', body) ?? messagingAPI<{
+    suppressed: boolean;
+}>(userId, token, '/receipts/batch', 'POST', body); }
+export async function syncMessages(userId: string, token: string, conversationId: string, after: string, receiptAfter: string): Promise<SyncResult> { return await socketRequest<SyncResult>(userId, 'messages:sync', { conversationId, after, receiptAfter }) ?? messagingAPI<SyncResult>(userId, token, `/${conversationId}/messages?after=${after}&receiptAfter=${receiptAfter}`); }
 export async function messagingAPI<T>(userId: string, token: string, path: string, method = 'GET', body?: unknown): Promise<T> {
     const r = currentMessagingRuntime(userId);
+    if (path === '/messages' && method === 'POST') {
+        const sent = await socketRequest<T>(userId, 'message:send', body);
+        if (sent)
+            return sent;
+    }
     const binary = body instanceof Blob;
     const response = await fetch(`${apiUrl}/conversations${path}`, { method, credentials: 'include', cache: 'no-store', headers: { Authorization: `Bearer ${token}`, 'X-Messaging-Device': r.deviceId, ...(body ? { 'Content-Type': binary ? 'application/octet-stream' : 'application/json' } : {}) }, body: body ? binary ? body : JSON.stringify(body) : undefined });
     if (!response.ok)
@@ -28,7 +60,8 @@ export async function deviceTargets(userId: string, token: string, peerId: strin
             continue;
         }
         const bundle = await messagingAPI<any>(userId, token, `/devices/${d.deviceId}/claim`, 'POST', { claimId: crypto.randomUUID() });
-        if(bundle.identityKey!==d.identityPublic)throw new Error('Device identity changed while claiming prekeys');
+        if (bundle.identityKey !== d.identityPublic)
+            throw new Error('Device identity changed while claiming prekeys');
         targets.push({ userId: d.userId, deviceId: d.deviceId, signalDeviceId: d.signalDeviceId, conversationId, bundle: { registrationId: bundle.registrationId, identityKey: unbase64(bundle.identityKey).buffer, signedPreKey: { keyId: bundle.signedPreKey.keyId, publicKey: unbase64(bundle.signedPreKey.publicKey).buffer, signature: unbase64(bundle.signedPreKey.signature).buffer }, ...(bundle.preKey ? { preKey: { keyId: bundle.preKey.keyId, publicKey: unbase64(bundle.preKey.publicKey).buffer } } : {}) } });
     }
     if (!targets.some(t => t.userId === peerId))
@@ -89,7 +122,19 @@ export async function sendMedia(userId: string, token: string, peerId: string, c
     for (const file of files) {
         const blobId = crypto.randomUUID();
         const { blob, secret } = await encryptAttachment(file, conversationId, blobId);
-        await messagingAPI(userId, token, `/${conversationId}/blobs/${blobId}`, 'PUT', blob);
+        const grant = await messagingAPI<{
+            url?: string;
+            headers?: Record<string, string>;
+            finalized: boolean;
+        }>(userId, token, `/${conversationId}/blobs`, 'POST', { blobId, ciphertextBytes: secret.ciphertextBytes, ciphertextSha256: secret.ciphertextSha256B64 });
+        if (!grant.finalized) {
+            if (!grant.url)
+                throw new Error('Upload grant unavailable');
+            const upload = await fetch(grant.url, { method: 'PUT', headers: grant.headers, body: blob, credentials: 'omit', referrerPolicy: 'no-referrer' });
+            if (!upload.ok && upload.status !== 412)
+                throw new Error('Encrypted upload failed');
+            await messagingAPI(userId, token, `/${conversationId}/blobs/${blobId}/finalize`, 'POST', {});
+        }
         attachments.push(attachmentSchema.parse(secret));
     }
     return sendContent(userId, token, peerId, conversationId, { kind: 'media', text, attachments, reply });
@@ -99,6 +144,13 @@ export async function loadMedia(userId: string, token: string, conversationId: s
     const response = await fetch(`${apiUrl}/conversations/${conversationId}/blobs/${secret.blobId}`, { credentials: 'include', headers: { Authorization: `Bearer ${token}`, 'X-Messaging-Device': r.deviceId }, cache: 'no-store' });
     if (!response.ok)
         throw new Error('Attachment unavailable');
+    if (response.headers.get('content-type')?.includes('application/json')) {
+        const grant = await response.json();
+        const bytes = await fetch(grant.url, { credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' });
+        if (!bytes.ok)
+            throw new Error('Attachment unavailable');
+        return decryptAttachment(secret, await bytes.arrayBuffer(), conversationId);
+    }
     return decryptAttachment(secret, await response.arrayBuffer(), conversationId);
 }
 async function eventHash(event: MessagingEvent) { return base64(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(event))))); }
@@ -140,7 +192,7 @@ export async function decryptWire(userId: string, wire: MessagingWire): Promise<
         delete draft.records[`failed:${wire.id}`];
         return event;
     };
-    const event = wire.ownDevice ? await r.vault.atomic(async (draft) => validate(JSON.parse(draft.records[`event:${wire.eventId}`] ?? 'null'), draft)) : await decryptAndCommit(r.vault, wire.id, { userId: wire.fromUserId, deviceId: wire.fromDeviceId, signalDeviceId: wire.senderSignalDeviceId, conversationId: wire.conversation, identityPublic:wire.senderIdentityPublic }, { recipientDeviceId: r.deviceId, wireType: wire.wireType, ciphertextB64: wire.ciphertextB64 }, validate);
+    const event = wire.ownDevice ? await r.vault.atomic(async (draft) => validate(JSON.parse(draft.records[`event:${wire.eventId}`] ?? 'null'), draft)) : await decryptAndCommit(r.vault, wire.id, { userId: wire.fromUserId, deviceId: wire.fromDeviceId, signalDeviceId: wire.senderSignalDeviceId, conversationId: wire.conversation, identityPublic: wire.senderIdentityPublic }, { recipientDeviceId: r.deviceId, wireType: wire.wireType, ciphertextB64: wire.ciphertextB64 }, validate);
     return { wire, event, hash: await eventHash(event) };
 }
 export async function localConversation(userId: string, conversationId: string, peerId: string): Promise<LocalMessage[]> {
@@ -186,7 +238,7 @@ export async function localConversation(userId: string, conversationId: string, 
         const c = event.content;
         if (event.conversationId !== conversationId || (c.kind !== 'text' && c.kind !== 'media') || map.has(eventId))
             continue;
-        messages.push({ id: eventId, eventId, conversation: conversationId, fromUserId: userId, fromDeviceId: event.senderDeviceId, senderSignalDeviceId: 0, senderActionSigningPublic: '', senderIdentityPublic:'', toUserId: peerId, toDeviceId: '', serverSequence: '0', createdAt: event.createdAt, wireType: 1, ciphertextB64: '', seen: [], read: [], event, hash: await eventHash(event), content: c.text, attachments: c.kind === 'media' ? c.attachments : undefined, reply: c.reply, reactions: [], deleted: false, revision: 0, queued: true });
+        messages.push({ id: eventId, eventId, conversation: conversationId, fromUserId: userId, fromDeviceId: event.senderDeviceId, senderSignalDeviceId: 0, senderActionSigningPublic: '', senderIdentityPublic: '', toUserId: peerId, toDeviceId: '', serverSequence: '0', createdAt: event.createdAt, wireType: 1, ciphertextB64: '', seen: [], read: [], event, hash: await eventHash(event), content: c.text, attachments: c.kind === 'media' ? c.attachments : undefined, reply: c.reply, reactions: [], deleted: false, revision: 0, queued: true });
     }
     for (const wire of records.failed.filter(w => w.conversation === conversationId)) {
         if (messages.some(m => m.id === wire.id))
@@ -223,14 +275,15 @@ export async function hideMessage(userId: string, token: string, conversationId:
     await r.vault.atomic(async (draft) => { const key = `hidden:${conversationId}`; draft.records[key] = JSON.stringify([...new Set([...(JSON.parse(draft.records[key] ?? '[]') as string[]), messageId])]); });
 }
 export async function resetLocalMessaging(userId: string, token: string) {
-    const {storedMessagingDeviceId, resetMessagingDevice} = await import('@/lib/signal/deviceManager');
+    const { storedMessagingDeviceId, resetMessagingDevice } = await import('@/lib/signal/deviceManager');
     const deviceId = await storedMessagingDeviceId(userId);
     if (deviceId) {
         // Revocation needs account authentication, not the lost messaging passphrase.
         const response = await fetch(`${apiUrl}/conversations/devices/${deviceId}/revoke`, {
-            method: 'POST', credentials: 'include', headers: {Authorization: `Bearer ${token}`},
+            method: 'POST', credentials: 'include', headers: { Authorization: `Bearer ${token}` },
         });
-        if (!response.ok) throw new Error('Revoke this device before resetting its messaging keys');
+        if (!response.ok)
+            throw new Error('Revoke this device before resetting its messaging keys');
     }
     await resetMessagingDevice(userId);
 }

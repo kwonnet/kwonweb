@@ -1,4 +1,5 @@
 'use client'
+import {useConvoSocketIoContext} from '@/context/ConvoSocketIoContext';
 import { useAuthSession } from '@/hooks';
 import { getUserChatConversations } from '@/lib/conversations';
 import debounce from 'lodash/debounce';
@@ -14,6 +15,7 @@ const ChatClientList = ({convoList, slug}: { convoList: EncryptedConversation[];
 
     const { token, user } = useAuthSession();
 
+    const {liveReady}=useConvoSocketIoContext();
     const userId = user.id
 
   const getKey = (pageIndex: number, previousPageData?: any[]) => {
@@ -31,7 +33,7 @@ const ChatClientList = ({convoList, slug}: { convoList: EncryptedConversation[];
   const { data, error, isLoading, isValidating, size, mutate, setSize } =
     useSWRInfinite(getKey, (args) => getUserChatConversations(args, token), {
       keepPreviousData: false,
-      refreshInterval: 3000,
+      refreshInterval: liveReady ? 120000 : 30000,
       refreshWhenOffline: false,
       fallbackData: convoList.length > 0 ? [convoList] : undefined,
     });

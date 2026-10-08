@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthSession } from '@/hooks';
 import { useConvoSocketIoContext } from '@/context/ConvoSocketIoContext';
 import { createConversation } from '@/lib/conversations';
-import { MessageQueuedError, messagingAPI, sendContent, sendMedia, forgetConversation, hideMessage } from '@/lib/conversations/messaging';
+import { MessageQueuedError, messagingAPI, sendContent, sendMedia, sendReceiptBatch, forgetConversation, hideMessage } from '@/lib/conversations/messaging';
 import { type Conversation, type EncryptedChatMessage } from '@/types/conversation';
 import type { MessagingDevice, LocalMessage, Content } from '@/lib/signal/contracts';
 import type { UserPublic } from '@/types/user';
@@ -22,10 +22,12 @@ export default function ChatBoxClient({ params }: {
 }) {
     const { user, token: authToken } = useAuthSession();
     const token = authToken ?? '';
-    const { messages, refresh, convoSocketIo: socket, revision } = useConvoSocketIoContext();
+    const { messages, refresh, convoSocketIo: socket, revision, liveReady, processed } = useConvoSocketIoContext();
     const router = useRouter();
     const [convo, setConvo] = useState(params.convo), [text, setText] = useState(''), [files, setFiles] = useState<File[]>([]), [reply, setReply] = useState<LocalMessage>(), [error, setError] = useState(''), [busy, setBusy] = useState(false), [typingUntil, setTypingUntil] = useState(0), [now, setNow] = useState(Date.now());
     const pane = useRef<HTMLDivElement>(null), visible = useRef(new Set<string>()), viewed = useRef(new Set<string>());
+    const receiptEpoch=useRef(0);
+    const receiptQueue = useRef(new Map<string, 'READ' | 'DELIVERED'>()), receiptTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined), receiptBusy = useRef(false);
     const delivered = useRef(new Set<string>()), read = useRef(new Set<string>()), end = useRef<HTMLDivElement>(null), fileInput = useRef<HTMLInputElement>(null);
     const peer = params.recipient;
     const [fingerprints, setFingerprints] = useState<{
@@ -47,68 +49,97 @@ export default function ChatBoxClient({ params }: {
             setError(e instanceof Error ? e.message : 'Unable to load messages');
         }
     }, [convo?.id, refresh, peer.id]);
-    useEffect(() => { void sync(); const id = setInterval(() => { void sync(); setNow(Date.now()); }, 3000); return () => clearInterval(id); }, [sync]);
-    useEffect(() => { if (revision)
-        void sync(); }, [revision, sync]);
-    useEffect(() => { delivered.current.clear(); read.current.clear(); visible.current.clear(); viewed.current.clear(); setReply(undefined); }, [convo?.id]);
+    useEffect(() => { void sync(); let stopped = false; let delay = liveReady ? 60000 : 5000; let timer: ReturnType<typeof setTimeout>; const run = () => { timer = setTimeout(async () => { if (document.visibilityState === 'visible')
+        await sync(); delay = Math.min(60000, delay * 2); if (!stopped)
+        run(); }, delay + Math.random() * 1000); }; run(); const focus = () => { setNow(Date.now()); void sync(); }; window.addEventListener('focus', focus); window.addEventListener('online', focus); return () => { stopped = true; clearTimeout(timer); window.removeEventListener('focus', focus); window.removeEventListener('online', focus); }; }, [sync, liveReady]);
+    useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 3000); return () => clearInterval(timer); }, []);
     useEffect(() => {
-        const observer = new IntersectionObserver(entries => { for (const entry of entries) {
-            const id = (entry.target as HTMLElement).dataset.messageId!;
-            if (entry.isIntersecting) {
-                visible.current.add(id);
-                if (document.visibilityState === 'visible' && document.hasFocus())
-                    viewed.current.add(id);
+        if (revision)
+            void sync();
+    }, [revision, sync]);
+    useEffect(() => { receiptEpoch.current++;clearTimeout(receiptTimer.current); receiptTimer.current = undefined; receiptQueue.current.clear(); delivered.current.clear(); read.current.clear(); visible.current.clear(); viewed.current.clear(); setReply(undefined); }, [convo?.id]);
+    useEffect(() => {
+        const observer = new IntersectionObserver(entries => {
+            for (const entry of entries) {
+                const id = (entry.target as HTMLElement).dataset.messageId!;
+                if (entry.isIntersecting) {
+                    visible.current.add(id);
+                    if (document.visibilityState === 'visible' && document.hasFocus())
+                        viewed.current.add(id);
+                }
+                else
+                    visible.current.delete(id);
             }
-            else
-                visible.current.delete(id);
-        } setNow(Date.now()); }, { root: pane.current, threshold: 0.5 });
+            setNow(Date.now());
+        }, { root: pane.current, threshold: 0.5 });
         pane.current?.querySelectorAll('[data-message-id]').forEach(element => observer.observe(element));
         return () => observer.disconnect();
     }, [messages, convo?.id]);
-    useEffect(() => { if (document.visibilityState === 'visible' && document.hasFocus())
-        visible.current.forEach(id => viewed.current.add(id)); }, [now]);
+    useEffect(() => {
+        if (document.visibilityState === 'visible' && document.hasFocus())
+            visible.current.forEach(id => viewed.current.add(id));
+    }, [now]);
     useEffect(() => {
         if (!convo || pending)
             return;
-        const send = async (status: 'DELIVERED' | 'READ', ids: string[]) => { if (!ids.length)
-            return; try {
-            await messagingAPI(user.id, token, '/receipts', 'POST', { conversationId: convo.id, messageIds: ids, status });
-            const cache = status === 'READ' ? read.current : delivered.current;
-            ids.forEach(id => cache.add(id));
+        const received = (processed ?? chats.map(m => ({ id: m.id, fromUserId: m.fromUserId, action: false }))).filter(m => m.fromUserId !== user.id);
+        const focused = document.visibilityState === 'visible' && document.hasFocus();
+        for (const m of received) {
+            const status = focused && (m.action || visible.current.has(m.id)) && !read.current.has(m.id) ? 'READ' : !delivered.current.has(m.id) ? 'DELIVERED' : undefined;
+            if (status && (status === 'READ' || receiptQueue.current.get(m.id) !== 'READ'))
+                receiptQueue.current.set(m.id, status);
         }
-        catch (e) {
-            setError(e instanceof Error ? e.message : 'Unable to save receipt');
-        } };
-        const received = chats.filter(m => m.fromUserId !== user.id && !m.integrityFailed && !m.queued);
-        // READ only while the unlocked chat is visible and focused. Pending previews never send either event.
-        void send('DELIVERED', received.filter(m => !delivered.current.has(m.id)).slice(0, 100).map(m => m.id));
-        if (document.visibilityState === 'visible' && document.hasFocus())
-            void send('READ', received.filter(m => visible.current.has(m.id) && !read.current.has(m.id)).slice(0, 100).map(m => m.id));
-    }, [messages, convo?.id, pending, user.id, token, now]);
+        const epoch=receiptEpoch.current;
+        const flush = () => {
+            if(epoch!==receiptEpoch.current)return;
+            if (receiptBusy.current || !receiptQueue.current.size)
+                return;
+            receiptBusy.current = true;
+            const batch = [...receiptQueue.current.entries()].slice(0, 100);
+            const reads = batch.filter(([, s]) => s === 'READ').map(([id]) => id), deliveries = batch.filter(([, s]) => s === 'DELIVERED').map(([id]) => id);
+            let applied=false;
+            void sendReceiptBatch(user.id, token, convo.id, deliveries, reads).then(result => { if (result.suppressed)
+                return; applied=true;batch.forEach(([id, status]) => { if (receiptQueue.current.get(id) === status)
+                receiptQueue.current.delete(id); delivered.current.add(id); if (status === 'READ')
+                read.current.add(id); }); }).catch(e => setError(e instanceof Error ? e.message : 'Unable to save receipts')).finally(() => { receiptBusy.current = false; receiptTimer.current = undefined;if(applied&&epoch===receiptEpoch.current&&receiptQueue.current.size)receiptTimer.current=setTimeout(flush,250); });
+        };
+        if (!receiptTimer.current && !receiptBusy.current)
+            receiptTimer.current = setTimeout(flush, 250);
+    }, [messages, processed, convo?.id, pending, user.id, token, now]);
+    useEffect(() => () => {receiptEpoch.current++;clearTimeout(receiptTimer.current);}, []);
     useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth' }); }, [chats.length]);
     useEffect(() => {
         const start = (event: {
             conversationId: string;
             userId: string;
             expiresAt: number;
-        }) => { if (event.conversationId === convo?.id && event.userId === peer.id && !pending)
-            setTypingUntil(event.expiresAt); };
+        }) => {
+            if (event.conversationId === convo?.id && event.userId === peer.id && !pending)
+                setTypingUntil(event.expiresAt);
+        };
         const stop = () => setTypingUntil(0);
         socket?.on('typing:start', start);
         socket?.on('typing:stop', stop);
         return () => { socket?.off('typing:start', start); socket?.off('typing:stop', stop); };
     }, [socket, convo?.id, peer.id, pending]);
-    const verifyKeys = async () => { try {
-        const devices = (await Promise.all([messagingAPI<MessagingDevice[]>(user.id, token, `/users/${user.id}/devices`), messagingAPI<MessagingDevice[]>(user.id, token, `/users/${peer.id}/devices`)])).flat();
-        const hashes = await Promise.all(devices.map(async (d) => ({ id: `${d.userId}: ${d.deviceId}`, hash: Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(['kwonnet-device-fingerprint', 2, d.userId, d.deviceId, d.identityPublic, d.actionSigningPublic]))))).map(v => v.toString(16).padStart(2, '0')).join(' ').replaceAll(' ', '') })));
-        setFingerprints(hashes);
-        setShowKeys(true);
-    }
-    catch (e) {
-        setError(e instanceof Error ? e.message : 'Unable to load identities');
-    } };
-    const ensureConversation = async () => { if (convo)
-        return convo; const created = await createConversation({ recipientId: peer.id }, token); setConvo(created); return created; };
+    const verifyKeys = async () => {
+        try {
+            const devices = (await Promise.all([messagingAPI<MessagingDevice[]>(user.id, token, `/users/${user.id}/devices`), messagingAPI<MessagingDevice[]>(user.id, token, `/users/${peer.id}/devices`)])).flat();
+            const hashes = await Promise.all(devices.map(async (d) => ({ id: `${d.userId}: ${d.deviceId}`, hash: Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(['kwonnet-device-fingerprint', 2, d.userId, d.deviceId, d.identityPublic, d.actionSigningPublic]))))).map(v => v.toString(16).padStart(2, '0')).join(' ').replaceAll(' ', '') })));
+            setFingerprints(hashes);
+            setShowKeys(true);
+        }
+        catch (e) {
+            setError(e instanceof Error ? e.message : 'Unable to load identities');
+        }
+    };
+    const ensureConversation = async () => {
+        if (convo)
+            return convo;
+        const created = await createConversation({ recipientId: peer.id }, token);
+        setConvo(created);
+        return created;
+    };
     const send = async (content?: Content) => {
         if (busy || incoming)
             return;
@@ -205,15 +236,24 @@ export default function ChatBoxClient({ params }: {
    {!pending && typingUntil > now && <Typography variant="caption">{peer.name} is typing…</Typography>}
    {reply && <Alert onClose={() => setReply(undefined)}>Replying to: {reply.content.slice(0, 100)}</Alert>}
    {files.length > 0 && <Alert onClose={() => setFiles([])}>{files.map(f => f.name).join(', ')}</Alert>}
-   <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><input hidden ref={fileInput} type="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,audio/mpeg,application/pdf" onChange={e => { const selected = Array.from(e.target.files ?? []); if (selected.length > 10 || selected.some(f => f.size > 8388608))
-            setError('Select up to 10 files, each under 8 MB');
-        else
-            setFiles(selected); e.target.value = ''; }}/><IconButton disabled={busy} onClick={() => fileInput.current?.click()} aria-label="Attach encrypted file"><AttachFile /></IconButton><TextField fullWidth size="small" multiline maxRows={3} value={text} placeholder="Message" disabled={busy} onChange={e => { setText(e.target.value); if (convo && !pending)
-            socket?.emit('typing:start', { conversationId: convo.id }); }} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            if (text.trim() || files.length)
-                void send();
-        } }}/><IconButton aria-label="Send message" disabled={busy || (!text.trim() && !files.length)} onClick={() => send()}><SendOutlined /></IconButton></Stack>
+   <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><input hidden ref={fileInput} type="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,audio/mpeg,application/pdf" onChange={e => {
+                const selected = Array.from(e.target.files ?? []);
+                if (selected.length > 10 || selected.some(f => f.size > 8388608))
+                    setError('Select up to 10 files, each under 8 MB');
+                else
+                    setFiles(selected);
+                e.target.value = '';
+            }}/><IconButton disabled={busy} onClick={() => fileInput.current?.click()} aria-label="Attach encrypted file"><AttachFile /></IconButton><TextField fullWidth size="small" multiline maxRows={3} value={text} placeholder="Message" disabled={busy} onChange={e => {
+                setText(e.target.value);
+                if (convo && !pending)
+                    socket?.emit('typing:start', { conversationId: convo.id });
+            }} onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (text.trim() || files.length)
+                        void send();
+                }
+            }}/><IconButton aria-label="Send message" disabled={busy || (!text.trim() && !files.length)} onClick={() => send()}><SendOutlined /></IconButton></Stack>
   </Box>}
  </Stack>;
 }
