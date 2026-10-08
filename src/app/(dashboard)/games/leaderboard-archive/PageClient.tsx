@@ -13,7 +13,7 @@ import {
   Skeleton,
   Stack,
 } from "@mui/material";
-import { GameRankingArchiveStats } from "@/types";
+import { GameRankingArchiveStats, GameArchiveUser } from "@/types";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -42,26 +42,29 @@ const DropdownSkeleton = () => (
   </Stack>
 );
 
+type InitialArchivePage = { query: string; data: GameArchiveUser[] };
 const ITEM_PER_PAGE = 15;
 
 function PlayerPage({
   query,
   currentUserId,
   token,
+  initialPage,
 }: {
   query: string;
   currentUserId: string;
   token?: string;
+  initialPage?: InitialArchivePage;
 }) {
   const { data, isLoading, error } = useSWR({ query, token }, (arg) =>
     getGameCategoryRankingArchive(arg.query, arg.token),
-  { errorRetryCount: 1}
+  { errorRetryCount: 1, fallbackData: initialPage?.query === query ? initialPage.data : undefined, revalidateOnMount: initialPage?.query !== query }
   );
   if(isLoading && !data){
     return (<SkeletonTable rows={2} />)
   }
   if((error && !data) || !data || data?.length === 0){
-    return (<Typography sx={{py: 1, textAlign: "center"}}>{error.status === 404 ? "No ranking data yet" :getErrorMessage(error)}</Typography>)
+    return (<Typography sx={{py: 1, textAlign: "center"}}>{data?.length === 0 || error?.status === 404 ? "No ranking data yet" :getErrorMessage(error)}</Typography>)
   }
   
   return (
@@ -79,8 +82,10 @@ const getPaginationCount = (total: number) => {
 
 const DisplayRankingArchieve = ({
   rankingStats,
+  initialPage,
 }: {
   rankingStats: GameRankingArchiveStats[];
+  initialPage?: InitialArchivePage;
 }) => {
   const { token, user } = useAuthSession();
 
@@ -272,6 +277,7 @@ const DisplayRankingArchieve = ({
       </Typography>
       <div style={{ display: "none" }}>
         <PlayerPage
+          initialPage={initialPage}
           currentUserId={user.id}
           token={token}
           query={`type=ranking-archieve&catId=${
@@ -291,6 +297,7 @@ const DisplayRankingArchieve = ({
         }}
       >
         <PlayerPage
+          initialPage={initialPage}
           currentUserId={user.id}
           token={token}
           query={`type=ranking-archieve&catId=${state.catId}&limit=${ITEM_PER_PAGE}&year=${state.year}&month=${state.month}&page=${state.page}`}
@@ -314,7 +321,7 @@ const DisplayRankingArchieve = ({
   );
 };
 
-const PageClient = () => {
+const PageClient = ({ initialStats, initialPage }: { initialStats?: GameRankingArchiveStats[]; initialPage?: InitialArchivePage }) => {
   const { token } = useAuthSession();
 
   const {
@@ -322,7 +329,7 @@ const PageClient = () => {
     isLoading,
     error,
   } = useSWR({ type: "archive-stats", token }, (key) =>
-    getGameRankingArchiveStats(key.token)
+    getGameRankingArchiveStats(key.token), { fallbackData: initialStats, revalidateOnMount: initialStats === undefined }
   );
   return (
     <Container maxWidth="xl">
@@ -337,10 +344,11 @@ const PageClient = () => {
                   <SkeletonTable />
                 </Box>
               )}
-              {error && <Typography>{error.status === 404 ? "No data yet" :getErrorMessage(error)}</Typography>}
-              {rankingStats && (
-                <DisplayRankingArchieve rankingStats={rankingStats} />
+              {error && <Typography>{error?.status === 404 ? "No data yet" :getErrorMessage(error)}</Typography>}
+              {!!rankingStats?.length && (
+                <DisplayRankingArchieve rankingStats={rankingStats} initialPage={initialPage} />
               )}
+              {rankingStats?.length === 0 && <Typography>No archived rankings yet.</Typography>}
             </Box>
           </Paper>
         </Box>

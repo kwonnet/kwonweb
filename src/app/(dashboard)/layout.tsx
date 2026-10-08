@@ -10,12 +10,13 @@ import NotificationServer from "@/components/common/NotificationServer";
 
 const layout = async (props: any) => {
   const session = await getServerSession();
+  const notificationNode = await NotificationServer();
   return (
     <GuestAuthGate guest={!session?.user?.accessToken}>
     <CustomLayout
       CustomToolbar={
         // <CustomToolbarActions />
-        <CustomToolbarActions NotificationNode={<React.Suspense fallback={null}><NotificationServer /></React.Suspense>} />
+        <CustomToolbarActions initialStats={notificationNode?.props.stats} initialUserId={session?.user?.id} NotificationNode={notificationNode} />
 
       }
     >

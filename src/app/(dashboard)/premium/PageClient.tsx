@@ -11,14 +11,14 @@ import Link from "next/link";
 import PageHeader from "@/components/common/PageHeader";
 import { Subscription } from "@/types";
 
-const DisplayPage = ({ subscription }: { subscription?: Subscription }) => {
+const DisplayPage = ({ subscription, initialUserId }: { subscription?: Subscription | null; initialUserId?: string }) => {
   // get auth user
   const { user, token } = useAuthSession();
   //   fetch active sub
-  const { data, error, isLoading, mutate } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR<Subscription | null>(
     { type: "pro", id: user.id, token },
-    (arg) => getUserActiveSubscription(arg.id, arg.token),
-    { errorRetryCount: 0, fallbackData: subscription }
+    (arg: { id: string; token?: string }) => getUserActiveSubscription(arg.id, arg.token),
+    { errorRetryCount: 0, fallbackData: user.id === initialUserId ? subscription : undefined, revalidateOnMount: user.id !== initialUserId || subscription === undefined }
   );
 
   const handleAction = () => {
@@ -28,7 +28,7 @@ const DisplayPage = ({ subscription }: { subscription?: Subscription }) => {
   if (isLoading && !data) return <PlanSkeleton />;
 
   if (!data) {
-    const is404 = error.status === 404;
+    const is404 = subscription === null || error?.status === 404;
     return (
       <Box sx={{ textAlign: "center", pt: 4 }}>
         <Typography variant="h6">
@@ -53,7 +53,7 @@ const DisplayPage = ({ subscription }: { subscription?: Subscription }) => {
   return <DisplayItem data={data} handleAction={handleAction} />;
 };
 
-const PageClient = ({ subscription }: { subscription?: Subscription }) => {
+const PageClient = ({ subscription, initialUserId }: { subscription?: Subscription | null; initialUserId?: string }) => {
   return (
     <Container maxWidth="xl">
       <PageHeader title="My Premium Plan" />

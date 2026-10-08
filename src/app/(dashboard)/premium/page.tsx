@@ -4,6 +4,7 @@ import PageClient from './PageClient'
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import { apiUrl } from '@/config'
+import DisplayError from "@/components/common/DisplayError";
 import { Typography } from '@mui/material'
 import { Subscription } from '@/types'
 
@@ -12,7 +13,7 @@ const Page = async() => {
 
   if(!session) return redirect("/")
 
-  const result = await fetch(`${apiUrl}/users/${session.user.id}/pro`, {next: { revalidate: 30, tags: [`${session.user.id}_pro`]}, headers: {
+  const result = await fetch(`${apiUrl}/users/${session.user.id}/pro`, {cache: "no-store", headers: {
     Authorization: `Bearer ${session.user.accessToken}`
   }})
 
@@ -20,9 +21,10 @@ const Page = async() => {
   //   const message = await result.text()
   //   return <Typography>{message}</Typography>
   // }
-  const subscription: Subscription = !result.ok ? undefined : await result.json()
+  if (!result.ok && result.status !== 404) return <DisplayError status={result.status} message="Unable to load subscription." />;
+  const subscription: Subscription | null = result.status === 404 ? null : await result.json()
   return (
-    <PageClient subscription={subscription} />
+    <PageClient subscription={subscription} initialUserId={session.user.id} />
   )
 }
 

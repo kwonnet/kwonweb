@@ -45,7 +45,7 @@ test('search server renders seeded API results and forwards the authenticated to
   assert.equal(people.props.people[0].id, 'u'); assert.equal(calls[1][0], 'people');
 });
 
-test('profile streams the authorized active tab and seeds it with server posts', async () => {
+test('profile awaits the authorized active tab and seeds it with server posts', async () => {
   const calls = [];
   const user = { id: 'profile', username: 'ada', meta: {isPrivate: false, isActive: true, isPro: false}, actions: {} };
   const previousFetch = global.fetch;
@@ -61,13 +61,12 @@ test('profile streams the authorized active tab and seeds it with server posts',
       '@/lib/users': {getUserPostsFeed: async (...args) => {calls.push(args); return [{id: 'server-post'}];}},
     }).default;
     const streamed = await Page({params: Promise.resolve({username: '@ada', slug: ['replies']})});
-    const content = await streamed.props.children.type();
+    const content = streamed;
     assert.deepEqual(calls[0], [{userId: 'profile', kind: 'replies', page: 1, limit: 21}, 'token']);
     assert.equal(content.props.posts[0].id, 'server-post');
     assert.equal(content.props.slug, 'replies');
     calls.length = 0;
     const privateTab = await Page({params: Promise.resolve({username: '@ada', slug: ['bookmarks']})});
-    await privateTab.props.children.type();
     assert.equal(calls[0][0].kind, 'posts');
     user.actions.hasBlockedUser = true;
     assert.equal(await Page({params: Promise.resolve({username: '@ada'})}), null);

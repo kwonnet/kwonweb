@@ -11,7 +11,7 @@ import { EncryptedConversation } from '@/types/conversation';
 
 const PAGE_SIZE = 21
 
-const ChatClientList = ({convoList, slug}: { convoList: EncryptedConversation[]; slug: string}) => {
+const ChatClientList = ({convoList, slug, initialFetchFailed = false}: { convoList: EncryptedConversation[]; slug: string; initialFetchFailed?: boolean }) => {
 
     const { token, user } = useAuthSession();
 
@@ -36,7 +36,9 @@ const ChatClientList = ({convoList, slug}: { convoList: EncryptedConversation[];
       revalidateAll: true,
       refreshInterval: liveReady ? 120000 : 30000,
       refreshWhenOffline: false,
-      fallbackData: convoList.length > 0 ? [convoList] : undefined,
+      fallbackData: [convoList],
+      revalidateOnMount: initialFetchFailed,
+      revalidateFirstPage: false,
     });
 
   const flatData = data ? data.flat().map(item => ({ ...item, lastMessage: messages?.filter(message => message.conversation === item.id).at(-1) })) : [];

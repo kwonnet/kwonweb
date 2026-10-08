@@ -1,11 +1,11 @@
 'use client';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Alert, Avatar, Box, Button, Dialog, DialogContent, DialogTitle, IconButton, Paper, Stack, TextField, Typography, CircularProgress } from '@mui/material';
+import { Alert, Avatar, Box, Button, Dialog, DialogContent, DialogTitle, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
 import { ArrowBackIosNewOutlined, AttachFile, SendOutlined, LockOutlined } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthSession } from '@/hooks';
-import { useConvoSocketIoContext, MessagingOptionsButton } from '@/context/ConvoSocketIoContext';
+import { useConvoSocketIoContext, MessagingOptionsButton, type InitialMessagingSync } from '@/context/ConvoSocketIoContext';
 import { createConversation } from '@/lib/conversations';
 import { MessageQueuedError, messagingAPI, sendContent, sendMedia, sendReceiptBatch, forgetConversation, hideMessage } from '@/lib/conversations/messaging';
 import { type Conversation, type EncryptedChatMessage } from '@/types/conversation';
@@ -15,6 +15,7 @@ import ChatBubble from './ChatBubble';
 import { IMAGE_TYPES, validateImageUploads } from '@/lib/signal/attachments';
 export default function ChatBoxClient({ params }: {
     params: {
+        initialSync?: InitialMessagingSync;
         recipient: UserPublic;
         convo?: Conversation;
         recipientDevices: unknown[];
@@ -27,7 +28,7 @@ export default function ChatBoxClient({ params }: {
     const router = useRouter();
     const [convo, setConvo] = useState(params.convo), [text, setText] = useState(''), [files, setFiles] = useState<File[]>([]), [reply, setReply] = useState<LocalMessage>(), [error, setError] = useState(''), [busy, setBusy] = useState(false), [typingUntil, setTypingUntil] = useState(0), [now, setNow] = useState(Date.now());
     const [outgoing, setOutgoing] = useState<LocalMessage[]>([]);
-    const sending = useRef(false);
+    const sending = useRef(false), usedInitialSync = useRef(false);
     const pane = useRef<HTMLDivElement>(null), visible = useRef(new Set<string>()), viewed = useRef(new Set<string>());
     const receiptEpoch=useRef(0);
     const receiptQueue = useRef(new Map<string, 'READ' | 'DELIVERED'>()), receiptTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined), receiptBusy = useRef(false);
@@ -50,14 +51,16 @@ export default function ChatBoxClient({ params }: {
         if (!convo)
             return;
         try {
-            const result = await refresh(convo.id, peer.id);
+            const initial = usedInitialSync.current ? undefined : params.initialSync;
+            usedInitialSync.current = true;
+            const result = await refresh(convo.id, peer.id, initial);
             if (result)
                 setConvo(previous => previous ? { ...previous, ...result.conversation } : previous);
         }
         catch (e) {
             setError(e instanceof Error ? e.message : 'Unable to load messages');
         }
-    }, [convo?.id, refresh, peer.id]);
+    }, [convo?.id, refresh, peer.id, params.initialSync]);
     useEffect(() => { void sync(); let stopped = false; let delay = liveReady ? 60000 : 5000; let timer: ReturnType<typeof setTimeout>; const run = () => { timer = setTimeout(async () => { if (document.visibilityState === 'visible')
         await sync(); delay = Math.min(60000, delay * 2); if (!stopped)
         run(); }, delay + Math.random() * 1000); }; run(); const focus = () => { setNow(Date.now()); if (document.visibilityState === 'visible') void sync(); }; window.addEventListener('focus', focus); window.addEventListener('online', focus); document.addEventListener('visibilitychange', focus); return () => { stopped = true; clearTimeout(timer); window.removeEventListener('focus', focus); window.removeEventListener('online', focus); document.removeEventListener('visibilitychange', focus); }; }, [sync, liveReady]);
@@ -266,7 +269,7 @@ export default function ChatBoxClient({ params }: {
   <Paper sx={{ p: 1, flexShrink: 0 }} elevation={0}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><IconButton component={Link} href="/messages"><ArrowBackIosNewOutlined /></IconButton><Avatar src={peer.avatar ?? undefined}/><Box sx={{ flex: 1, minWidth: 0 }}><Typography noWrap sx={{ fontWeight: 700 }}>{peer.name}</Typography><Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>@{peer.username} </Typography></Box><IconButton aria-label="Verify E2E encryption" title="End-to-end encrypted · verify keys" onClick={verifyKeys}><LockOutlined fontSize="small" /></IconButton><MessagingOptionsButton /></Stack></Paper>
   <Dialog open={showKeys} onClose={() => setShowKeys(false)}><DialogTitle>Verify device identities</DialogTitle><DialogContent><Typography>Compare these fingerprints with your contact through a trusted channel. First-use trust alone does not prove who owns a key.</Typography>{fingerprints.map(f => <Box key={f.id} sx={{ my: 2, overflowWrap: 'anywhere' }}><Typography variant="caption">{f.id}</Typography><Typography sx={{ fontFamily: 'monospace' }}>{f.hash}</Typography></Box>)}</DialogContent></Dialog>
   {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
-  <Box ref={pane} data-message-pane onScroll={() => { const element = pane.current; if (element) followBottom.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80; }} aria-busy={!!loadingConversations?.[convo?.id ?? '']} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', p: 1 }}>{loadingConversations?.[convo?.id ?? ''] && <Stack role="status" direction="row" spacing={1} sx={{ p: 1, alignItems: 'center' }}><CircularProgress size={16} /><Typography variant="caption">{chats.length ? 'Syncing messages…' : 'Loading and decrypting messages…'}</Typography></Stack>}{chats.map(m => <Box key={m.id} data-event-id={m.eventId} data-message-id={m.sendingState || m.queued ? undefined : m.id}><ChatBubble message={m} isSender={m.fromUserId === user.id} onAction={(kind, value) => action(m, kind, value)} disabled={busy || !!pending || !!m.queued || !!m.sendingState || !!m.integrityFailed} userId={user.id} token={token} replyMessage={chats.find(original => original.eventId === m.reply?.targetId && original.hash === m.reply?.targetHash)} onReplyClick={targetId => {
+  <Box ref={pane} data-message-pane onScroll={() => { const element = pane.current; if (element) followBottom.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80; }} aria-busy={!!loadingConversations?.[convo?.id ?? '']} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', p: 1 }}>{chats.map(m => <Box key={m.id} data-event-id={m.eventId} data-message-id={m.sendingState || m.queued ? undefined : m.id}><ChatBubble message={m} isSender={m.fromUserId === user.id} onAction={(kind, value) => action(m, kind, value)} disabled={busy || !!pending || !!m.queued || !!m.sendingState || !!m.integrityFailed} userId={user.id} token={token} replyMessage={chats.find(original => original.eventId === m.reply?.targetId && original.hash === m.reply?.targetHash)} onReplyClick={targetId => {
         const target = Array.from(pane.current?.querySelectorAll<HTMLElement>('[data-event-id]') ?? []).find(element => element.dataset.eventId === targetId);
         const element = pane.current;
         if (target && element) {

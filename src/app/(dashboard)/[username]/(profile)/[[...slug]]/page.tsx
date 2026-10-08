@@ -1,7 +1,6 @@
 import {profileMetadata} from '@/lib/seo-data';
-import React, { Suspense } from "react";
+import React from "react";
 import { getUserPostsFeed } from "@/lib/users";
-import FeedSkeleton from "@/components/post/FeedSkeleton";
 import PageClient from "./PageClient";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import { apiUrl } from "@/config";
@@ -64,13 +63,8 @@ const page = async ({ params }: { params: Promise<URLParams> }) => {
 
   const allowed = ["posts", "replies", "media", ...(user.meta.isPro ? ["highlights"] : []), ...(isCurrentUser ? ["scheduled", "likes", "bookmarks"] : [])];
   const kind = allowed.includes(slug) ? slug : "posts";
-  async function ProfileFeed() {
-    // Stream the profile header while fetching the active tab on the server.
-    // No persistent cache here: visibility and reactions must use current authorization.
-    const posts = await getUserPostsFeed({ userId: user.id, kind, page: 1, limit: 21 }, session?.user?.accessToken).catch(() => undefined);
-    return <PageClient slug={kind} user={user} posts={posts} />;
-  }
-  return <Suspense fallback={<FeedSkeleton />}><ProfileFeed /></Suspense>;
+  const posts = await getUserPostsFeed({ userId: user.id, kind, page: 1, limit: 21 }, session?.user?.accessToken).catch(() => undefined);
+  return <PageClient slug={kind} user={user} posts={posts} />;
 };
 
 export default page;

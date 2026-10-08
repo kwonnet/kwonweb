@@ -34,6 +34,7 @@ const PageServer = async ({ params }: { params: Promise<URLParams> }) => {
     }
   );
 
+  if (!result.ok) return <ErrorMessage message={await result.text()} />;
   const users: UserConnection[] = result.ok ? await result.json() : [];
 
 

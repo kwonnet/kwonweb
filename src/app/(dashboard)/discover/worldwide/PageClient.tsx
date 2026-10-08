@@ -42,6 +42,7 @@ const DisplayClient = ({ country, trends }: { trends: TrendingTopics[], country?
       refreshWhenOffline: false,
       revalidateOnReconnect: true,
       fallbackData: trends,
+      revalidateOnMount: false,
     });
 
   return (

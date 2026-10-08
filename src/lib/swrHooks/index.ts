@@ -1,6 +1,7 @@
+import { apiUrl } from "@/config";
 import { publicEnv } from "@/config/public-env";
 import { axiosAPI } from "@/config/axios";
-import { CurrUserStats, GamePlayer, Task, Transaction } from "@/types";
+import { CurrUserStats, GamePlayer, Task, Transaction, Wallet } from "@/types";
 import { cache } from "react";
 import useSWR from "swr";
 import { getUserCoinsWallet } from "../wallets";
@@ -41,11 +42,11 @@ export const getSwrPlayers = cache(
   }
 );
 
-export const useUserCoinsWallet = (token?: string) => {
+export const useUserCoinsWallet = (token?: string, fallbackData?: Wallet) => {
   const result = useSWR(
     token ? ["/v1/wallets", token] : null,
     ([_, token]) => getUserCoinsWallet(token),
-    { keepPreviousData: true }
+    { keepPreviousData: true, fallbackData, revalidateOnMount: fallbackData === undefined }
   );
   return result;
 };
@@ -73,7 +74,7 @@ export const useUserStats = ({
   const result = useSWR(
     userId && token ? [`/v1/users/${userId}/stats`, token] : null,
     ([url, token]) => getUserStats(url, token),
-    { keepPreviousData: true,  fallbackData: fallback }
+    { keepPreviousData: true, fallbackData: fallback, revalidateOnMount: fallbackData === undefined }
   );
   return result;
 };
@@ -100,7 +101,7 @@ export const useAccountAnalytics = (
       token,
     ],
     ([url, token]) => getUserAccountAnalytics(url, token),
-    { keepPreviousData: false, fallbackData: args.analytics }
+    { keepPreviousData: false, fallbackData: args.analytics, revalidateOnMount: args.analytics === undefined }
   );
   return result;
 };
@@ -112,20 +113,17 @@ export const usePostAnalytics = (
   const result = useSWR(
     [`/v1/posts/${args.id}/post-analytics?duration=${args.duration}`, token],
     ([url, token]) => getUserAccountAnalytics(url, token),
-    { keepPreviousData: false, fallbackData: args.analytics }
+    { keepPreviousData: false, fallbackData: args.analytics, revalidateOnMount: args.analytics === undefined }
   );
   return result;
 };
 
 export const getSWRTxnHistory = cache(
-  async (url: string): Promise<{ data: Transaction[]; nextCursor: string }> => {
-    try {
-      let res: AxiosResponse = await axiosAPI.get(url);
-      const data = res.data as Transaction[];
-      return { data, nextCursor: data[data.length - 1].id };
-    } catch (error: any) {
-      throw error;
-    }
+  async (url: string, token?: string): Promise<{ data: Transaction[]; nextCursor: string }> => {
+    const response = await fetch(`${apiUrl}${url.startsWith('/v1/') ? url.slice(3) : url}`, { credentials: 'include', cache: 'no-store', headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: AbortSignal.timeout(15000) });
+    if (!response.ok) throw new Error('Unable to load transaction history.');
+    const data = await response.json() as Transaction[];
+    return { data, nextCursor: data.at(-1)?.id ?? '' };
   }
 );
 
@@ -134,7 +132,7 @@ export const getTasks = cache(
     try {
       let res: AxiosResponse = await axiosAPI.get(url);
       const data = res.data as Task[];
-      return { data, nextCursor: data[data.length - 1].id };
+      return { data, nextCursor: data.at(-1)?.id ?? '' };
     } catch (error: any) {
       throw error;
     }
@@ -155,6 +153,7 @@ export const getUserTaskSettings = cache(
   }> => {
     axiosAPI.accessToken = token;
     try {
+      axiosAPI.accessToken = token;
       let res: AxiosResponse = await axiosAPI.get(url);
       return res.data;
     } catch (error: any) {

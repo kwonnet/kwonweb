@@ -10,7 +10,7 @@ import {
   Skeleton,
   Stack,
 } from "@mui/material";
-import { GameWinnersStats } from "@/types";
+import { GameWinnersStats, GameWinner } from "@/types";
 import InputLabel from "@mui/material/InputLabel";
 import FormControl from "@mui/material/FormControl";
 import PageHeader from "@/components/common/PageHeader";
@@ -34,26 +34,29 @@ const DropdownSkeleton = () => (
   </Stack>
 );
 
+type InitialWinnersPage = { query: string; data: GameWinner[] };
 const ITEM_PER_PAGE = 15;
 
 function PlayerPage({
   query,
   currentUserId,
   token,
+  initialPage,
 }: {
   query: string;
   currentUserId: string;
   token?: string;
+  initialPage?: InitialWinnersPage;
 }) {
   const { data, isLoading, error } = useSWR({ query, token }, (arg) =>
     getGameWinners(arg.query, arg.token),
-  { errorRetryCount: 1}
+  { errorRetryCount: 1, fallbackData: initialPage?.query === query ? initialPage.data : undefined, revalidateOnMount: initialPage?.query !== query }
   );
   if(isLoading && !data){
     return (<SkeletonTable rows={2} />)
   }
   if((error && !data) || !data){
-    return (<Typography sx={{py: 1, textAlign: "center"}}>{error.status === 404 ? "No data yet" :getErrorMessage(error)}</Typography>)
+    return (<Typography sx={{py: 1, textAlign: "center"}}>{error?.status === 404 ? "No data yet" :getErrorMessage(error)}</Typography>)
   }
   return (
     <WinnersTable
@@ -70,8 +73,10 @@ const getPaginationCount = (total: number) => {
 
 const DisplayWinners = ({
   winnersStats,
+  initialPage,
 }: {
   winnersStats: GameWinnersStats[];
+  initialPage?: InitialWinnersPage;
 }) => {
 
   console.log("winnersStats ", winnersStats)
@@ -351,6 +356,7 @@ const DisplayWinners = ({
       </Typography>
       <div style={{ display: "none" }}>
         <PlayerPage
+          initialPage={initialPage}
           currentUserId={user.id}
           token={token}
           query={`type=winners&catId=${
@@ -370,6 +376,7 @@ const DisplayWinners = ({
         }}
       >
         <PlayerPage
+          initialPage={initialPage}
           currentUserId={user.id}
           token={token}
           query={`type=winners&catId=${state.catId}&limit=${ITEM_PER_PAGE}&year=${state.year}&month=${state.month}&page=${state.page}`}
@@ -393,14 +400,14 @@ const DisplayWinners = ({
   );
 };
 
-const PageClient = () => {
+const PageClient = ({ initialStats, initialPage }: { initialStats?: GameWinnersStats[]; initialPage?: InitialWinnersPage }) => {
   const { token } = useAuthSession();
 
   const {
     data: winnersStats,
     isLoading,
     error,
-  } = useSWR({type: "winners-stats", token }, (key) => getGameWinnersStats(key.token));
+  } = useSWR({type: "winners-stats", token }, (key) => getGameWinnersStats(key.token), { fallbackData: initialStats, revalidateOnMount: initialStats === undefined });
 
 console.log("winnersStats ", winnersStats)
   return (
@@ -416,7 +423,7 @@ console.log("winnersStats ", winnersStats)
                 <SkeletonTable />
               </Box>)  }
               {error && <Typography>{getErrorMessage(error)}</Typography>}
-              {winnersStats && <DisplayWinners winnersStats={winnersStats} />}
+              {!!winnersStats?.length && <DisplayWinners winnersStats={winnersStats} initialPage={initialPage} />}{winnersStats?.length === 0 && <Typography>No winners yet.</Typography>}
             </Box>
           </Paper>
         </Box>

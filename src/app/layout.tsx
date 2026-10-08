@@ -4,7 +4,6 @@ import { headers } from "next/headers";
 import { PUBLIC_LEGAL_HEADER } from "@/lib/auth-redirect";
 import { publicEnvScript } from "@/config/public-env";
 import type { Metadata } from "next";
-import AppLoadingShell from "@/components/common/AppLoadingShell";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { SessionProvider } from "next-auth/react";
 import React from "react";
@@ -51,13 +50,13 @@ export default async function RootLayout({
       <body>
         <SessionProvider session={session} refetchOnWindowFocus={!publicLegal} refetchInterval={publicLegal ? 0 : 60}>
           <AppRouterCacheProvider>
-            <React.Suspense fallback={<AppLoadingShell />}>
+
               <NextjsAppProvider session={session}>
                 {publicLegal ? children : <SocketIoProvider><ConvoSocketIoProvider><SSEContextProvider>
                   <AuthSessionBoundary initiallyAuthenticated={!!session?.user}>{children}</AuthSessionBoundary>
                 </SSEContextProvider></ConvoSocketIoProvider></SocketIoProvider>}
               </NextjsAppProvider>
-            </React.Suspense>
+
           </AppRouterCacheProvider>
         </SessionProvider>
       </body>

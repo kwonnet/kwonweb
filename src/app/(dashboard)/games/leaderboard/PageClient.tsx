@@ -12,7 +12,7 @@ import {
   Skeleton,
   Stack,
 } from "@mui/material";
-import { GameCategoryRanking, GameMode, GameRoomRankingEnum } from "@/types";
+import { GameCategoryRanking, GameMode, GameRoomRankingEnum, GamePlayer } from "@/types";
 import InputLabel from "@mui/material/InputLabel";
 import FormControl from "@mui/material/FormControl";
 import PageHeader from "@/components/common/PageHeader";
@@ -65,20 +65,23 @@ const SkeletonStats = () => {
   );
 };
 
+type InitialLeaderboardPage = { query: string; data: GamePlayer[] };
 const ITEM_PER_PAGE = 15;
 
 function PlayerPage({
   query,
   currentUserId,
+  initialPage,
 }: {
   query: string;
   currentUserId: string;
+  initialPage?: InitialLeaderboardPage;
 }) {
   const { token } = useAuthSession();
 
-  const { data, isLoading } = useSWR({ query, token }, getSwrPlayers);
+  const { data, isLoading } = useSWR({ query, token }, getSwrPlayers, { fallbackData: initialPage?.query === query ? initialPage.data : undefined, revalidateOnMount: initialPage?.query !== query });
 
-  if (!data || isLoading) return <SkeletonTable rows={2} />;
+  if (!data) return <SkeletonTable rows={2} />;
 
   return (
     <PlayersTable
@@ -97,10 +100,12 @@ const DisplayRankings = ({
   rankType,
   category,
   mode,
+  initialPage,
 }: {
   rankType: GameRoomRankingEnum;
   category: GameCategoryRanking;
   mode: string;
+  initialPage?: InitialLeaderboardPage;
 }) => {
   const { user } = useAuthSession();
 
@@ -117,6 +122,7 @@ const DisplayRankings = ({
     <React.Fragment>
       <div style={{ display: "none" }}>
         <PlayerPage
+          initialPage={initialPage}
           currentUserId={user.id}
           query={`/v1/games/leaderboard?type=board-archive&ranking=${rankType}&mode=${mode}&catId=${
             category.id
@@ -135,6 +141,7 @@ const DisplayRankings = ({
         }}
       >
         <PlayerPage
+          initialPage={initialPage}
           currentUserId={user.id}
           query={`/v1/games/leaderboard?type=board-archive&ranking=${rankType}&mode=${mode}&catId=${category.id}&limit=${ITEM_PER_PAGE}&page=${state.page}`}
         />
@@ -159,7 +166,7 @@ const DisplayRankings = ({
 };
 
 
-const PageClient = () => {
+const PageClient = ({ initialRankings, initialPage }: { initialRankings?: GameCategoryRanking[]; initialPage?: InitialLeaderboardPage }) => {
   const [state, setState] = React.useState({
     rankType: GameRoomRankingEnum.TODAY,
     mode: GameMode.SINGLE,
@@ -193,7 +200,8 @@ const PageClient = () => {
       params: { rankType: state.rankType, mode: state.mode?.toLowerCase() },
       token,
     },
-    (arg) => getGameCategoriesRankings(arg.params, arg.token)
+    (arg) => getGameCategoriesRankings(arg.params, arg.token),
+    { fallbackData: state.rankType === GameRoomRankingEnum.TODAY && state.mode === GameMode.SINGLE ? initialRankings : undefined, revalidateOnMount: initialRankings === undefined || state.rankType !== GameRoomRankingEnum.TODAY || state.mode !== GameMode.SINGLE }
   );
 
   const isEmptyData = !data || data?.length === 0;
@@ -375,6 +383,7 @@ const PageClient = () => {
               </Box>
             ) : category ? (
               <DisplayRankings
+                initialPage={initialPage}
                 rankType={state.rankType}
                 category={category}
                 mode={state.mode}

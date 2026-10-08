@@ -32,6 +32,7 @@ const DisplayClient = ({
     () => getSuggestedConnections({ limit: 21, type: connType }, token),
     {
       fallbackData: users,
+      revalidateOnMount: false,
       keepPreviousData: true,
       refreshWhenOffline: false,
     }
@@ -109,7 +110,7 @@ const DisplayClient = ({
       // eslint-disable-next-line
     }, [sseSource]);
 
-  const isError404 = error?.status === 404;
+  const isError404 = error?.status === 404 || (!error && data?.length === 0);
 
   return (
     <React.Fragment>

@@ -34,13 +34,15 @@ import { useUserStats } from "@/lib/swrHooks";
 const NotificationContainer = ({
   stats,
   data,
+  initialUserId,
 }: {
   stats?: UserStats;
   data?: AppNotification[];
+  initialUserId?: string;
 }) => {
   const { user, token } = useAuthSession();
 
-  const { data: notifStats, mutate } = useUserStats({fallbackData: stats, userId: user?.id, token})
+  const { data: notifStats, mutate } = useUserStats({fallbackData: user?.id === initialUserId ? stats : undefined, userId: user?.id, token})
 
   const handleUpdateUnseenNotif = async () => {
     if (!user?.id || notifStats?.totalUnseenCount === 0) return;
@@ -126,7 +128,7 @@ const NotificationContainer = ({
                 <Divider variant="fullWidth" />
                 <Box sx={{ px: 1, pb: 2 }}>
                   <NotificationClient
-                    items={data}
+                    items={user?.id === initialUserId ? data : undefined}
                     close={() => popupState.close()}
                   />
                 </Box>

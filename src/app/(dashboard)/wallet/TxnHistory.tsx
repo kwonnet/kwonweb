@@ -1,5 +1,6 @@
 "use client";
 import { getSWRTxnHistory, useUserStats } from "@/lib/swrHooks";
+import type { UserStats } from "@/types/user";
 import { Transaction } from "@/types";
 import {
   checkSWRIsLoadingMore,
@@ -115,12 +116,12 @@ const DisplayTxnHistory = ({ data }: { data: GroupedRecord }) => {
     </React.Fragment>
   );
 };
-const TxnHistory = ({ refreshHistory }:{ refreshHistory?: boolean}) => {
+const TxnHistory = ({ refreshHistory, initialTransactions, initialStats }:{ refreshHistory?: boolean; initialTransactions?: Transaction[]; initialStats?: UserStats }) => {
   const [state, setState] = useState({ page: 1, limit: 20 });
 
   const { token, user } = useAuthSession();
 
-  const { data: stats} = useUserStats({userId: user.id, token});
+  const { data: stats} = useUserStats({userId: user.id, token, fallbackData: initialStats});
 
   // get keys for fetching data
   const getKey = (
@@ -128,15 +129,18 @@ const TxnHistory = ({ refreshHistory }:{ refreshHistory?: boolean}) => {
     previousPageData: { data: Transaction[] | undefined; nextCursor: string }
   ) => {
     // if no user or reached the end, do not fetch
-    if (previousPageData && !previousPageData.data) return null;
+    if (!user?.id || !token) return null;
+    if (previousPageData && !previousPageData.data?.length) return null;
     // first page, we don't have `previousPageData`
     return {
       url: `/v1/wallets/history?limit=${state.limit}&page=${pageIndex + 1}`,
       type: "txnHistory",
+      userId: user.id,
+      token,
     };
   };
   const { data, error, isLoading, isValidating, mutate, size, setSize } =
-    useSWRInfinite(getKey, ({ url }) => getSWRTxnHistory(url));
+    useSWRInfinite(getKey, ({ url, token }) => getSWRTxnHistory(url, token), { fallbackData: initialTransactions ? [{ data: initialTransactions, nextCursor: initialTransactions.at(-1)?.id ?? '' }] : undefined, revalidateOnMount: initialTransactions === undefined, revalidateFirstPage: false });
 
   const txnHistoryData = getSWRData<Transaction>(data);
 
@@ -153,7 +157,7 @@ const TxnHistory = ({ refreshHistory }:{ refreshHistory?: boolean}) => {
   });
 
   useEffect(() => {
-    if(refreshHistory) return
+    if (!refreshHistory) return;
     mutate()
     return () => {}
   }, [refreshHistory, mutate])

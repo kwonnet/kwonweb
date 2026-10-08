@@ -47,7 +47,8 @@ const NotificationClient = ({items,
   const { data, error, isLoading, isValidating, mutate, size, setSize } =
     useSWRInfinite(getKey, (args) => getUserNotifications({userId: args.userId, limit: args.limit, page: args.page}, args.token), {
       keepPreviousData: false,
-      revalidateOnMount: true,
+      revalidateOnMount: items === undefined,
+      revalidateFirstPage: false,
       revalidateAll: true,
       fallbackData: items ? [items] : items,
       errorRetryCount: 2

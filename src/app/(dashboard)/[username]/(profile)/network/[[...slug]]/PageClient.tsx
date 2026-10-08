@@ -130,6 +130,7 @@ const PageClient = (params: {
           {filterTabItems.map((tab) => (
             <TabPanel sx={{ py: 1, px: 0 }} key={tab.id} value={tab.id}>
               <DisplayClient
+                initialSlug={params.slug}
                 connections={state.connections}
                 slug={tab.id}
                 userId={params.user.id}

@@ -27,6 +27,7 @@ const PageClient = ({ trends }: { trends: TrendingTopics[] }) => {
       refreshWhenOffline: false,
       revalidateOnReconnect: true,
       fallbackData: trends,
+      revalidateOnMount: false,
     });
   return (
     <Box

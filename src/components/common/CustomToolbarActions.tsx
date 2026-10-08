@@ -7,6 +7,7 @@ import {
   Stack,
   Tooltip,
 } from "@mui/material";
+import type { UserStats } from "@/types/user";
 import AccountMenu from "./AccountMenu";
 import React from "react";
 import SearchToolbar from "./SearchToolbar";
@@ -23,6 +24,8 @@ import { useUserStats } from "@/lib/swrHooks";
 
 const CustomToolbarActions = (props: {
   NotificationNode?: React.ReactNode;
+  initialStats?: UserStats;
+  initialUserId?: string;
   AccountNode?: React.ReactNode;
 }) => {
 
@@ -30,7 +33,7 @@ const CustomToolbarActions = (props: {
 
   const { user, token } = useAuthSession();
 
-  const { data: stats, mutate } = useUserStats({ userId: user?.id, token})
+  const { data: stats, mutate } = useUserStats({ userId: user?.id, token, fallbackData: user?.id === props.initialUserId ? props.initialStats : undefined })
 
 
 

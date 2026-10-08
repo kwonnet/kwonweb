@@ -24,10 +24,14 @@ const DisplayClient = ({
   connections,
   slug,
   userId,
+  initialSlug = slug,
+  initialFetchFailed = false,
 }: {
   connections: UserConnection[];
   slug: string;
   userId: string;
+  initialSlug?: string;
+  initialFetchFailed?: boolean;
 }) => {
 
   const { token, user } = useAuthSession();
@@ -48,7 +52,9 @@ const DisplayClient = ({
     useSWRInfinite(getKey, (args) => getUserConnections(args, token), {
       keepPreviousData: false,
       refreshWhenOffline: false,
-      fallbackData: connections.length > 0 ? [connections] : undefined,
+      fallbackData: initialSlug === slug ? [connections] : undefined,
+      revalidateOnMount: initialFetchFailed || initialSlug !== slug,
+      revalidateFirstPage: false,
     });
 
   const flatData = data ? data?.flat() : [];

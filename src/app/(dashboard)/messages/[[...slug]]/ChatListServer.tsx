@@ -23,7 +23,7 @@ const ChatListServer = async({slug}: { slug: string}) => {
   // console.log("convoList ",convoList)
 
   return (
-    <ChatListClient slug={slug} convoList={convoList} /> 
+    <ChatListClient slug={slug} convoList={convoList} initialFetchFailed={!result.ok} />
   )
 }
 

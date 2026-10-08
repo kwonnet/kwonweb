@@ -76,6 +76,7 @@ const page = async ({ params }: { params: Promise<URLParams> }) => {
     }
   );
 
+  if (!result2.ok) return <ErrorMessage message={await result2.text()} />;
   const connections: UserConnection[] = !result2.ok ? [] : await result2.json();
 
   

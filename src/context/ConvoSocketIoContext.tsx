@@ -3,7 +3,7 @@ import PasswordTextField from '@/components/common/PasswordTextField';
 import MoreVert from '@mui/icons-material/MoreVert';
 import MessagingHistoryTransfer from '@/components/common/MessagingHistoryTransfer';
 import { createContext, useContext, useEffect, useCallback, useRef, useState, type ReactNode } from 'react';
-import { Alert, Box, Button, Dialog, DialogContent, DialogTitle, Paper, Stack, Typography, IconButton, Menu, MenuItem, Checkbox, FormControlLabel, CircularProgress } from '@mui/material';
+import { Alert, Box, Button, Dialog, DialogContent, DialogTitle, Paper, Stack, Typography, IconButton, Menu, MenuItem, Checkbox, FormControlLabel } from '@mui/material';
 import { useAuthSession } from '@/hooks';
 import { useSocketIoContext } from './SocketIoContext';
 import { hasMessagingVault, unlockMessaging, restoreRememberedMessaging, forgetRememberedMessaging, lockMessaging, resetMessagingDevice, currentMessagingRuntime, signMessaging } from '@/lib/signal/deviceManager';
@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation';
 import type { Conversation } from '@/types/conversation';
 import { getUserChatConversations } from '@/lib/conversations';
 import { useSWRConfig } from 'swr';
+export type InitialMessagingSync = { userId: string; deviceId: string; result: SyncResult };
 type State = {
     convoSocketIo?: ReturnType<typeof useSocketIoContext>['convoSocketIo'];
     messages: LocalMessage[];
@@ -31,7 +32,7 @@ type State = {
         conversationId: string;
         action: boolean;
     }[];
-    refresh: (conversationId: string, peerId: string) => Promise<SyncResult | undefined>;
+    refresh: (conversationId: string, peerId: string, initial?: InitialMessagingSync) => Promise<SyncResult | undefined>;
 };
 const Context = createContext<State>({ messages: [], ready: false, revision: 0, liveReady: false, processed: [], refresh: async () => undefined, refreshInbox: () => {}, receiptTotals: {}, openOptions: () => {}, warmConversations: () => {}, loadingConversations: {} });
 export const useConvoSocketIoContext = () => useContext(Context);
@@ -74,6 +75,8 @@ export default function ConvoSocketIoProvider({ children }: {
     const [liveReady, setLiveReady] = useState(false);
     const [devices, setDevices] = useState<MessagingDevice[]>([]), [showDevices, setShowDevices] = useState(false);
     const [messages, setMessages] = useState<LocalMessage[]>([]), [revision, setRevision] = useState(0);
+    const inboxSeeded = useRef(false);
+    const initialSyncs = useRef(new Map<string, InitialMessagingSync>());
     const inFlight = useRef(new Map<string, Promise<SyncResult | undefined>>());
     const generation = useRef(0);
     const dirty = useRef(new Set<string>());
@@ -94,7 +97,7 @@ export default function ConvoSocketIoProvider({ children }: {
         previousUser.current = userId;
         if (previous && previous !== userId) void forgetRememberedMessaging(previous);
         generation.current++; lockMessaging(); setReady(false); setMessages([]); setProcessed([]); setReceiptTotals({});
-        knownConversations.current.clear(); warmQueue.current.clear(); warmWorkers.current = 0; inFlight.current.clear(); setLoadingConversations({}); setPassphrase(''); setConfirmation(''); setRestoring(true);
+        inboxSeeded.current = false; initialSyncs.current.clear(); knownConversations.current.clear(); warmQueue.current.clear(); warmWorkers.current = 0; inFlight.current.clear(); setLoadingConversations({}); setPassphrase(''); setConfirmation(''); setRestoring(true);
         const epoch = generation.current;
         if (userId) void (async () => {
             try {
@@ -138,7 +141,8 @@ export default function ConvoSocketIoProvider({ children }: {
             setBusy(false);
         }
     };
-    const refresh = useCallback((conversationId: string, peerId: string) => {
+    const refresh = useCallback((conversationId: string, peerId: string, initial?: InitialMessagingSync) => {
+        if (initial) initialSyncs.current.set(conversationId, initial);
         const prior = inFlight.current.get(conversationId);
         if (prior) {
             dirty.current.add(conversationId);
@@ -165,7 +169,10 @@ export default function ConvoSocketIoProvider({ children }: {
             do {
                 dirty.current.delete(conversationId);
                 try {
-                    result = await syncMessages(userId, token, conversationId, cursor, receiptCursor);
+                    const seed = initialSyncs.current.get(conversationId);
+                    initialSyncs.current.delete(conversationId);
+                    const validSeed = seed?.userId === userId && seed.deviceId === r.deviceId && seed.result.conversation.id === conversationId && cursor === '0' && receiptCursor === '0';
+                    result = validSeed ? seed!.result : await syncMessages(userId, token, conversationId, cursor, receiptCursor);
                 }
                 catch (error) {
                     if (epoch === generation.current) {
@@ -230,6 +237,7 @@ export default function ConvoSocketIoProvider({ children }: {
     }, [ready, userId, token, refreshInbox]);
     const warmConversations = useCallback((conversations: Conversation[]) => {
         if (!ready) return;
+        inboxSeeded.current = true;
         for (const conversation of conversations) {
             const peerId = conversation.initiator.id === userId ? conversation.responder.id : conversation.initiator.id;
             const stamp = `${conversation.lastSequence ?? conversation.updatedAt}:${conversation.state}`;
@@ -253,7 +261,7 @@ export default function ConvoSocketIoProvider({ children }: {
         while (warmWorkers.current < 2 && warmQueue.current.size) void worker();
     }, [ready, userId, refresh]);
     useEffect(() => {
-        if (!ready) return;
+        if (!ready || inboxSeeded.current) return;
         let cancelled = false;
         void getUserChatConversations({ userId, kind: 'chat', page: 1, limit: 21 }, token).then(conversations => { if (!cancelled) warmConversations(conversations); }).catch(() => {});
         return () => { cancelled = true; };
@@ -323,7 +331,7 @@ export default function ConvoSocketIoProvider({ children }: {
     };
     if (!userId && messagingPage)
         return <Alert severity="info">Sign in to use encrypted messaging.</Alert>;
-    if (messagingPage && restoring) return <Box role="status" sx={{ p: 3 }}><CircularProgress size={24} /> Restoring encrypted messaging…</Box>;
+    if (messagingPage && restoring) return <Box role="status" sx={{ p: 3 }}><Typography>Unlocking encrypted messaging on this browser…</Typography></Box>;
     if (messagingPage && !ready)
         return <Box sx={{ p: 3, maxWidth: 600, mx: 'auto' }}><Paper sx={{ p: 3 }}><Stack spacing={2}><Typography variant="h5">{existing ? 'Unlock encrypted messages' : 'Set up encrypted messages'}</Typography><Typography>Your messaging passphrase protects keys on this browser. Use at least 12 characters. Keep it safe: resetting your account password cannot recover these messages.</Typography>{error && <Alert severity="error">{error}</Alert>}<PasswordTextField label="Messaging passphrase" value={passphrase} onChange={e => setPassphrase(e.target.value)} autoComplete={existing ? 'current-password' : 'new-password'}/>{!existing && <PasswordTextField label="Confirm messaging passphrase" value={confirmation} onChange={e => setConfirmation(e.target.value)} autoComplete="new-password"/>}<FormControlLabel control={<Checkbox checked={remember} onChange={event => setRemember(event.target.checked)} />} label="Remember this private browser for 30 days" /><Typography variant="caption">Automatic unlock after sign-in on this browser. Anyone with access to this browser profile can access your local messages. Lock messages or sign out to forget it.</Typography><Button loading={busy} variant="contained" disabled={passphrase.length < 12} onClick={unlock}>{existing ? 'Unlock' : 'Set up messaging'}</Button>{existing && <Button color="warning" onClick={async () => {
                     if (!window.confirm('Remove this browser’s messaging keys and history? This cannot be undone. You will need a new device identity.'))

@@ -1,4 +1,4 @@
-import { Box, Grid, Paper, CircularProgress, Typography } from "@mui/material";
+import { Box, Grid, Paper } from "@mui/material";
 import React from "react";
 import ChatListServer from "./ChatListServer";
 import ChatListHeader from "./ChatListHeader";
@@ -65,7 +65,7 @@ const Layout = async ({
                 elevation={0}
               >
                 <ChatListHeader />
-                <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: { xs: 9, md: 0 } }}><React.Suspense fallback={<Box role="status" sx={{ p: 2 }}><CircularProgress size={20} /><Typography variant="caption">Loading conversations…</Typography></Box>}><ChatListServer slug={slug} /></React.Suspense></Box>
+                <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pb: { xs: 9, md: 0 } }}><ChatListServer slug={slug} /></Box>
                 <NewConversationButton floating />
               </Paper>
             </Grid>

@@ -47,7 +47,7 @@ test('legal rendering skips session refresh even with an expired session and omi
   const tree = await Root({children: legal});
   const provider = tree.props.children[1].props.children;
   assert.equal(provider.props.session, null);
-  const theme = provider.props.children.props.children.props.children;
+  const theme = provider.props.children.props.children;
   assert.equal(theme.props.children, legal);
 });
 

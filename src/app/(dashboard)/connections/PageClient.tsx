@@ -1,5 +1,5 @@
 "use client";
-import React, { Suspense, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, CardMedia, Typography } from "@mui/material";
 
 export default function PageClient({

@@ -43,9 +43,11 @@ const PAGE_SIZE = 1;
 const PageClient = ({
   posts,
   postId,
+  initialFetchFailed = false,
 }: {
   postId: string;
   posts: FeedPost[];
+  initialFetchFailed?: boolean;
 }) => {
   const { token, user } = useAuthSession();
   const notifications = useNotifications();
@@ -78,7 +80,9 @@ const PageClient = ({
     useSWRInfinite(getKey, (args) => getPostQuotes(args, token), {
       keepPreviousData: false,
       refreshWhenOffline: false,
-      fallbackData: posts.length > 0 ? [posts] : undefined,
+      fallbackData: [posts],
+      revalidateOnMount: initialFetchFailed,
+      revalidateFirstPage: false,
     });
 
   const mutate = useFeedCacheMutate(mutatePages, data);

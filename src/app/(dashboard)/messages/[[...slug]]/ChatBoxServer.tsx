@@ -4,6 +4,7 @@ import React from "react";
 import ChatBoxClient from "./ChatBoxClient";
 import { UserPublic } from "@/types/user";
 import DisplayError from "@/components/common/DisplayError";
+import type {InitialMessagingSync} from "@/context/ConvoSocketIoContext";
 import type {MessagingDevice} from "@/lib/signal/contracts";
 import { Conversation, EncryptedChatMessage } from "@/types/conversation";
 const ChatBoxServer = async ({ recipientId, slug, }: {
@@ -30,6 +31,7 @@ const ChatBoxServer = async ({ recipientId, slug, }: {
         return (<DisplayError status={result.status} message={await result.text()}/>);
     }
     const res: {
+        initialSync?: InitialMessagingSync;
         recipient: UserPublic;
         convo?: Conversation;
         recipientDevices: MessagingDevice[];

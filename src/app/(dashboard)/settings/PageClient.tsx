@@ -12,7 +12,12 @@ import {saveProfile} from '@/lib/profile-actions';
 import useRefreshProfileIdentity from '@/hooks/useRefreshProfileIdentity';
 import {logoutCurrentAccount} from '@/lib/account-actions';
 
-export default function PageClient() {
+type InitialSettings = {
+  initialUserId?: string;
+  initialAccount?: Awaited<ReturnType<typeof getAccountSettings>>;
+  initialSessions?: Awaited<ReturnType<typeof getActiveSessions>>;
+};
+export default function PageClient({ initialUserId, initialAccount, initialSessions }: InitialSettings = {}) {
   const {token, user} = useAuthSession();
   const notif = useNotifications();
   const refreshIdentity = useRefreshProfileIdentity();
@@ -22,7 +27,7 @@ export default function PageClient() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [now, setNow] = useState(Date.now);
-  const {data: account, error: accountError, mutate: refreshAccount} = useSWR(token && user ? ['account-settings', user.id, token] : null, ([, , accessToken]) => getAccountSettings(accessToken), {revalidateOnMount: true, revalidateOnFocus: true});
+  const {data: account, error: accountError, mutate: refreshAccount} = useSWR(token && user ? ['account-settings', user.id, token] : null, ([, , accessToken]) => getAccountSettings(accessToken), {fallbackData: user?.id === initialUserId ? initialAccount : undefined, revalidateOnMount: user?.id !== initialUserId || initialAccount === undefined, revalidateOnFocus: true});
   const verificationExpiresAt = account?.passwordSetupVerifiedUntil ? Date.parse(account.passwordSetupVerifiedUntil) : 0;
   const googleVerified = verificationExpiresAt > now;
   useEffect(() => {
@@ -77,7 +82,7 @@ export default function PageClient() {
   const [revoking, setRevoking] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const {data, error, isLoading, mutate} = useSWR(token && user ? ['active-sessions', user.id, token, page] : null,
-    ([, , accessToken, currentPage]) => getActiveSessions(accessToken, currentPage), {revalidateOnFocus: true, dedupingInterval: 30_000});
+    ([, , accessToken, currentPage]) => getActiveSessions(accessToken, currentPage), {fallbackData: page === 1 && user?.id === initialUserId ? initialSessions : undefined, revalidateOnMount: page !== 1 || user?.id !== initialUserId || initialSessions === undefined, revalidateOnFocus: true, dedupingInterval: 30_000});
   useEffect(() => {
     let cancelled = false;
     if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window) {

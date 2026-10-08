@@ -186,8 +186,10 @@ const PAGE_SIZE = 21;
 export const PageClient = ({
   users,
   postId,
+  initialFetchFailed = false,
 }: {
   users: UserConnection[];
+  initialFetchFailed?: boolean;
   postId: string;
 }) => {
   const { token, user } = useAuthSession();
@@ -208,7 +210,9 @@ export const PageClient = ({
     useSWRInfinite(getKey, (args) => getPostReposts(args, token), {
       keepPreviousData: true,
       refreshWhenOffline: false,
-      fallbackData: users.length > 0 ? [users] : undefined,
+      fallbackData: [users],
+      revalidateOnMount: initialFetchFailed,
+      revalidateFirstPage: false,
     });
 
   const postReposters = data ? data?.flat() : [];

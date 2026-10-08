@@ -1,4 +1,6 @@
 "use client";
+import type { UserStats } from "@/types/user";
+import type { Wallet, Transaction } from "@/types";
 import PageHeader from "@/components/common/PageHeader";
 import { TransferModal, WithdrawalModal } from "@/components/modal";
 import { WalletSkeleton } from "@/components/skeleton";
@@ -20,7 +22,7 @@ import React, { useState } from "react";
 import TxnHistory from "./TxnHistory";
 import { useAuthSession } from "@/hooks";
 
-const WalletClient = ({tonRate}: { tonRate: number}) => {
+const WalletClient = ({tonRate, initialWallet, initialUserId, initialTransactions, initialStats}: { tonRate: number; initialWallet?: Wallet; initialUserId?: string; initialTransactions?: Transaction[]; initialStats?: UserStats }) => {
 
   const [state, setState] = useState({
     isOpenTransfer: false, 
@@ -31,12 +33,12 @@ const WalletClient = ({tonRate}: { tonRate: number}) => {
     refreshHistory: false
   });
 
-  const { token } = useAuthSession()
+  const { token, user } = useAuthSession()
 
-  const { data: wallet, isLoading, mutate} = useUserCoinsWallet(token)
+  const { data: wallet, isLoading, mutate} = useUserCoinsWallet(token, user?.id === initialUserId ? initialWallet : undefined)
   
 
-  if(isLoading || !wallet) return <WalletSkeleton />
+  if(!wallet) return <WalletSkeleton />
 
   const disableWithdraw = wallet.credit === 0 || wallet.isLocked
 
@@ -190,7 +192,7 @@ const WalletClient = ({tonRate}: { tonRate: number}) => {
               Transaction History
             </Typography>
             <Box>
-              <TxnHistory refreshHistory={state.refreshHistory} />
+              <TxnHistory refreshHistory={state.refreshHistory} initialTransactions={user?.id === initialUserId ? initialTransactions : undefined} initialStats={user?.id === initialUserId ? initialStats : undefined} />
             </Box>
           </Box>
       </Container>

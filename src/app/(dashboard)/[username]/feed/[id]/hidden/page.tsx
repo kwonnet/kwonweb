@@ -39,6 +39,7 @@ const page = async ({
     }
   );
 
+  if (!result.ok) return <ErrorMessage message={await result.text()} />;
   const posts: FeedPost[] = result.ok ? await result.json() : [];
 
   return (

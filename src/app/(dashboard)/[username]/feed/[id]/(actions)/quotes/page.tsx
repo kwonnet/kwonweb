@@ -31,6 +31,7 @@ const Page = async ({ params }: { params: Promise<URLParams> }) => {
     }
   );
 
+  if (!result.ok) return <ErrorMessage message={await result.text()} />;
   const posts: FeedPost[] = result.ok ? await result.json() : [];
 
   return (

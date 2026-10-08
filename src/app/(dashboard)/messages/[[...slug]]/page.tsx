@@ -1,6 +1,5 @@
 import {pageMetadata} from '@/lib/seo';
-import React, { Suspense } from 'react'
-import { Box, CircularProgress, Typography } from '@mui/material';
+import React from 'react'
 import ChatBoxServer from './ChatBoxServer'
 import StartConvo from './StartConvo'
 
@@ -10,7 +9,7 @@ const Page = async({params}: { params: Promise<{slug: string[]}>}) => {
   const kind = _params?.slug ? _params.slug[1] : undefined
   return (
     <React.Fragment>
-      {recipientId && kind ? <Suspense key={recipientId} fallback={<Box role="status" sx={{ p: 3 }}><CircularProgress size={24} /><Typography>Loading conversation…</Typography></Box>}><ChatBoxServer recipientId={recipientId} slug={kind} /></Suspense> :
+      {recipientId && kind ? <ChatBoxServer recipientId={recipientId} slug={kind} /> :
           <StartConvo />}
     </React.Fragment>
   )

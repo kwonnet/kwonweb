@@ -27,7 +27,7 @@ const Layout = (props: any) => {
           <CreateTopSection />
           {props.children}
         </Box>
-        <StickySidebar TrendingSection={<React.Suspense fallback={null}><SidebarTrendServer /></React.Suspense>} ConnectionSection={<React.Suspense fallback={null}><ConnectionServer /></React.Suspense>} />
+        <StickySidebar TrendingSection={<SidebarTrendServer />} ConnectionSection={<ConnectionServer />} />
       </Box>
     </React.Fragment>
   );
