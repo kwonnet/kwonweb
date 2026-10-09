@@ -24,7 +24,7 @@ export default function ChatBoxClient({ params }: {
 }) {
     const { user, token: authToken } = useAuthSession();
     const token = authToken ?? '';
-    const { activeConversationId, setActiveConversationId, messages, refresh, refreshInbox, convoSocketIo: socket, revision, liveReady, processed, loadingConversations, viewportHeight } = useConvoSocketIoContext();
+    const { activeConversationId, setActiveConversationId, messages, refresh, refreshInbox, convoSocketIo: socket, conversationUpdates, liveReady, processed, loadingConversations, viewportHeight } = useConvoSocketIoContext();
     const router = useRouter();
     const [convo, setConvo] = useState(params.convo), [text, setText] = useState(''), [files, setFiles] = useState<File[]>([]), [reply, setReply] = useState<LocalMessage>(), [error, setError] = useState(''), [busy, setBusy] = useState(false), [typingUntil, setTypingUntil] = useState(0), [now, setNow] = useState(Date.now());
     const [outgoing, setOutgoing] = useState<LocalMessage[]>([]);
@@ -100,9 +100,9 @@ export default function ChatBoxClient({ params }: {
         run(); }, delay + Math.random() * 1000); }; run(); const focus = () => { setNow(Date.now()); if (document.visibilityState === 'visible') void sync(); }; window.addEventListener('focus', focus); window.addEventListener('online', focus); document.addEventListener('visibilitychange', focus); return () => { stopped = true; clearTimeout(timer); window.removeEventListener('focus', focus); window.removeEventListener('online', focus); document.removeEventListener('visibilitychange', focus); }; }, [sync, liveReady]);
     useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 3000); return () => clearInterval(timer); }, []);
     useEffect(() => {
-        if (revision)
-            void sync();
-    }, [revision, sync]);
+        const update = convo?.id ? conversationUpdates?.[convo.id] : undefined;
+        if (update) setConvo(previous => previous ? { ...previous, ...update } : previous);
+    }, [convo?.id, conversationUpdates]);
     useEffect(() => { receiptEpoch.current++;clearTimeout(receiptTimer.current); receiptTimer.current = undefined; receiptQueue.current.clear(); delivered.current.clear(); read.current.clear(); visible.current.clear(); viewed.current.clear(); followBottom.current = true; lastPositioned.current = undefined; setReply(undefined); }, [convo?.id]);
     useEffect(() => {
         const observer = new IntersectionObserver(entries => {
@@ -138,6 +138,9 @@ export default function ChatBoxClient({ params }: {
         }
         const epoch=receiptEpoch.current;
         const flush = () => {
+            // The timer has fired, including when there is nothing left to acknowledge.
+            // Keeping its expired handle would prevent every subsequent arrival from flushing.
+            receiptTimer.current = undefined;
             if(epoch!==receiptEpoch.current)return;
             if (receiptBusy.current || !receiptQueue.current.size)
                 return;

@@ -57,7 +57,7 @@ test('one initial request disables the composer and re-enables it when acceptanc
   await React.act(async()=>field.onChange({target:{value:'First request'}}));await React.act(async()=>document.querySelector('[aria-label="Send message"]').click());
   assert.equal(calls,1);assert.equal(document.querySelector('textarea').disabled,true);assert.equal(document.querySelector('[aria-label="Attach images up to 500 KB"]').disabled,true);assert.match(document.body.textContent,/Wait for this person to accept/);
   await React.act(async()=>field.onChange({target:{value:'Another'}}));await React.act(async()=>field.onKeyDown({key:'Enter',shiftKey:false,nativeEvent:{isComposing:false},preventDefault(){}}));assert.equal(calls,1,'a stale input handler cannot bypass the pending-request guard');
-  convo.state='ACCEPTED';context.revision++;await React.act(async()=>render());assert.equal(document.querySelector('textarea').disabled,false);
+  convo.state='ACCEPTED';context.conversationUpdates={[convo.id]:{...convo}};context.revision++;await React.act(async()=>render());assert.equal(document.querySelector('textarea').disabled,false);
   await React.act(async()=>document.querySelector('[aria-label="Send message"]').click());assert.equal(calls,2);
  }finally{await React.act(async()=>root.unmount());dom.window.close();delete global.IntersectionObserver;}
 });

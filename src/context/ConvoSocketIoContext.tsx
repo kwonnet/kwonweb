@@ -29,6 +29,7 @@ type State = {
     openOptions: (anchor: HTMLElement) => void;
     warmConversations: (conversations: Conversation[]) => void;
     loadingConversations: Record<string, boolean>;
+    conversationUpdates?: Record<string, Partial<Conversation>>;
     receiptTotals: Record<string, { unreadCount: number; unseenCount: number }>;
     processed: {
         id: string;
@@ -68,6 +69,7 @@ export default function ConvoSocketIoProvider({ children }: {
     const userId = user?.id ?? '';
     const { convoSocketIo } = useSocketIoContext();
     const { mutate } = useSWRConfig();
+    const [conversationUpdates, setConversationUpdates] = useState<Record<string, Partial<Conversation>>>({});
     const [receiptTotals, setReceiptTotals] = useState<Record<string, { unreadCount: number; unseenCount: number }>>({});
     const [optionsAnchor, setOptionsAnchor] = useState<HTMLElement | null>(null);
     const [viewportHeight, setViewportHeight] = useState<number>();
@@ -111,7 +113,7 @@ export default function ConvoSocketIoProvider({ children }: {
         const previous = previousUser.current;
         previousUser.current = userId;
         if (previous && previous !== userId) void forgetRememberedMessaging(previous);
-        generation.current++; lockMessaging(); setReady(false); setMessages([]); setProcessed([]); setReceiptTotals({}); setActiveConversationId(undefined);
+        generation.current++; lockMessaging(); setReady(false); setMessages([]); setProcessed([]); setReceiptTotals({}); setConversationUpdates({}); setActiveConversationId(undefined);
         inboxSeeded.current = false; initialSyncs.current.clear(); knownConversations.current.clear(); warmQueue.current.clear(); warmWorkers.current = 0; inFlight.current.clear(); setLoadingConversations({}); setPassphrase(''); setConfirmation(''); setRestoring(true);
         const epoch = generation.current;
         if (userId) void (async () => {
@@ -157,6 +159,9 @@ export default function ConvoSocketIoProvider({ children }: {
         }
     };
     const refresh = useCallback((conversationId: string, peerId: string, initial?: InitialMessagingSync) => {
+        // Direct links can open chats beyond the currently loaded inbox pages.
+        // Register them so targeted socket hints still sync the mounted conversation.
+        if (!knownConversations.current.has(conversationId)) knownConversations.current.set(conversationId, { peerId, stamp: '' });
         if (initial) initialSyncs.current.set(conversationId, initial);
         const prior = inFlight.current.get(conversationId);
         if (prior) {
@@ -233,6 +238,7 @@ export default function ConvoSocketIoProvider({ children }: {
                 });
                 cursor = result.nextCursor;
                 receiptCursor = result.nextReceiptCursor;
+                if (epoch === generation.current) setConversationUpdates(previous => ({ ...previous, [conversationId]: result!.conversation }));
                 await publishCache();
                 if (result.accountTotals) refreshInbox(conversationId, { ...result.conversation, ...result.accountTotals });
                 if (result.conversation.state === 'ACCEPTED') {
@@ -360,5 +366,5 @@ export default function ConvoSocketIoProvider({ children }: {
                         setError(e instanceof Error ? e.message : 'Unable to reset local messaging');
                     }
                 }}>Reset messaging on this browser</Button>}</Stack></Paper></Box>;
-    return <Context.Provider value={{ convoSocketIo, messages, ready, activeConversationId: messagingPage && !pathname.split('/').includes('list') && pageVisible && ready && !restoring ? selectedConversationId : undefined, setActiveConversationId, messagingRestoring: restoring, messagingGate, viewportHeight, revision, liveReady, processed, refresh, refreshInbox, receiptTotals, loadingConversations, warmConversations, openOptions: setOptionsAnchor }}>{messagingPage && ready && error && <Alert severity="error" sx={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 1300 }} onClose={() => setError('')}>{error}</Alert>}<Menu anchorEl={optionsAnchor} open={!!optionsAnchor} onClose={() => setOptionsAnchor(null)}><MenuItem onClick={() => { setOptionsAnchor(null); void listDevices(); }}>Messaging devices</MenuItem><MenuItem onClick={() => { setOptionsAnchor(null); generation.current++; lockMessaging(); setReady(false); setMessages([]); setProcessed([]); void forgetRememberedMessaging(userId).catch(() => setError('Unable to forget automatic unlock. Clear site storage before leaving a shared browser.')); }}>Lock messages</MenuItem></Menu><Dialog open={showDevices} onClose={() => setShowDevices(false)}><DialogTitle>Messaging devices</DialogTitle><DialogContent><Typography>Each browser keeps separate keys. New devices receive future messages automatically; transfer older history below. Revoke devices you no longer use.</Typography>{devices.map(d => <Box key={d.deviceId} sx={{ my: 2 }}><Typography variant="body2">{d.deviceId}</Typography><Button color="error" onClick={() => revoke(d.deviceId)}>Revoke device</Button></Box>)}<MessagingHistoryTransfer userId={userId} onRestored={() => setRevision(value => value + 1)} /></DialogContent></Dialog>{children}</Context.Provider>;
+    return <Context.Provider value={{ convoSocketIo, messages, ready, activeConversationId: messagingPage && !pathname.split('/').includes('list') && pageVisible && ready && !restoring ? selectedConversationId : undefined, setActiveConversationId, messagingRestoring: restoring, messagingGate, viewportHeight, revision, liveReady, processed, refresh, refreshInbox, conversationUpdates, receiptTotals, loadingConversations, warmConversations, openOptions: setOptionsAnchor }}>{messagingPage && ready && error && <Alert severity="error" sx={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 1300 }} onClose={() => setError('')}>{error}</Alert>}<Menu anchorEl={optionsAnchor} open={!!optionsAnchor} onClose={() => setOptionsAnchor(null)}><MenuItem onClick={() => { setOptionsAnchor(null); void listDevices(); }}>Messaging devices</MenuItem><MenuItem onClick={() => { setOptionsAnchor(null); generation.current++; lockMessaging(); setReady(false); setMessages([]); setProcessed([]); void forgetRememberedMessaging(userId).catch(() => setError('Unable to forget automatic unlock. Clear site storage before leaving a shared browser.')); }}>Lock messages</MenuItem></Menu><Dialog open={showDevices} onClose={() => setShowDevices(false)}><DialogTitle>Messaging devices</DialogTitle><DialogContent><Typography>Each browser keeps separate keys. New devices receive future messages automatically; transfer older history below. Revoke devices you no longer use.</Typography>{devices.map(d => <Box key={d.deviceId} sx={{ my: 2 }}><Typography variant="body2">{d.deviceId}</Typography><Button color="error" onClick={() => revoke(d.deviceId)}>Revoke device</Button></Box>)}<MessagingHistoryTransfer userId={userId} onRestored={() => { for (const [id, conversation] of knownConversations.current) void refresh(id, conversation.peerId).catch(() => {}); refreshInbox(); }} /></DialogContent></Dialog>{children}</Context.Provider>;
 }
