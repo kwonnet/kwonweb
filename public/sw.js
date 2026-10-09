@@ -27,9 +27,9 @@ self.addEventListener('notificationclick', event => {
 });
 // Cache only this explicit public allowlist. Never store navigations, API/RSC
 // responses, user media, or authenticated HTML in Cache Storage.
-const PWA_CACHE = 'kwonnet-pwa-v1';
+const PWA_CACHE = 'kwonnet-pwa-v3';
 const OFFLINE_URL = '/offline.html';
-const PUBLIC_ASSETS = [OFFLINE_URL, '/android-chrome-192x192.png', '/android-chrome-512x512.png', '/apple-touch-icon.png', '/site.webmanifest'];
+const PUBLIC_ASSETS = [OFFLINE_URL, '/android-chrome-192x192.png', '/android-chrome-512x512.png', '/apple-touch-icon.png'];
 self.addEventListener('install', event => event.waitUntil((async () => {
   const cache = await caches.open(PWA_CACHE);
   await cache.addAll(PUBLIC_ASSETS.map(url => new Request(url, {cache: 'reload'})));

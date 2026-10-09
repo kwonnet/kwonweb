@@ -2,18 +2,18 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 function worker(network=async request=>({body:'online',request})){
  const handlers={},deleted=[],cached=[];let stored;
  const context={URL,Response,Request:class{constructor(url,options){this.url=url;this.options=options;}},fetch:network,
- caches:{open:async()=>({addAll:async requests=>{cached.push(...requests);stored={body:'offline'};}}),keys:async()=>['kwonnet-pwa-v0','kwonnet-pwa-v1','unrelated-cache'],delete:async name=>deleted.push(name),match:async()=>stored},
+ caches:{open:async()=>({addAll:async requests=>{cached.push(...requests);stored={body:'offline'};}}),keys:async()=>['kwonnet-pwa-v2','kwonnet-pwa-v3','unrelated-cache'],delete:async name=>deleted.push(name),match:async()=>stored},
  self:{location:{origin:'https://kwonnet.test'},addEventListener:(event,fn)=>handlers[event]=fn,skipWaiting:async()=>{},clients:{claim:async()=>{}}}};
  vm.runInNewContext(fs.readFileSync('public/sw.js','utf8'),context);
  return {handlers,deleted,cached,install:async()=>{let work;handlers.install({waitUntil:p=>work=p});await work;},activate:async()=>{let work;handlers.activate({waitUntil:p=>work=p});await work;},fetch:async(path,options={})=>{let response;handlers.fetch({request:{url:'https://kwonnet.test'+path,method:'GET',mode:'cors',...options},respondWith:p=>response=p});return response&&await response;}};
 }
 test('manifest declares stable identity, standalone launch and real correctly sized icons',async()=>{
- const manifest=JSON.parse(fs.readFileSync('public/site.webmanifest'));assert.equal(manifest.name,'Kwonnet');assert.equal(manifest.id,'/');assert.equal(manifest.start_url,'/');assert.equal(manifest.scope,'/');assert.equal(manifest.display,'standalone');
+ const manifest=JSON.parse(fs.readFileSync('src/config/pwa-manifest.json'));assert.equal(manifest.name,'Kwonnet');assert.equal(manifest.id,'/');assert.equal(manifest.start_url,'/');assert.equal(manifest.scope,'/');assert.equal(manifest.display,'standalone');
  const sharp=require('sharp');for(const icon of manifest.icons){const metadata=await sharp('public'+icon.src).metadata();assert.equal(`${metadata.width}x${metadata.height}`,icon.sizes);assert.equal(icon.purpose,'any');}
- assert.match(fs.readFileSync('src/app/layout.tsx','utf8'),/manifest: '\/site.webmanifest'/);
+ assert.match(fs.readFileSync('src/app/layout.tsx','utf8'),/rel="manifest" href="\/site.webmanifest" crossOrigin="use-credentials"/);
 });
 test('service worker caches only public fallback assets and cleans only its own obsolete caches',async()=>{
- const sw=worker();await sw.install();assert.ok(sw.cached.some(request=>request.url==='/offline.html'));assert.ok(sw.cached.every(request=>request.options.cache==='reload'));assert.ok(sw.cached.every(request=>!/^\/(api|messages|wallet|settings|_next)/.test(request.url)));await sw.activate();assert.deepEqual(sw.deleted,['kwonnet-pwa-v0']);assert.ok(sw.handlers.push&&sw.handlers.notificationclick,'existing notifications remain supported');
+ const sw=worker();await sw.install();assert.ok(sw.cached.some(request=>request.url==='/offline.html'));assert.ok(sw.cached.every(request=>request.options.cache==='reload'));assert.ok(sw.cached.every(request=>!/^\/(api|messages|wallet|settings|_next)/.test(request.url)));await sw.activate();assert.deepEqual(sw.deleted,['kwonnet-pwa-v2']);assert.ok(sw.handlers.push&&sw.handlers.notificationclick,'existing notifications remain supported');
 });
 test('offline navigations get a generic screen, while API, RSC, mutations and cross-origin requests bypass caching',async()=>{
  const sw=worker(async()=>{throw Error('offline');});await sw.install();assert.equal((await sw.fetch('/messages/private/chat',{mode:'navigate'})).body,'offline');

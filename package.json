@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "generate:pwa-splash": "node scripts/generate-pwa-splash.cjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

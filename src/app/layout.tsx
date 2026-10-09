@@ -1,3 +1,5 @@
+import { pwaStartupImages } from "@/config/pwa-splash";
+import { pwaThemeScript } from "@/utils/pwa-theme";
 import {siteOrigin} from '@/lib/seo';
 import AuthSessionBoundary from "@/providers/AuthSessionBoundary";
 import { headers } from "next/headers";
@@ -35,7 +37,6 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
   title: {default: constant.siteName, template: '%s | Kwonnet'},
   applicationName: 'Kwonnet',
-  manifest: '/site.webmanifest',
   appleWebApp: { capable: true, title: 'Kwonnet', statusBarStyle: 'default' },
   icons: { icon: '/favicon.ico', apple: '/apple-touch-icon.png' },
   verification: {google: process.env.GOOGLE_SITE_VERIFICATION, other: process.env.BING_SITE_VERIFICATION ? {'msvalidate.01': process.env.BING_SITE_VERIFICATION} : undefined},
@@ -55,6 +56,10 @@ export default async function RootLayout({
   return (
     <html lang="en" data-toolpad-color-scheme="system" suppressHydrationWarning>
       <head>
+        <style id="kwonnet-launch-background">{`html[data-toolpad-color-scheme="system"], html[data-toolpad-color-scheme="system"] body { background-color: #ffffff; } @media (prefers-color-scheme: dark) { html[data-toolpad-color-scheme="system"], html[data-toolpad-color-scheme="system"] body { background-color: #111111; } }`}</style>
+        <script id="kwonnet-pwa-theme" dangerouslySetInnerHTML={{ __html: pwaThemeScript }} />
+        <link rel="manifest" href="/site.webmanifest" crossOrigin="use-credentials" />
+        {pwaStartupImages.map(image => <link key={image.href} rel="apple-touch-startup-image" href={image.href} media={image.media} />)}
         <link rel="describedby" href="/llms.txt" />
         <link rel="ai-catalog" type="application/json" href="/.well-known/ai-catalog.json" />
         <script id="kwonnet-public-env" dangerouslySetInnerHTML={{ __html: publicEnvScript() }} />
