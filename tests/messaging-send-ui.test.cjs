@@ -22,6 +22,8 @@ test('send appears before network acknowledgement, preserves new input and recon
   assert.match(document.body.textContent,/hello:sending/);assert.equal(input.value,'');assert.equal(calls.length,1);
   const optimisticNode=document.querySelector('[data-event-id]');
   const eventId=calls[0][5];assert.ok(eventId);assert.equal(document.querySelector('[data-event-id]').dataset.eventId,eventId);
+  context.messages=[{id:eventId,eventId,conversation:convo.id,fromUserId:'user',content:'hello',seen:[],read:[],event:{eventId},hash:'hash',queued:true}];await React.act(async()=>render());
+  context.messages=[];await React.act(async()=>render());assert.equal(document.querySelector('[data-event-id]'),optimisticNode,'a queued projection disappearing from cache must not remove the sending bubble');assert.match(document.body.textContent,/hello:sending/);
   await React.act(async()=>input.onChange({target:{value:'next message'}}));
   await React.act(async()=>resolveSend({eventId}));assert.match(document.body.textContent,/hello:sent/);assert.equal(input.value,'next message');assert.equal(badgeRefreshes,1);
   context.messages=[{id:'server-id',eventId,conversation:convo.id,fromUserId:'user',content:'hello',seen:[],read:[],event:{eventId},hash:'hash'}];

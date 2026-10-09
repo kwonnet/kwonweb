@@ -71,3 +71,19 @@ test('history rejects malformed files, unknown fields and excessive file sizes b
  await assert.rejects(history.importMessagingHistory('alice',{size:history.MAX_HISTORY_FILE_BYTES+1},transferPassphrase),/too large/);
  assert.equal(derivations,count);
 });
+test('accepted outbox messages stay visible until relay ciphertext replaces them, without duplication',async()=>{
+ const source=device('alice');runtime=source;
+ const room=crypto.randomUUID(),eventId=crypto.randomUUID();
+ const event={v:2,eventId,conversationId:room,senderId:'alice',senderDeviceId:source.deviceId,createdAt:new Date().toISOString(),content:{kind:'text',text:'Keep this bubble'}};
+ source.draft.records[`event:${eventId}`]=JSON.stringify(event);source.draft.outbox[eventId]='[]';
+ const messaging=load('src/lib/conversations/messaging.ts'),original=global.fetch;
+ const wireId=crypto.randomUUID();global.fetch=async()=>({ok:true,json:async()=>({messageId:wireId})});
+ try{
+  assert.equal((await localConversation('alice',room,'bob'))[0].queued,true);
+  await messaging.flushMessagingOutbox('alice','token');assert.deepEqual(source.draft.outbox,{});
+  const sent=await localConversation('alice',room,'bob');assert.equal(sent.length,1);assert.equal(sent[0].content,'Keep this bubble');assert.equal(sent[0].sendingState,'sent');assert.equal(sent[0].eventId,eventId);
+  const wire={id:wireId,eventId,conversation:room,fromUserId:'alice',fromDeviceId:source.deviceId,senderSignalDeviceId:1,senderActionSigningPublic:'',senderIdentityPublic:'',toUserId:'alice',toDeviceId:source.deviceId,serverSequence:'1',createdAt:event.createdAt,wireType:1,ciphertextB64:'',seen:[],read:[],ownDevice:true};
+  await messaging.decryptWire('alice',wire);assert.equal(source.draft.records[`sent:${eventId}`],undefined);
+  const confirmed=await localConversation('alice',room,'bob');assert.equal(confirmed.length,1);assert.equal(confirmed[0].id,wireId);assert.equal(confirmed[0].eventId,eventId);
+ }finally{global.fetch=original;}
+});

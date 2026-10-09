@@ -84,8 +84,9 @@ export async function flushMessagingOutbox(userId: string, token: string) {
     const failed: string[] = [];
     for (const item of pending) {
         try {
+            let accepted: { messageId: string };
             try {
-                await messagingAPI(userId, token, '/messages', 'POST', { conversationId: item.event.conversationId, clientId: item.id, envelopes: item.envelopes });
+                accepted = await messagingAPI(userId, token, '/messages', 'POST', { conversationId: item.event.conversationId, clientId: item.id, envelopes: item.envelopes });
             }
             catch (error) {
                 if (!(error instanceof Error) || !error.message.includes('Device roster changed'))
@@ -96,9 +97,15 @@ export async function flushMessagingOutbox(userId: string, token: string) {
                 const peer = sync.conversation.initiator.id === userId ? sync.conversation.responder.id : sync.conversation.initiator.id;
                 const targets = await deviceTargets(userId, token, peer, item.event.conversationId);
                 const envelopes = await encryptBatch(r.vault, item.event, targets, true);
-                await messagingAPI(userId, token, '/messages', 'POST', { conversationId: item.event.conversationId, clientId: item.id, envelopes });
+                accepted = await messagingAPI(userId, token, '/messages', 'POST', { conversationId: item.event.conversationId, clientId: item.id, envelopes });
             }
-            await r.vault.atomic(async (draft) => { delete draft.outbox[item.id]; });
+            await r.vault.atomic(async (draft) => {
+                // Keep a local projection between relay acceptance and ciphertext sync.
+                // Removing only the outbox entry creates a visible gap on slow networks.
+                if (['text', 'media'].includes(item.event.content.kind) && !draft.records[`wire:${accepted.messageId}`])
+                    draft.records[`sent:${item.id}`] = JSON.stringify({ conversationId: item.event.conversationId });
+                delete draft.outbox[item.id];
+            });
         }
         catch {
             failed.push(item.id);
@@ -201,6 +208,7 @@ export async function decryptWire(userId: string, wire: MessagingWire): Promise<
         draft.records[pin] = wire.senderActionSigningPublic;
         draft.records[`wire:${wire.id}`] = JSON.stringify(wire);
         draft.records[`event:${event.eventId}`] = JSON.stringify(event);
+        delete draft.records[`sent:${event.eventId}`];
         delete draft.records[`failed:${wire.id}`];
         return event;
     };
@@ -209,7 +217,7 @@ export async function decryptWire(userId: string, wire: MessagingWire): Promise<
 }
 export async function localConversation(userId: string, conversationId: string, peerId: string): Promise<LocalMessage[]> {
     const r = currentMessagingRuntime(userId);
-    const records = await r.vault.atomic(async (draft) => ({ wires: Object.entries(draft.records).filter(([k]) => k.startsWith('wire:')).map(([, v]) => JSON.parse(v) as MessagingWire).filter(w => w.conversation === conversationId), events: draft.records, hidden: draft.records[`hidden:${conversationId}`] ?? '[]', pending: Object.keys(draft.outbox), failed: Object.entries(draft.records).filter(([k]) => k.startsWith('failed:')).map(([, v]) => JSON.parse(v) as MessagingWire) }));
+    const records = await r.vault.atomic(async (draft) => ({ wires: Object.entries(draft.records).filter(([k]) => k.startsWith('wire:')).map(([, v]) => JSON.parse(v) as MessagingWire).filter(w => w.conversation === conversationId), events: draft.records, hidden: draft.records[`hidden:${conversationId}`] ?? '[]', pending: [...new Set([...Object.keys(draft.outbox), ...Object.keys(draft.records).filter(key => key.startsWith('sent:')).map(key => key.slice(5))])], queued: new Set(Object.keys(draft.outbox)), failed: Object.entries(draft.records).filter(([k]) => k.startsWith('failed:')).map(([, v]) => JSON.parse(v) as MessagingWire) }));
     const hidden = new Set(JSON.parse(records.hidden) as string[]);
     const messages: LocalMessage[] = [];
     const map = new Map<string, LocalMessage>();
@@ -262,7 +270,8 @@ export async function localConversation(userId: string, conversationId: string, 
         const c = event.content;
         if (event.conversationId !== conversationId || (c.kind !== 'text' && c.kind !== 'media') || map.has(eventId))
             continue;
-        messages.push({ id: eventId, eventId, conversation: conversationId, fromUserId: userId, fromDeviceId: event.senderDeviceId, senderSignalDeviceId: 0, senderActionSigningPublic: '', senderIdentityPublic: '', toUserId: peerId, toDeviceId: '', serverSequence: '0', createdAt: event.createdAt, wireType: 1, ciphertextB64: '', seen: [], read: [], event, hash: await eventHash(event), content: c.text, attachments: c.kind === 'media' ? c.attachments : undefined, reply: c.reply, reactions: [], deleted: false, revision: 0, queued: true });
+        const queued = records.queued.has(eventId);
+        messages.push({ id: eventId, eventId, conversation: conversationId, fromUserId: userId, fromDeviceId: event.senderDeviceId, senderSignalDeviceId: 0, senderActionSigningPublic: '', senderIdentityPublic: '', toUserId: peerId, toDeviceId: '', serverSequence: '0', createdAt: event.createdAt, wireType: 1, ciphertextB64: '', seen: [], read: [], event, hash: await eventHash(event), content: c.text, attachments: c.kind === 'media' ? c.attachments : undefined, reply: c.reply, reactions: [], deleted: false, revision: 0, queued, sendingState: queued ? undefined : 'sent' });
     }
     for (const wire of records.failed.filter(w => w.conversation === conversationId)) {
         if (messages.some(m => m.id === wire.id))
@@ -283,6 +292,7 @@ export async function forgetConversation(userId: string, conversationId: string)
                 delete draft.records[key];
             if (key.startsWith('event:') && JSON.parse(value).conversationId === conversationId) {
                 delete draft.outbox[key.slice(6)];
+                delete draft.records[`sent:${key.slice(6)}`];
                 delete draft.records[key];
             }
         }

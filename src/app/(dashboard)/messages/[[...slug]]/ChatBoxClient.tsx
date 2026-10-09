@@ -104,7 +104,9 @@ export default function ChatBoxClient({ params }: {
     }, [messages, processed, user.id]);
     const waitingAcceptance = !!pending && !incoming && (!!convo?.requestMessageSent || chats.some(message => message.fromUserId === user.id && message.sendingState !== 'failed'));
     useEffect(() => {
-        setOutgoing(previous => previous.filter(m => !messages.some(saved => saved.eventId === m.eventId)));
+        // Queued/sent local projections are temporary; retain the original until
+        // the relay-backed row exists, even if an intermediate cache is empty.
+        setOutgoing(previous => previous.filter(m => !messages.some(saved => saved.eventId === m.eventId && !saved.queued && !saved.sendingState)));
     }, [messages]);
     const sync = useCallback(async () => {
         if (!convo)

@@ -23,6 +23,7 @@ import ConvoSocketIoProvider from "@/context/ConvoSocketIoContext";
 import SocketIoProvider from "@/context/SocketIoContext";
 import { constant } from "@/config";
 import SSEContextProvider from "@/context/SSEContext";
+import { GoogleTagManager } from '@next/third-parties/google'
 
 export const dynamic = "force-dynamic";
 export const viewport: Viewport = {
@@ -63,6 +64,7 @@ export default async function RootLayout({
         <link rel="describedby" href="/llms.txt" />
         <link rel="ai-catalog" type="application/json" href="/.well-known/ai-catalog.json" />
         <script id="kwonnet-public-env" dangerouslySetInnerHTML={{ __html: publicEnvScript() }} />
+        <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
       </head>
       <body>
         <SessionProvider session={session} refetchWhenOffline={false} refetchOnWindowFocus={!publicLegal} refetchInterval={publicLegal ? 0 : 60}>

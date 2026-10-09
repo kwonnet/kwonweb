@@ -12,9 +12,13 @@ namespace NodeJS {
     MONGODB_URI: string;
 
     // flutterwave
-    NEXT_PUBLIC_FLUTTERWAVE_REDIRECT_URL: strin;
-    NEXT_PUBLIC_FLUTTERWAVE_PUBK: strin;
-    FLUTTERWAVE_SECK: strin;
-    FLUTTERWAVE_ENCK: strin;
+    NEXT_PUBLIC_FLUTTERWAVE_REDIRECT_URL: string;
+    NEXT_PUBLIC_FLUTTERWAVE_PUBK: string;
+    FLUTTERWAVE_SECK: string;
+    FLUTTERWAVE_ENCK: string;
+
+    // google analytics
+    NEXT_PUBLIC_GTM_ID: string;
+    NEXT_PUBLIC_GA_ID: string;
   }
 }
