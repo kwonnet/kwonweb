@@ -46,21 +46,15 @@ const LuckyWhizBox = () => {
               <Grid key={index} size={{ lg: 3, md: 3, sm: 6, xs: 6 }}>
                 <Button
                   fullWidth
-                  variant="outlined"
+                  variant={state.choice === option ? "contained" : "outlined"}
+                  color="primary"
+                  type="button"
+                  aria-pressed={state.choice === option}
                   size="small"
                   sx={{
                     marginY: 1,
                     height: "100%",
                     boxShadow: 3,
-                    ...((state.choice === option) && { 
-                      background: "linear-gradient(45deg, #031d37, #044b7f)",
-                      color: theme => theme.vars.palette.gradient.contrastText
-                    }),
-                    "&:hover": {
-                      background: "linear-gradient(45deg, #031d37, #044b7f)",
-                      color: "white",
-                      transition: "2s ease-out",
-                    },
                   }}
                   onClick={(ev) => handleAnswer(ev,option)}
                 >

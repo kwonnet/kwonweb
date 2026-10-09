@@ -110,8 +110,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({
               position: "absolute",
               bottom: 20,
               right: 15,
-              bgcolor: "primary.light",
-              color: "white",
+              bgcolor: "primary.main",
+              color: "primary.contrastText",
               "&:hover": { bgcolor: "primary.dark" },
             }}
           >
@@ -160,13 +160,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({
           type="button"
           onClick={() => handleSendMessage()}
           variant="contained"
-          color="inherit"
-          sx={[
-            (theme) => ({
-              ml: 1,
-              background: theme.vars.palette.gradient.D900,
-            }),
-          ]}
+          color="primary"
+          sx={{ ml: 1 }}
         >
           Send
         </Button>

@@ -124,15 +124,16 @@ const DisplayTabIcons = ({
       {isSm && (
         <Stack key={firstItem.id} sx={{ alignItems: "center" }}>
           <IconButton aria-label={firstItem.title}
-            sx={[
-              (theme) => ({
-                boxShadow: 5,
-                ...(activeTab === firstItem.id && {
-                  background: theme.vars.palette.gradient.D900,
-                  color: "common.white",
-                }),
+            aria-pressed={activeTab === firstItem.id}
+            sx={{
+              boxShadow: 5,
+              color: "text.secondary",
+              ...(activeTab === firstItem.id && {
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
+                "&:hover": { bgcolor: "primary.dark" },
               }),
-            ]}
+            }}
             onClick={() => handleTabSelect(firstItem.id)}
             size={isSm ? "medium" : "large"}
           >
@@ -150,15 +151,16 @@ const DisplayTabIcons = ({
       {buttons.slice(1).map((item) => (
         <Stack key={item.id} sx={{ alignItems: "center" }}>
           <IconButton aria-label={item.title}
-            sx={[
-              (theme) => ({
-                boxShadow: 5,
-                ...(activeTab === item.id && {
-                  background: theme.vars.palette.gradient.D900,
-                  color: "common.white",
-                }),
+            aria-pressed={activeTab === item.id}
+            sx={{
+              boxShadow: 5,
+              color: "text.secondary",
+              ...(activeTab === item.id && {
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
+                "&:hover": { bgcolor: "primary.dark" },
               }),
-            ]}
+            }}
             onClick={() => handleTabSelect(item.id)}
             size={isSm ? "medium" : "large"}
           >

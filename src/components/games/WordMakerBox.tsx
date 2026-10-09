@@ -127,7 +127,8 @@ const WordMakerBox = () => {
           width: "100%",
           p: 2,
           // bgcolor: "background.paper",
-          borderTop: "1px solid #e0e0e0",
+          borderTop: 1,
+          borderColor: "divider",
           borderBottomRightRadius: 12,
           borderBottomLeftRadius: 12,
         }}
@@ -158,13 +159,8 @@ const WordMakerBox = () => {
           type="button"
           onClick={(ev) => handleSendMessage(ev)}
           variant="contained"
-          // color="primary"
-          sx={[
-            (theme) => ({
-              ml: 1,
-              background: theme.vars.palette.gradient.D900,
-            }),
-          ]}
+          color="primary"
+          sx={{ ml: 1 }}
         >
           Send
         </Button>
