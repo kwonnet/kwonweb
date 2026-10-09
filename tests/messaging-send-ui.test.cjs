@@ -20,11 +20,12 @@ test('send appears before network acknowledgement, preserves new input and recon
   await React.act(async()=>input.onChange({target:{value:'hello'}}));
   await React.act(async()=>document.querySelector('[aria-label="Send message"]').click());
   assert.match(document.body.textContent,/hello:sending/);assert.equal(input.value,'');assert.equal(calls.length,1);
+  const optimisticNode=document.querySelector('[data-event-id]');
   const eventId=calls[0][5];assert.ok(eventId);assert.equal(document.querySelector('[data-event-id]').dataset.eventId,eventId);
   await React.act(async()=>input.onChange({target:{value:'next message'}}));
   await React.act(async()=>resolveSend({eventId}));assert.match(document.body.textContent,/hello:sent/);assert.equal(input.value,'next message');assert.equal(badgeRefreshes,1);
   context.messages=[{id:'server-id',eventId,conversation:convo.id,fromUserId:'user',content:'hello',seen:[],read:[],event:{eventId},hash:'hash'}];
-  await React.act(async()=>render());assert.equal(document.querySelectorAll('[data-event-id]').length,1);assert.match(document.body.textContent,/hello:confirmed/);
+  await React.act(async()=>render());assert.equal(document.querySelectorAll('[data-event-id]').length,1);assert.match(document.body.textContent,/hello:confirmed/);assert.equal(document.querySelector('[data-event-id]'),optimisticNode,'confirmation preserves the existing bubble DOM instead of remounting/flickering');
   const existingRenders=bubbleRenders.get('server-id');context.messages=context.messages.concat({...context.messages[0],id:'another-message',eventId:'another-event',content:'another arrival'});await React.act(async()=>render());assert.equal(bubbleRenders.get('server-id'),existingRenders,'an incoming message does not redraw unchanged history bubbles');await React.act(async()=>input.onChange({target:{value:'next message'}}));assert.equal(bubbleRenders.get('server-id'),existingRenders,'typing in the composer does not redraw old messages');
   await React.act(async()=>document.querySelector('[aria-label="Send message"]').click());
   await React.act(async()=>rejectSend(new Error('Recipient has not enrolled')));assert.match(document.body.textContent,/next message:failed/);assert.equal(input.value,'next message','failed preflight preserves text for retry');

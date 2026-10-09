@@ -9,26 +9,9 @@ import { usePathname } from "next/navigation";
 import { tabsClasses } from "@mui/material/Tabs";
 import StickyBox from "react-sticky-box";
 import { useAuthSession } from "@/hooks";
-import { getCurrentSegment } from "@/utils";
 
 
 
-
-function samePageLinkNavigation(
-  event: React.MouseEvent<HTMLAnchorElement, MouseEvent>
-) {
-  if (
-    event.defaultPrevented ||
-    event.button !== 0 || // ignore everything but left-click
-    event.metaKey ||
-    event.ctrlKey ||
-    event.altKey ||
-    event.shiftKey
-  ) {
-    return false;
-  }
-  return true;
-}
 
 interface LinkTabProps {
   label?: string;
@@ -56,35 +39,13 @@ export default function ChatListHeader() {
 
     const pathname = usePathname()
 
-  const segment = getCurrentSegment(pathname) //useSelectedLayoutSegment();
 
   const tabItems = React.useMemo(() => getTabItems(user.id), [user.id]);
 
   const currIndex = tabItems.findIndex((item) => pathname.includes(item.id));
 
-  const [value, setValue] = React.useState(currIndex >= 0 ? currIndex : 0);
+  const value = currIndex >= 0 ? currIndex : 0;
 
-
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-    if (
-      event.type !== "click" ||
-      (event.type === "click" &&
-        samePageLinkNavigation(
-          event as React.MouseEvent<HTMLAnchorElement, MouseEvent>
-        ))
-    ) {
-      const currIndex = tabItems.findIndex(
-        (_item, index) => index === newValue
-      );
-      setValue(currIndex);
-    }
-  };
-
-  React.useEffect(() => {
-    const currIndex = tabItems.findIndex((item) => pathname.includes(item.id));
-    setValue(currIndex >= 0 ? currIndex : 0);
-    return () => {};
-  }, [pathname, tabItems]);
 
   return (
     <React.Fragment>
@@ -103,8 +64,7 @@ export default function ChatListHeader() {
 
           <Box sx={{ display: "flex", alignItems: "center" }}><Tabs
             value={value}
-            onChange={handleChange}
-            aria-label="connections action tabs"
+            aria-label="Message folders"
             role="navigation"
             variant="fullWidth"
             selectionFollowsFocus={true}

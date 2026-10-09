@@ -41,7 +41,14 @@ const ChatClientList = ({convoList, slug, initialFetchFailed = false}: { convoLi
       revalidateFirstPage: false,
     });
 
-  const flatData = data ? data.flat().map(item => ({ ...item, lastMessage: messages?.filter(message => message.conversation === item.id).at(-1) })) : [];
+  const flatData = (data ?? [convoList]).flat().map(item => {
+    const update = conversationUpdates?.[item.id];
+    return { ...item, ...update, ...receiptTotals?.[item.id],
+      initiator: { ...item.initiator, ...update?.initiator, user: item.initiator.user },
+      responder: { ...item.responder, ...update?.responder, user: item.responder.user },
+      lastMessage: messages?.filter(message => message.conversation === item.id).at(-1),
+    };
+  });
   React.useEffect(() => { if (ready && data) warmConversations(data.flat()); }, [data, ready, warmConversations]);
 
   const lastInboxRevision = React.useRef(inboxRevision);

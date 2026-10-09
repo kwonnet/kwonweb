@@ -94,7 +94,7 @@ export default function ConvoSocketIoProvider({ children }: {
     const [devices, setDevices] = useState<MessagingDevice[]>([]), [showDevices, setShowDevices] = useState(false);
     const [messages, setMessages] = useState<LocalMessage[]>([]), [revision, setRevision] = useState(0);
     const [inboxRevision, setInboxRevision] = useState(0);
-    const activeConversationId = messagingPage && !pathname.split('/').includes('list') && pageVisible && ready && !restoring ? selectedConversationId : undefined;
+    const activeConversationId = messagingPage && pathname.split('/').length >= 4 && !pathname.split('/').includes('list') && pageVisible && ready && !restoring ? selectedConversationId : undefined;
     const activeConversation = useRef<string | undefined>(undefined);
     useLayoutEffect(() => { activeConversation.current = activeConversationId; }, [activeConversationId]);
     const inboxSeeded = useRef(false);
@@ -277,6 +277,9 @@ export default function ConvoSocketIoProvider({ children }: {
                 }
                 if (epoch !== generation.current) return;
                 const update = { ...result.conversation, ...totals };
+                // A prior read acknowledgement must not override a later arrival.
+                // Sync membership counts are authoritative even without account totals.
+                setReceiptTotals(previous => ({ ...previous, [conversationId]: { unreadCount: update.unreadCount, unseenCount: update.unseenCount } }));
                 setConversationUpdates(previous => JSON.stringify(previous[conversationId]) === JSON.stringify(update) ? previous : { ...previous, [conversationId]: update });
                 await publishCache();
                 if (totals) refreshInbox(conversationId, totals);

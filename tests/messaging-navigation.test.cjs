@@ -59,3 +59,17 @@ test('start message lists mutual friends, searches all users and opens a non-fri
     assert.deepEqual(pushed, ['/messages/stranger/chat']);
   } finally {await React.act(async () => root.unmount()); dom.window.close();}
 });
+test('back to the inbox preserves both list panes and their scroll nodes without a route fetch', async () => {
+ const dom=new JSDOM('<div id="root"></div>',{url:'https://kwonnet.test/messages/peer/chat'});global.window=dom.window;global.document=dom.window.document;global.IS_REACT_ACT_ENVIRONMENT=true;
+ let pathname='/messages/peer/chat',mounts=0;
+ const ui=({children,sx})=>React.createElement('div',{'data-display':typeof sx?.display==='string'?sx.display:undefined},children);
+ const Shell=load('src/app/(dashboard)/messages/MessagingShell.tsx',{'@mui/material':{Box:ui,Grid:ui,Paper:ui},'next/navigation':{usePathname:()=>pathname},'./[[...slug]]/ChatListHeader':{__esModule:true,default:()=>null},'./[[...slug]]/NewConversationButton':{__esModule:true,default:()=>null},'./[[...slug]]/StartConvo':{__esModule:true,default:()=>React.createElement('div',null,'Start')}});
+ function List({kind}){React.useEffect(()=>{mounts++;},[]);return React.createElement('div',{'data-list':kind},kind);}
+ const chats=React.createElement(List,{kind:'chat'}),requests=React.createElement(List,{kind:'requests'}),root=require('react-dom/client').createRoot(document.getElementById('root'));
+ const render=()=>root.render(React.createElement(Shell,{chats,requests},React.createElement('div',null,'Detail')));
+ try{
+  await React.act(async()=>render());const chatNode=document.querySelector('[data-list="chat"]'),requestNode=document.querySelector('[data-list="requests"]');chatNode.scrollTop=123;
+  pathname='/messages';await React.act(async()=>render());assert.equal(document.querySelector('[data-list="chat"]'),chatNode);assert.equal(chatNode.scrollTop,123);assert.equal(mounts,2);assert.doesNotMatch(document.body.textContent,/Detail/);assert.match(document.body.textContent,/Start/);
+  pathname='/messages/me/requests/list';await React.act(async()=>render());assert.equal(document.querySelector('[data-list="requests"]'),requestNode);assert.equal(mounts,2,'tab/back navigation does not remount the lists or show a loading skeleton');
+ }finally{await React.act(async()=>root.unmount());dom.window.close();}
+});

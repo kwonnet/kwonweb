@@ -9,7 +9,7 @@ const Page = async({params}: { params: Promise<{slug: string[]}>}) => {
   const kind = _params?.slug ? _params.slug[1] : undefined
   return (
     <React.Fragment>
-      {recipientId && kind ? <ChatBoxServer recipientId={recipientId} slug={kind} /> :
+      {recipientId && kind && !_params.slug.includes('list') ? <ChatBoxServer recipientId={recipientId} slug={kind} /> :
           <StartConvo />}
     </React.Fragment>
   )
