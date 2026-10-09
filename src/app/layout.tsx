@@ -65,7 +65,7 @@ export default async function RootLayout({
         <script id="kwonnet-public-env" dangerouslySetInnerHTML={{ __html: publicEnvScript() }} />
       </head>
       <body>
-        <SessionProvider session={session} refetchOnWindowFocus={!publicLegal} refetchInterval={publicLegal ? 0 : 60}>
+        <SessionProvider session={session} refetchWhenOffline={false} refetchOnWindowFocus={!publicLegal} refetchInterval={publicLegal ? 0 : 60}>
           <AppRouterCacheProvider>
 
               <NextjsAppProvider session={session}>

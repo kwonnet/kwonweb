@@ -93,6 +93,16 @@ const SocketIoProvider = (props: any) => {
     for (const socket of active.sockets) if (!socket.connected && socket.active === false) socket.connect();
   }, [token, identity]);
 
+  useEffect(() => {
+    const reconnect = () => {
+      for (const socket of activeSockets.current?.sockets ?? []) {
+        if (!socket.connected) socket.connect();
+      }
+    };
+    window.addEventListener('online', reconnect);
+    return () => window.removeEventListener('online', reconnect);
+  }, []);
+
   return (
     <SocketIoContext.Provider value={state}>
       {props.children}

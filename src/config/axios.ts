@@ -1,6 +1,7 @@
 import { getSession } from 'next-auth/react';
 import { prepareWalletIntent, completeWalletIntent, isWalletCharge } from '@/utils/wallet-intents';
 import { publicEnv } from "@/config/public-env";
+import { waitForReconnect } from '@/utils/offline';
 // import mittEmitter, { EventEnum } from '@/mittEmitter'
 import axios, { AxiosInstance } from "axios";
 
@@ -91,6 +92,13 @@ axiosAPI.interceptors.response.use(
     return response;
   },
   async function (error) {
+    const failedRead = error?.config;
+    if (typeof window !== 'undefined' && error?.code === 'ERR_NETWORK' && !error.response &&
+        failedRead?.method?.toLowerCase() === 'get' && !failedRead.signal?.aborted) {
+      const attempt = failedRead._offlineAttempt ?? 0;
+      await waitForReconnect(window, failedRead.signal, Math.min(1000 * 2 ** Math.min(attempt, 5), 30_000));
+      return axiosAPI({...failedRead, _offlineAttempt: attempt + 1});
+    }
     const originalRequest = error.config;
     if ([401,403].includes(error?.response?.status) && originalRequest && !originalRequest._retry) {
       try {

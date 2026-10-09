@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 function worker(network=async request=>({body:'online',request})){
  const handlers={},deleted=[],cached=[];let stored;
  const context={URL,Response,Request:class{constructor(url,options){this.url=url;this.options=options;}},fetch:network,
- caches:{open:async()=>({addAll:async requests=>{cached.push(...requests);stored={body:'offline'};}}),keys:async()=>['kwonnet-pwa-v2','kwonnet-pwa-v3','unrelated-cache'],delete:async name=>deleted.push(name),match:async()=>stored},
+ caches:{open:async()=>({addAll:async requests=>{cached.push(...requests);stored={body:'offline'};}}),keys:async()=>['kwonnet-pwa-v2','kwonnet-pwa-v4','unrelated-cache'],delete:async name=>deleted.push(name),match:async()=>stored},
  self:{location:{origin:'https://kwonnet.test'},addEventListener:(event,fn)=>handlers[event]=fn,skipWaiting:async()=>{},clients:{claim:async()=>{}}}};
  vm.runInNewContext(fs.readFileSync('public/sw.js','utf8'),context);
  return {handlers,deleted,cached,install:async()=>{let work;handlers.install({waitUntil:p=>work=p});await work;},activate:async()=>{let work;handlers.activate({waitUntil:p=>work=p});await work;},fetch:async(path,options={})=>{let response;handlers.fetch({request:{url:'https://kwonnet.test'+path,method:'GET',mode:'cors',...options},respondWith:p=>response=p});return response&&await response;}};

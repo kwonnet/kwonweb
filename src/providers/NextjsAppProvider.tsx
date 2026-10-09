@@ -1,5 +1,6 @@
 "use client";
 import PwaProvider from "./PwaProvider";
+import ConnectivityProvider from "./ConnectivityProvider";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
 import type { Session } from "next-auth";
@@ -46,7 +47,7 @@ export default function NextjsAppProvider({ children }: { children: ReactNode; s
     <InitColorSchemeScript attribute="data-toolpad-color-scheme" defaultMode="system" />
     <ThemeProvider theme={theme} defaultMode="system" disableTransitionOnChange>
       <CssBaseline />
-      <SWRConfig value={readCacheOptions}><IdentityCacheSync /><NotificationsProvider><PwaProvider>{children}</PwaProvider></NotificationsProvider></SWRConfig>
+      <SWRConfig value={readCacheOptions}><IdentityCacheSync /><NotificationsProvider><PwaProvider><ConnectivityProvider>{children}</ConnectivityProvider></PwaProvider></NotificationsProvider></SWRConfig>
     </ThemeProvider>
   </>;
 }
