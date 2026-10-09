@@ -431,7 +431,7 @@ const SubscribeDrawer = ({
           <Box role="presentation">
             <Box sx={{ position: "relative" }}>
               <Box sx={{ position: "absolute", right: 5 }}>
-                <IconButton
+                <IconButton aria-label="Close"
                   color="inherit"
                   onClick={(ev) => toggleDrawer(ev, false)}
                 >

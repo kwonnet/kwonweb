@@ -68,9 +68,10 @@ const ConnectionCard = ({
   return (
     <Box sx={{ px: 1, py: 1, height: "100%" }}>
       <Paper sx={{ pb: 2, height: "100%" }}>
-        <Link href={`/@${item?.username}`}>
+        <Link aria-label={`View ${item.name || item.username} profile`} href={`/@${item?.username}`}>
           <CardMedia
             image={item.avatar ?? "/avatar.jpeg"}
+            alt={item.name || item.username || "User profile picture"}
             component={"img"}
             sx={{
               height: 200,
@@ -107,7 +108,7 @@ const ConnectionCard = ({
                 {item.name}
               </Typography>
               {item?.meta?.isPro && (
-                <IconButton size="small" sx={{ ml: 0.1, flexShrink: 0 }}>
+                <IconButton aria-label="Verified account" size="small" sx={{ ml: 0.1, flexShrink: 0 }}>
                   <VerifiedIcon
                     sx={{ width: 14, height: 14, color: badgeColor }}
                   />

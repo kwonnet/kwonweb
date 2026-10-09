@@ -181,7 +181,7 @@ const CreatePollCard = ({
               <Grid sx={{ lg: 2, md: 2, sm: 2, xs: 2 }}>
                 {index > 1 && (
                   <Tooltip title="Add option">
-                    <IconButton
+                    <IconButton aria-label="Add option"
                       onClick={(ev) => onDeleteOption(ev, item.id)}
                       disableRipple
                       size="small"
@@ -222,7 +222,7 @@ const CreatePollCard = ({
                 }}
               >
                 <Tooltip title="Set Duration">
-                  <IconButton
+                  <IconButton aria-label="Set Duration"
                     disableRipple
                     size="small"
                     sx={[
@@ -263,7 +263,7 @@ const CreatePollCard = ({
                 sx={{ alignItems: "center" }}
               >
                 <Tooltip title="Poll setting">
-                  <IconButton
+                  <IconButton aria-label="Poll setting"
                     disableRipple
                     size="small"
                     sx={[
@@ -286,7 +286,7 @@ const CreatePollCard = ({
                 </Typography>
               </Stack>
               <Tooltip title="Add option">
-                <IconButton
+                <IconButton aria-label="Add option"
                   disabled={state.options.length >= state.optionsLimit}
                   onClick={(ev) => onAddOption(ev)}
                   disableRipple

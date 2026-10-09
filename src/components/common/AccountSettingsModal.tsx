@@ -121,7 +121,7 @@ export default function AccountSettingsModal({
           }}>
           <DialogTitle>Account Settings</DialogTitle>
           <Box>
-            <IconButton onClick={ev => toggle(false) }>
+            <IconButton aria-label="Close" onClick={ev => toggle(false) }>
             <CloseOutlinedIcon />
           </IconButton>
           </Box>

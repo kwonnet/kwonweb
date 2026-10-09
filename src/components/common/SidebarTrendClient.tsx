@@ -62,7 +62,7 @@ const SidebarTrendClient = ({trends, initialError = false}: { trends: TrendingTo
               color="textDisabled"
               variant="caption"
             >{`Trending in ${item.country}`}</Typography>
-            <IconButton size="small">
+            <IconButton aria-label="More options" size="small">
               <MoreHorizOutlinedIcon />
             </IconButton>
           </Stack>

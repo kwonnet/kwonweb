@@ -252,7 +252,7 @@ const MediaPreview = ({
             zIndex: 1000,
           }}
         >
-          <IconButton color="inherit" onClick={(ev) => toggleDrawer(ev, false)}>
+          <IconButton aria-label="Close" color="inherit" onClick={(ev) => toggleDrawer(ev, false)}>
             <Close />
           </IconButton>
           {!isVideoItem() &&
@@ -260,7 +260,7 @@ const MediaPreview = ({
               const fileItem = getCurrItem();
               if (!fileItem?.url) return null;
               return (
-                <IconButton color="inherit" onClick={(ev) => handleDownload(ev)}>
+                <IconButton aria-label="Download media" color="inherit" onClick={(ev) => handleDownload(ev)}>
                   <FileDownloadOutlinedIcon />
                 </IconButton>
               );

@@ -138,7 +138,7 @@ const FeedSocialShare = ({
           direction={"row"}
           sx={{ alignItems: "center", mb: 1, mx: 1, gap: 12  }}
         >
-          <IconButton color="inherit" onClick={(ev) => toggleDrawer(ev, false)}>
+          <IconButton aria-label="Go back" color="inherit" onClick={(ev) => toggleDrawer(ev, false)}>
             <ArrowBack />
           </IconButton>
           <Typography variant="subtitle1" sx={{fontFamily: "PlayFair", alignSelf: 'center', alignContent: "center"}}>Social Share</Typography>
@@ -146,7 +146,7 @@ const FeedSocialShare = ({
         <Container maxWidth="xl" sx={{ mt: 0, pb: 2 }}>
             <Grid container spacing={2}>
             <Grid size={{lg: 2, md: 2, sm: 2, xs: 2}}>
-                    <IconButton onClick={ev => {
+                    <IconButton aria-label="Copy link" onClick={ev => {
                       ev.preventDefault()
                       ev.stopPropagation()
                       handleCopy(ev)

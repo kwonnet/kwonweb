@@ -80,7 +80,7 @@ const BlockMuteCard = ({
               anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
               badgeContent={
                 item.meta.isPro && (
-                  <IconButton size="small">
+                  <IconButton aria-label="Verified account" size="small">
                     <VerifiedIcon
                       sx={{ width: 16, height: 16, color: badgeColor }}
                     />
@@ -89,7 +89,7 @@ const BlockMuteCard = ({
               }
               onClick={(ev) => ev.stopPropagation()}
             >
-              <Link style={{textDecoration: "none"}} href={`/@${item?.username}`}>
+              <Link aria-label={`View ${item?.name || 'user'} profile`} style={{textDecoration: "none", display: "inline-flex", alignItems: "center", minHeight: 24, minWidth: 24 }} href={`/@${item?.username}`}>
                 <Avatar
                   sx={{
                     height: 60,

@@ -102,7 +102,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
       </Box>
       <Box sx={{ position: "relative" }}>
         <Fade in={showScrollToBottom}>
-          <IconButton
+          <IconButton aria-label="Scroll to latest message"
             onClick={scrollToBottom}
             sx={{
               position: "absolute",

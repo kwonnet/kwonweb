@@ -65,7 +65,7 @@ export default function BadgeAvatar({
           alignItems: "center",
           gap: 2
         }}>
-        <Box component={Link} href={`/@${user.username}`}>
+        <Box aria-label={`View ${user.name || 'user'} profile`} component={Link} href={`/@${user.username}`}>
           <PulseBadge
           overlap="circular"
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}

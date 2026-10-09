@@ -100,7 +100,7 @@ const ConnectionCard = ({
             >
               {item.name}
               {item?.meta?.isPro && (
-                <IconButton size="small">
+                <IconButton aria-label="Verified account" size="small">
                   <VerifiedIcon
                     sx={{ width: 12, height: 12, color: badgeColor }}
                   />

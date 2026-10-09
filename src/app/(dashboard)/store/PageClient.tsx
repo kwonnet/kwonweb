@@ -22,7 +22,7 @@ const PageClient = ({
           RightIcon={
             <Box>
               <Link href="/wallet">
-                <IconButton>
+                <IconButton aria-label="Open wallet">
                   <WalletIcon />
                 </IconButton>
               </Link>

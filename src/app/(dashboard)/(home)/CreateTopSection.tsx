@@ -46,7 +46,7 @@ const CreateTopSection = () => {
               alignItems: "center",
               pb: 0
             }}>
-            <Link href={user?.username ? `/@${user.username}` : "/?auth=signin"} style={{textDecoration: "none"}}>
+            <Link aria-label={user?.username ? `View ${user.name || user.username} profile` : "Sign in to create a post"} href={user?.username ? `/@${user.username}` : "/?auth=signin"} style={{textDecoration: "none", display: "inline-flex", alignItems: "center", minHeight: 24, minWidth: 24 }}>
               <Avatar src={user?.avatar!} alt={user?.name}>
               {user?.name?.[0]}
             </Avatar>

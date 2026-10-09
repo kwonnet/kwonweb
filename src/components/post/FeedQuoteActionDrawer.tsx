@@ -77,7 +77,7 @@ const FeedQuoteActionDrawer = ({
     >
       <Box sx={{ width: "auto" }} role="presentation">
         <Stack direction={"row"} sx={{ justifyContent: "flex-end", mx: 1 }}>
-          <IconButton color="inherit" onClick={(ev) => toggleDrawer(ev, false)}>
+          <IconButton aria-label="Close" color="inherit" onClick={(ev) => toggleDrawer(ev, false)}>
             <Close />
           </IconButton>
         </Stack>

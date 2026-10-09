@@ -184,7 +184,7 @@ const DisplayTagMentionDrawer = ({
                   my: 1,
                 }}
               >
-                <IconButton
+                <IconButton aria-label="Close"
                   color="inherit"
                   onClick={(ev) => toggleDrawer(ev, false)}
                 >

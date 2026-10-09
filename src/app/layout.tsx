@@ -45,6 +45,7 @@ export default async function RootLayout({
   return (
     <html lang="en" data-toolpad-color-scheme="system" suppressHydrationWarning>
       <head>
+        <link rel="describedby" href="/llms.txt" />
         <script id="kwonnet-public-env" dangerouslySetInnerHTML={{ __html: publicEnvScript() }} />
       </head>
       <body>

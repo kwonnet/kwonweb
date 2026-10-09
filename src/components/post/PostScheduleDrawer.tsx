@@ -89,7 +89,7 @@ const PostScheduleDrawer = ({
             my: 1,
           }}
         >
-          <IconButton color="inherit" onClick={(ev) => toggleDrawer(ev, false)}>
+          <IconButton aria-label="Close" color="inherit" onClick={(ev) => toggleDrawer(ev, false)}>
             <Close />
           </IconButton>
           <Typography>Schedule Thread?</Typography>
@@ -154,7 +154,7 @@ const PostScheduleDrawer = ({
                   alignItems: "center"
                 }}>
                   <Typography color="error">Clear schedule</Typography>
-                  <IconButton color="error" onClick={(ev) => clearSchedule(ev)}>
+                  <IconButton aria-label="Close" color="error" onClick={(ev) => clearSchedule(ev)}>
                     <Close />
                   </IconButton>
                 </Stack>

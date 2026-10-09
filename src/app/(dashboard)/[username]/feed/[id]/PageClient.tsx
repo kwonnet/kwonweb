@@ -70,7 +70,7 @@ const ReplyBox = ({
         ]}
       >
         <Typography>
-          <IconButton color="info">
+          <IconButton aria-label="View tagged people" color="info">
             <AlternateEmailOutlinedIcon />
           </IconButton>
           {scopeMessage}
@@ -115,7 +115,7 @@ const ReplyBox = ({
           </Button>
           {item.totalHiddenReplies > 0 && (
             <Tooltip title="Hidden replies">
-              <IconButton
+              <IconButton aria-label="Hidden replies"
                 LinkComponent={Link}
                 href={`/${item.author.username}/feed/${item.id}/hidden`}
                 color="inherit"

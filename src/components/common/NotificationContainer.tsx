@@ -56,7 +56,7 @@ const NotificationContainer = ({
         {(popupState) => (
           <div>
             <Tooltip title="Notifications">
-              <IconButton
+              <IconButton aria-label="Notifications"
                 size="medium"
                 {...bindTrigger(popupState)}
                 onClick={(e: React.MouseEvent) => {
@@ -113,7 +113,7 @@ const NotificationContainer = ({
                     })]}>
                     <Typography>Notifications</Typography>
                     <Tooltip title="Settings">
-                      <IconButton
+                      <IconButton aria-label="Settings"
                         LinkComponent={Link}
                         href="/settings"
                         size="small"

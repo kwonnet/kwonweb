@@ -57,13 +57,13 @@ const ReposterCard = ({
             overlap="circular"
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             badgeContent={
-              item.meta.isPro && <IconButton size="small">
+              item.meta.isPro && <IconButton aria-label="Verified account" size="small">
                 <VerifiedIcon sx={{ width: 16, height: 16, color: badgeColor }} />
               </IconButton>
             }
             onClick={(ev) => ev.stopPropagation()}
           >
-            <Link href={`/@${item?.username}`}>
+            <Link aria-label={`View ${item?.name || 'user'} profile`} href={`/@${item?.username}`}>
               <Avatar
                 sx={{
                   height: 60,
@@ -95,7 +95,7 @@ const ReposterCard = ({
             >
               {item.name} caption space between james man
               {item?.meta?.isPro && (
-                <IconButton size="small">
+                <IconButton aria-label="Verified account" size="small">
                   <VerifiedIcon
                     sx={{ width: 12, height: 12, color: badgeColor }}
                   />

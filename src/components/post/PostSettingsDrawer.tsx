@@ -311,7 +311,7 @@ const PostSettingsDrawer = ({
                   my: 1
                 }}>
                 <Box>
-                  <IconButton
+                  <IconButton aria-label="Go back"
                     onClick={(ev) => {
                       ev.preventDefault();
                       setState((prev) => ({ ...prev, showSelection: false }));

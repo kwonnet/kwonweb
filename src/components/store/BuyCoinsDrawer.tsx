@@ -59,7 +59,7 @@ export default function BuyCoinsDrawer({
               <Box sx={{ position: "relative" }}>
                 {/* <Typography>Buy Coins</Typography> */}
                 <Box sx={{ position: "absolute", right: 5 }}>
-                  <IconButton
+                  <IconButton aria-label="Close"
                     color="inherit"
                     onClick={(ev) => toggleDrawer(ev, false)}
                   >

@@ -1,5 +1,5 @@
 "use client";
-import { Box, Card, Skeleton, Stack, IconButton } from "@mui/material";
+import { Box, Card, Skeleton, Stack } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 
 const FeedSkeleton = ({rows = 8, items = 6, height = 200}: {rows?:number; height?: number; items?: number}) => {
@@ -29,9 +29,9 @@ const FeedSkeleton = ({rows = 8, items = 6, height = 200}: {rows?:number; height
                 <Skeleton variant="text" width={80} height={15} />
               </Stack>
             </Stack>
-            <IconButton color="inherit">
+            <Box aria-hidden="true" sx={{ p: 1 }}>
               <MoreVertIcon color="disabled" />
-            </IconButton>
+            </Box>
           </Stack>
 
           <Box sx={{ p: 2 }}>

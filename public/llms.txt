@@ -1,0 +1,24 @@
+# Kwonnet
+
+> Kwonnet - Connecting the dots and nodes. A social web application for sharing posts, discovering conversations, connecting with people and creators, and playing games.
+
+The canonical website is https://kwonnet.com/. Kwonnet includes public posts and profiles, topic discovery, community connections, games, and private encrypted messaging. Interactive and personalized features may require sign-in.
+
+Public posts are user-generated content, not official statements or endorsements by Kwonnet. Access to a post depends on its author's visibility settings and the post's current availability. The sitemap provides links to eligible public posts; it is not a directory of private messages or account records.
+
+For policies, use the linked policy pages and their displayed update dates. Game rewards, coins, tips, payments, and subscriptions are subject to the applicable rules and eligibility conditions; participation does not guarantee earnings. Private messages, notifications, settings, wallets, and account histories are not public reference material. This overview does not grant access to restricted content or replace robots.txt.
+
+## Website
+
+- [Kwonnet homepage](https://kwonnet.com/): Main entry point for the platform and its public community content.
+
+## Policies
+
+- [Privacy Policy](https://kwonnet.com/privacy-policy): Information about data collection, use, sharing, retention, security, and privacy choices.
+- [Terms of Service](https://kwonnet.com/terms-of-service): Account and content rules, games, rewards, payments, subscriptions, moderation, and service conditions.
+
+## Optional
+
+- [Sitemap index](https://kwonnet.com/sitemap.xml): Canonical index of sitemaps for public pages and eligible public posts.
+- [Robots.txt](https://kwonnet.com/robots.txt): Published crawler access guidance and the sitemap location.
+- [Kwonnet support](mailto:support@kwonnet.com): Contact for account, privacy, content, payment, and service questions.

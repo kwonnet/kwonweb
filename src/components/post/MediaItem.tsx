@@ -62,7 +62,7 @@ const MediaItem = memo(
           <Box sx={{ position: "relative", display: "inline-block" }}>
             {/* Top Left Brush Button */}
             <Box sx={{ position: "absolute", top: 8, left: 8, zIndex: 999 }}>
-              <IconButton
+              <IconButton aria-label="Edit media"
                 disableFocusRipple
                 disableRipple
                 disableTouchRipple
@@ -75,7 +75,7 @@ const MediaItem = memo(
 
             {/* Top Right Close Button */}
             <Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 999 }}>
-              <IconButton
+              <IconButton aria-label="Close"
                 disableFocusRipple
                 disableRipple
                 disableTouchRipple

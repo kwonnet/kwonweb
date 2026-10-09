@@ -484,7 +484,7 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
               }}>
               {(canAccess || isCurrentUser) && (
                 <Tooltip title="Message">
-                  <IconButton
+                  <IconButton aria-label="Message"
                     LinkComponent={Link}
                     href={`/messages/${visitedUser?.id}/chat`}
                     disabled={isCurrentUser ? false : disabled}
@@ -509,7 +509,7 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
               {canAccess && (
                 <>
                   <Tooltip title={`Gift ${visitedUser?.username}`}>
-                    <IconButton disabled={disabled} size="small">
+                    <IconButton aria-label={`Gift ${visitedUser?.username}`} disabled={disabled} size="small">
                       <CardGiftcardOutlinedIcon />
                     </IconButton>
                   </Tooltip>
@@ -652,7 +652,7 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
             {visitedUser.name}
             {""}
             {visitedUser?.meta?.isPro && (
-              <IconButton size="small">
+              <IconButton aria-label="Verified account" size="small">
                 <VerifiedIcon
                   sx={{ width: 16, height: 16, color: badgeColor }}
                 />
@@ -824,7 +824,7 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
                   alignItems: "center",
                   justifyContent: "center"
                 }}>
-                <IconButton disabled={true} size="large">
+                <IconButton aria-label="Private account" disabled={true} size="large">
                   {isPrivate ? <Lock /> : <WarningOutlined />}
                 </IconButton>
                 <Typography

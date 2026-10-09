@@ -54,7 +54,7 @@ const CustomToolbarActions = (props: {
         <SearchToolbar />
         <Tooltip title="Store" suppressHydrationWarning>
           <Box sx={{ display: "inline-flex", alignItems: "center" }}>
-            <IconButton sx={{ display: { xs: "inline-flex", sm: "none" } }} size="small" LinkComponent={Link} href="/store">
+            <IconButton aria-label="Store" sx={{ display: { xs: "inline-flex", sm: "none" } }} size="small" LinkComponent={Link} href="/store">
               <LocalMallOutlinedIcon />
             </IconButton>
             <Button
@@ -70,7 +70,7 @@ const CustomToolbarActions = (props: {
           </Box>
         </Tooltip>
           <Tooltip title="Messages" suppressHydrationWarning>
-            <IconButton size="small" LinkComponent={Link} href="/messages">
+            <IconButton aria-label="Messages" size="small" LinkComponent={Link} href="/messages">
               <Badge
                 color="error"
                 badgeContent={stats?.totalUnreadMsg ?? 0}

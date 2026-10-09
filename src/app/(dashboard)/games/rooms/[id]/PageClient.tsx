@@ -123,7 +123,7 @@ const DisplayTabIcons = ({
     >
       {isSm && (
         <Stack key={firstItem.id} sx={{ alignItems: "center" }}>
-          <IconButton
+          <IconButton aria-label={firstItem.title}
             sx={[
               (theme) => ({
                 boxShadow: 5,
@@ -149,7 +149,7 @@ const DisplayTabIcons = ({
 
       {buttons.slice(1).map((item) => (
         <Stack key={item.id} sx={{ alignItems: "center" }}>
-          <IconButton
+          <IconButton aria-label={item.title}
             sx={[
               (theme) => ({
                 boxShadow: 5,
@@ -409,7 +409,7 @@ const PageClient = ({
                       }}
                     >
                       <Box sx={{ position: "relative" }}>
-                        <IconButton
+                        <IconButton aria-label="Go back"
                           onClick={() => router.back()}
                           sx={{
                             color: "inherit",

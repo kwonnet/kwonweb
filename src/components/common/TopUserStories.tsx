@@ -60,7 +60,7 @@ function TopUserStories() {
           left: 10,
         }}
       >
-        <IconButton
+        <IconButton aria-label="Previous"
           sx={{ border: "1px solid grey" }}
           onClick={() => sliderRef?.current?.slickPrev()}
         >
@@ -78,7 +78,7 @@ function TopUserStories() {
           right: 10,
         }}
       >
-        <IconButton
+        <IconButton aria-label="Next"
           sx={{ border: "1px solid grey" }}
           onClick={() => sliderRef?.current?.slickNext()}
         >

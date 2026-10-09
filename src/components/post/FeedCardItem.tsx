@@ -352,7 +352,7 @@ const FeedCardItem = ({
               anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
               badgeContent={
                 !isFollowed && (
-                  <IconButton
+                  <IconButton aria-label="Follow author"
                     onClick={(ev) => {
                       ev.preventDefault();
                       handleFollowUser(
@@ -373,7 +373,7 @@ const FeedCardItem = ({
               onClick={(ev) => ev.stopPropagation()}
             >
               <Box onClick={(ev) => trackProfileVisit(ev, item.author)}>
-                <Link href={`/@${item?.author?.username}`}>
+                <Link aria-label={`View ${item?.author?.name || 'user'} profile`} href={`/@${item?.author?.username}`}>
                   <Avatar
                     sx={{
                       height: 45,
@@ -627,7 +627,7 @@ const FeedCardItem = ({
                 }}
                 spacing={-0.7}
               >
-                <IconButton onClick={(ev) => handleReply(ev)}>
+                <IconButton aria-label="Reply" onClick={(ev) => handleReply(ev)}>
                   <QuickreplyOutlinedIcon
                     sx={{
                       height: 16,
@@ -658,7 +658,7 @@ const FeedCardItem = ({
                 }}
                 spacing={-0.7}
               >
-                <IconButton onClick={(ev) => handleToggleRepost(ev)}>
+                <IconButton aria-label="Repost" onClick={(ev) => handleToggleRepost(ev)}>
                   <RepeatOutlinedIcon
                     sx={{
                       height: 16,
@@ -713,7 +713,7 @@ const FeedCardItem = ({
                 }}
                 spacing={-0.7}
               >
-                <IconButton
+                <IconButton aria-label="View post analytics"
                   disableFocusRipple
                   disableTouchRipple
                   disableRipple
@@ -747,7 +747,7 @@ const FeedCardItem = ({
                 }}
                 spacing={-0.7}
               >
-                <IconButton
+                <IconButton aria-pressed={!!item?.actions?.hasSaved} aria-label={item?.actions?.hasSaved ? "Unsave post" : "Save post"}
                   onClick={(ev) =>
                     handleBookmark(ev, item.id, !item?.actions?.hasSaved)
                   }
@@ -792,7 +792,7 @@ const FeedCardItem = ({
                 }}
                 spacing={-0.7}
               >
-                <IconButton onClick={(ev) => handleToggleTip(ev)}>
+                <IconButton aria-label="Tip Author" onClick={(ev) => handleToggleTip(ev)}>
                   <MonetizationOnOutlinedIcon
                     sx={{
                       height: 16,
@@ -814,7 +814,7 @@ const FeedCardItem = ({
                 }}
                 spacing={-0.7}
               >
-                <IconButton onClick={(ev) => handleShare(ev, item)}>
+                <IconButton aria-label="Share" onClick={(ev) => handleShare(ev, item)}>
                   <IosShareOutlinedIcon
                     sx={{
                       height: 16,

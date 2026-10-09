@@ -80,12 +80,12 @@ const StickyWrapper = (props: { children?: React.ReactNode, showTitle?: boolean;
               <Stack onClick={(ev) => handleGoBack(ev)} direction={"row"} spacing={1} sx={{
                 alignItems: "center"
               }}>
-                <IconButton  size="small">
+                <IconButton aria-label="Go back"  size="small">
                 <ArrowBackIosNewOutlined />
               </IconButton>
               <Typography>{((props.showTitle && props.title) || props.title) ? props.title : segment}</Typography>
               </Stack>
-              <IconButton
+              <IconButton aria-label="Go to home"
                 onClick={(ev) => {
                   ev.preventDefault();
                   router.push("/", { scroll: false });

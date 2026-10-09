@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import Box from "@mui/material/Box";
-import { Container, IconButton, Stack, Typography } from "@mui/material";
+import { Container, Stack, Typography } from "@mui/material";
 import Link from "next/link";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -127,48 +127,28 @@ const AppBottomNav = () => {
             {buttons(pathname).map((item) => (
               <Stack
                 key={item.id}
-                sx={[(theme) => (
-                  {
-                    alignItems: "center",
-                    color: (theme) => theme.vars.palette.tints[200],
-                    ...(pathname === item.path && {
-                      // background: (theme) => theme.vars.palette.gradient.D900,
-                      // color: (theme) => theme.vars.palette.common.white,
-                      // boxShadow: 10,
-                      // px: 2,
-                      ...theme.applyStyles("dark", {
-                        // background: theme.vars.palette.grey[800],
-                      })
-                    }),
-                  }
-                )]}
+                component={Link}
+                href={item.path}
+                aria-label={item.title}
+                aria-current={pathname === item.path ? "page" : undefined}
+                spacing={0.25}
+                sx={{
+                  flex: 1,
+                  minWidth: 44,
+                  minHeight: 56,
+                  py: 0.5,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textDecoration: "none",
+                  color: pathname === item.path ? "text.primary" : "text.secondary",
+                  borderRadius: 1,
+                  "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: -2 },
+                }}
               >
-                <IconButton
-                  sx={[(theme) => ({
-                    // boxShadow: 0,
-                    // ...(pathname === item.path && {
-                    //   boxShadow: 1,
-                    //   ...theme.applyStyles("dark", {
-                    //     background: theme.vars.palette.grey[800],
-                    //   })
-                    // }),
-                  })]}
-                  size={"large"}
-                  LinkComponent={Link}
-                  href={item.path}
-                >
+                <Box component="span" aria-hidden="true" sx={{ display: "inline-flex", p: 0.5 }}>
                   {item.icon}
-                </IconButton>
-                <Typography sx={[(theme) => ({ 
-                  fontFamily: "PlayFair",
-                  // fontSize: "8px",
-                  ...(pathname === item.path && {  
-                    color: theme.vars.palette.primary.main,                  
-                    ...theme.applyStyles("dark", {
-                      color: theme.vars.palette.primary.contrastText,
-                    })
-                  }),
-                  })]} variant="caption">
+                </Box>
+                <Typography sx={{ fontFamily: "PlayFair" }} variant="caption">
                   {item.title}
                 </Typography>
               </Stack>

@@ -466,7 +466,7 @@ export default function CreateReplyDrawer({
               my: 1,
             }}
           >
-            <IconButton
+            <IconButton aria-label="Close"
               color="inherit"
               disabled={state.loading}
               onClick={(ev) => {
@@ -551,7 +551,7 @@ export default function CreateReplyDrawer({
                     {state.post.type === PostType.POLL && (
                       <Box sx={{ mt: 1, position: "relative" }}>
                         <Box sx={{ position: "absolute", right: 12, mt: 1 }}>
-                          <IconButton
+                          <IconButton aria-label="Close"
                             size="small"
                             onClick={(ev) => onTogglePoll(ev)}
                             sx={[
@@ -598,7 +598,7 @@ export default function CreateReplyDrawer({
                       >
                         <Stack direction={"row"} sx={{ alignItems: "center" }}>
                           <Tooltip title="Upload media">
-                            <IconButton
+                            <IconButton aria-label="Upload media"
                               onClick={(ev) => onSelectFile(ev, state.post.id)}
                               disableRipple
                               size="small"
@@ -631,7 +631,7 @@ export default function CreateReplyDrawer({
                           </Typography>
                         </Stack>
                         <Stack direction={"row"} sx={{ alignItems: "center" }}>
-                          <IconButton
+                          <IconButton aria-label="Add poll"
                             disableRipple
                             size="small"
                             disabled={
@@ -667,7 +667,7 @@ export default function CreateReplyDrawer({
                           onClick={(ev) => toggleTagPeopleDrawer(ev, true)}
                         >
                           <Tooltip title="Tag people">
-                            <IconButton
+                            <IconButton aria-label="Tag people"
                               disableRipple
                               size="small"
                               sx={[
@@ -714,7 +714,7 @@ export default function CreateReplyDrawer({
                       }}
                     >
                       <Stack direction={"row"} sx={{ alignItems: "center" }}>
-                        <IconButton
+                        <IconButton aria-label="Settings"
                           disableRipple
                           onClick={(ev) => togglePostSettingsDrawer(ev, true)}
                           size="small"
@@ -741,7 +741,7 @@ export default function CreateReplyDrawer({
                       </Stack>
                       <Stack direction={"row"} sx={{ alignItems: "center" }}>
                         <Tooltip title="Schedule">
-                          <IconButton
+                          <IconButton aria-label="Schedule"
                             onClick={(ev) => togglePostScheduleDrawer(ev, true)}
                             disableRipple
                             size="small"
@@ -771,7 +771,7 @@ export default function CreateReplyDrawer({
                       </Stack>
                       <Stack direction={"row"} sx={{ alignItems: "center" }}>
                         <Tooltip title="Location">
-                          <IconButton
+                          <IconButton aria-label="Set post location"
                             onClick={(ev) => togglePostLocationDrawer(ev, true)}
                             disableRipple
                             size="small"

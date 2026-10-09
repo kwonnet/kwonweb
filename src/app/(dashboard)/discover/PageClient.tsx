@@ -64,7 +64,7 @@ const PageClient = ({ trends, topic }: { trends: TrendingTopics[]; topic?: strin
               color="textDisabled"
               variant="caption"
             >{`${index + 1} . Trending in ${item.country}`}</Typography>
-            <IconButton size="small">
+            <IconButton aria-label="More options" size="small">
               <MoreHorizOutlinedIcon />
             </IconButton>
           </Stack>

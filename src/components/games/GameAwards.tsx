@@ -68,7 +68,7 @@ const GameAwards = ({
             Game Achievements
           </Typography>
           <Box sx={{  }}>
-            <IconButton onClick={(ev) => debounceMutate()}>
+            <IconButton aria-label="Refresh" onClick={(ev) => debounceMutate()}>
               <RefreshOutlinedIcon />
             </IconButton>
           </Box>

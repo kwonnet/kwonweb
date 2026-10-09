@@ -205,7 +205,7 @@ const CreateQuizCard = ({
                   />
                 {index > 1 && (
                   <Tooltip title="Add option">
-                    <IconButton
+                    <IconButton aria-label="Add option"
                       onClick={(ev) => onDeleteOption(ev, item.id)}
                       disableRipple
                       size="small"
@@ -247,7 +247,7 @@ const CreateQuizCard = ({
                 }}
               >
                 <Tooltip title="Set Duration">
-                  <IconButton
+                  <IconButton aria-label="Set Duration"
                     disableRipple
                     size="small"
                     sx={[
@@ -288,7 +288,7 @@ const CreateQuizCard = ({
                 sx={{ alignItems: "center" }}
               >
                 <Tooltip title="Quiz setting">
-                  <IconButton
+                  <IconButton aria-label="Quiz setting"
                     disableRipple
                     size="small"
                     sx={[
@@ -311,7 +311,7 @@ const CreateQuizCard = ({
                 </Typography>
               </Stack>
               <Tooltip title="Add option">
-                <IconButton
+                <IconButton aria-label="Add option"
                   disabled={state.options.length >= state.optionsLimit}
                   onClick={(ev) => onAddOption(ev)}
                   disableRipple

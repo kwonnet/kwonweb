@@ -75,7 +75,7 @@ export const Navigation: FC<Props> = ({
       >
         <Box>
           <Tooltip title="Crop" sx={{zIndex: 9999999}}>
-            <IconButton
+            <IconButton aria-label="Crop"
               size="medium"
               onClick={() => setMode("crop")}
               focusRipple={mode === "crop"}
@@ -95,7 +95,7 @@ export const Navigation: FC<Props> = ({
 
         <Box>
           <Tooltip title="Saturation">
-            <IconButton
+            <IconButton aria-label="Saturation"
               size="medium"
               onClick={() => setMode("saturation")}
               focusRipple={mode === "saturation"}
@@ -114,7 +114,7 @@ export const Navigation: FC<Props> = ({
 
         <Box>
           <Tooltip title="Brightness">
-            <IconButton
+            <IconButton aria-label="Brightness"
               size="medium"
               onClick={() => setMode("brightness")}
               focusRipple={mode === "brightness"}
@@ -133,7 +133,7 @@ export const Navigation: FC<Props> = ({
 
         <Box>
           <Tooltip title="Contrast">
-            <IconButton
+            <IconButton aria-label="Contrast"
               size="medium"
               focusRipple={mode === "contrast"}
               autoFocus={mode === "contrast"}
@@ -152,7 +152,7 @@ export const Navigation: FC<Props> = ({
 
         <Box>
           <Tooltip title="Hue">
-            <IconButton
+            <IconButton aria-label="Hue"
               size="medium"
               focusRipple={mode === "hue"}
               autoFocus={mode === "hue"}
@@ -170,7 +170,7 @@ export const Navigation: FC<Props> = ({
         </Box>
         <Box>
           <Tooltip title="Reset">
-            <IconButton
+            <IconButton aria-label="Reset"
               sx={{ color: (theme) => theme.vars.palette.grey[400] }}
               size="medium"
               onClick={onReset}
@@ -181,7 +181,7 @@ export const Navigation: FC<Props> = ({
         </Box>
         <Box>
           <Tooltip title="Save">
-            <IconButton
+            <IconButton aria-label="Save"
               disableRipple
               disableFocusRipple
               disableTouchRipple

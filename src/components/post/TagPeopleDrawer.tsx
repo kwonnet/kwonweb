@@ -152,7 +152,7 @@ const TagPeopleDrawer = ({
             my: 1,
           }}
         >
-          <IconButton color="inherit" onClick={(ev) => toggleDrawer(ev, false)}>
+          <IconButton aria-label="Close" color="inherit" onClick={(ev) => toggleDrawer(ev, false)}>
             <Close />
           </IconButton>
           <Typography>Tag People</Typography>

@@ -289,7 +289,7 @@ const EditImageDrawer =
         <Box sx={{ width: "auto" }} role="presentation">
           <Grid container sx={{ alignItems: "center" }}>
             <Grid size={{ lg: 2, md: 2, sm: 2, xl: 2, xs: 2 }}>
-              <IconButton
+              <IconButton aria-label="Go back"
                 color="inherit"
                 onClick={(ev) => toggleDrawer(ev, false)}
               >
@@ -325,7 +325,7 @@ const EditImageDrawer =
               spacing={2}
             >
               <Box>
-                <IconButton
+                <IconButton aria-label="Crop image"
                   color="inherit"
                   size="small"
                   sx={{
@@ -341,7 +341,7 @@ const EditImageDrawer =
                 </IconButton>
               </Box>
               <Box>
-                <IconButton
+                <IconButton aria-label="Edit image description"
                   color="inherit"
                   size="small"
                   sx={{
@@ -357,7 +357,7 @@ const EditImageDrawer =
                 </IconButton>
               </Box>
               <Box>
-                <IconButton
+                <IconButton aria-label="Set image content flags"
                   color="inherit"
                   size="small"
                   sx={{

@@ -158,7 +158,7 @@ const AuthorHoverPreview = ({
       }}>
       {isName ? (
         <Link
-          style={{ textDecoration: "none", color: "inherit" }}
+          style={{ textDecoration: "none", color: "inherit", display: "inline-flex", alignItems: "center", minHeight: 24, minWidth: 24 }}
           href={`/@${author?.username}`}
         >
           <Stack direction={"row"} sx={{ alignItems: "center" }}>
@@ -166,20 +166,15 @@ const AuthorHoverPreview = ({
               {author?.name}
             </Typography>
             {isProUser &&
-            <IconButton
-              disableFocusRipple
-              disableRipple
-              disableTouchRipple
-              size="small"
-            >
+            <Box component="span" role="img" aria-label="Verified account" sx={{ display: "inline-flex", p: 0.5 }}>
               <VerifiedIcon sx={{ width: 16, height: 16, color: badgeColor }} />
-            </IconButton>
+            </Box>
           }
           </Stack>
         </Link>
       ) : (
         <Link
-          style={{ textDecoration: "none", color: "inherit" }}
+          style={{ textDecoration: "none", color: "inherit", display: "inline-flex", alignItems: "center", minHeight: 24, minWidth: 24 }}
           href={`/@${author?.username}`}
         >
           <Typography
@@ -221,7 +216,7 @@ const AuthorHoverPreview = ({
                   overlap="circular"
                   anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                   badgeContent={
-                    isProUser && <IconButton
+                    isProUser && <IconButton aria-label="Verified account"
                     size="small"
                   >
                     <VerifiedIcon
@@ -231,7 +226,7 @@ const AuthorHoverPreview = ({
                   }
                   onClick={(ev) => ev.stopPropagation()}
                 >
-                  <Link href={`/@${author?.username}`}>
+                  <Link aria-label={`View ${author?.name || 'user'} profile`} href={`/@${author?.username}`}>
                     <Avatar
                       sx={{
                         height: 45,

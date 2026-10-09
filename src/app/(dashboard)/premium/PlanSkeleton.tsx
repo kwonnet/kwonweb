@@ -69,12 +69,12 @@ const PlanSkeleton = () => {
           sx={{ justifyContent: "space-between", py: 2 }}
         >
           <Box sx={{ textAlign: "center", display: "block" }}>
-            <Button variant="outlined" color="error" disabled>
+            <Button aria-hidden="true" variant="outlined" color="error" disabled>
               <Skeleton width="100px" />
             </Button>
           </Box>
           <Box sx={{ textAlign: "center", display: "block" }}>
-            <Button variant="outlined" color="info" disabled>
+            <Button aria-hidden="true" variant="outlined" color="info" disabled>
               <Skeleton width="100px" />
             </Button>
           </Box>

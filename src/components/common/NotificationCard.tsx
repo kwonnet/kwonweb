@@ -68,7 +68,7 @@ const NotificationCard = ({
           > */}
             <Grid container>
               <Grid size={{ lg: 2, md: 2, sm: 2, xs: 2 }}>
-                <Box component={Link} href={`/@${item.sender.username}`}>
+                <Box aria-label={`View ${item?.sender?.name || 'user'} profile`} component={Link} href={`/@${item.sender.username}`}>
                   <Avatar alt={item?.sender?.name} src={item?.sender?.avatar} />
                 </Box>
               </Grid>

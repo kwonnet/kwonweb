@@ -820,7 +820,7 @@ export default function CreatePostDrawer({
               my: 1,
             }}
           >
-            <IconButton
+            <IconButton aria-label="Close"
               color="inherit"
               disabled={state.loading}
               onClick={(ev) => {
@@ -896,7 +896,7 @@ export default function CreatePostDrawer({
                       {thread.type === PostType.POLL && (
                         <Box sx={{ mt: 1, position: "relative" }}>
                           <Box sx={{ position: "absolute", right: 12, mt: 1 }}>
-                            <IconButton
+                            <IconButton aria-label="Close"
                               size="small"
                               onClick={(ev) => onTogglePoll(ev, thread.id)}
                               sx={[
@@ -926,7 +926,7 @@ export default function CreatePostDrawer({
                       {thread.type === PostType.QUIZ && (
                         <Box sx={{ mt: 1, position: "relative" }}>
                           <Box sx={{ position: "absolute", right: 12, mt: 1 }}>
-                            <IconButton
+                            <IconButton aria-label="Close"
                               size="small"
                               onClick={(ev) => onToggleQuiz(ev, thread.id)}
                               sx={[
@@ -977,7 +977,7 @@ export default function CreatePostDrawer({
                             sx={{ alignItems: "center" }}
                           >
                             <Tooltip title="Upload media">
-                              <IconButton
+                              <IconButton aria-label="Upload media"
                                 onClick={(ev) => onSelectFile(ev, thread.id)}
                                 disableRipple
                                 disabled={thread.type === PostType.POLL || thread.type === PostType.QUIZ}
@@ -1017,7 +1017,7 @@ export default function CreatePostDrawer({
                             direction={"row"}
                             sx={{ alignItems: "center" }}
                           >
-                            <IconButton
+                            <IconButton aria-label="Add poll"
                               disableRipple
                               size="small"
                               disabled={
@@ -1053,7 +1053,7 @@ export default function CreatePostDrawer({
                             direction={"row"}
                             sx={{ alignItems: "center" }}
                           >
-                            <IconButton
+                            <IconButton aria-label="Add quiz"
                               disableRipple
                               size="small"
                               disabled={
@@ -1090,7 +1090,7 @@ export default function CreatePostDrawer({
                             onClick={(ev) => toggleTagPeopleDrawer(thread.id, true)}
                           >
                             <Tooltip title="Tag people">
-                              <IconButton
+                              <IconButton aria-label="Tag people"
                                 disableRipple
                                 size="small"
                                 sx={[
@@ -1144,7 +1144,7 @@ export default function CreatePostDrawer({
 
                           {state.threads.length > 1 && (
                             <Tooltip title="Add thread">
-                              <IconButton
+                              <IconButton aria-label="Remove thread"
                                 onClick={(ev) => onDeleteThread(ev, thread.id)}
                                 disableRipple
                                 size="small"
@@ -1193,7 +1193,7 @@ export default function CreatePostDrawer({
                       sx={{ alignItems: "center" }}
                       onClick={(ev) => togglePostSettingsDrawer(ev, true)}
                     >
-                      <IconButton
+                      <IconButton aria-label="Post audience settings"
                         disableRipple
                         size="small"
                         sx={[
@@ -1221,7 +1221,7 @@ export default function CreatePostDrawer({
                     </Stack>
                     <Stack sx={{ alignItems: "center" }}>
                       <Tooltip title="Schedule">
-                        <IconButton
+                        <IconButton aria-label="Schedule"
                           onClick={(ev) => togglePostScheduleDrawer(ev, true)}
                           disableRipple
                           size="small"
@@ -1249,7 +1249,7 @@ export default function CreatePostDrawer({
                     </Stack>
                     <Stack sx={{ alignItems: "center" }}>
                       <Tooltip title="Add thread">
-                        <IconButton
+                        <IconButton aria-label="Set post location"
                           onClick={(ev) => togglePostLocationDrawer(ev, true)}
                           disableRipple
                           size="small"
@@ -1280,7 +1280,7 @@ export default function CreatePostDrawer({
                     <Box>
                       <Tooltip placement="top" title="Add thread">
                         <Stack sx={{ alignItems: "center" }}>
-                          <IconButton
+                          <IconButton aria-label="Add thread"
                             onClick={(ev) => onAddThread(ev)}
                             disableRipple
                             size="small"

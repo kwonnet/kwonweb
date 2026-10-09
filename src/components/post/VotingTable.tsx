@@ -107,9 +107,9 @@ const VotingTable = () => {
                   <TableCell onClick={() => item.playerId !== user.id ?  handleVoting({answerId: item.answerId, roomId: item.roomId, votedUserId: item.playerId}) : {} }>
                     {
                     item.playerId !== user.id ? item.answerId !== state.votedId ? 
-                    <IconButton><FavoriteBorderOutlinedIcon />
+                    <IconButton aria-label="Vote for this answer"><FavoriteBorderOutlinedIcon />
                     </IconButton> 
-                    : <IconButton><DoneAllOutlinedIcon /></IconButton> : null
+                    : <IconButton aria-label="Vote submitted"><DoneAllOutlinedIcon /></IconButton> : null
                   }
                   </TableCell>
                 </TableRow>

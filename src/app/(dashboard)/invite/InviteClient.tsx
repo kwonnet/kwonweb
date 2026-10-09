@@ -169,7 +169,7 @@ const InviteClient = () => {
             </Button>
 
             {/* Copy Invite Link Button */}
-            <IconButton
+            <IconButton aria-label="Copy link"
               sx={{
                 background: (theme) =>
                   `linear-gradient(135deg, ${theme.vars.palette.shades[500]} 30%, ${theme.vars.palette.tints[200]} 90%)`,

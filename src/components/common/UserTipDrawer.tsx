@@ -172,7 +172,7 @@ export default function UserTipDrawer({
               my: 1,
             }}
           >
-            <IconButton
+            <IconButton aria-label="Close"
               color="inherit"
               onClick={(ev) => {
                 setState(initialState);

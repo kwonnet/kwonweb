@@ -3,6 +3,7 @@ import { AppBar, Box, Divider, Drawer, IconButton, List, ListItemButton, ListIte
 import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useState, type ReactNode } from "react";
@@ -48,7 +49,7 @@ export default function CustomLayout({ children, CustomToolbar }: { children: Re
       <Toolbar sx={{ minHeight: "64px !important", gap: 1 }}>
         <IconButton aria-label="Open navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(value => !value)} sx={{ display: { md: "none" } }}><MenuIcon /></IconButton>
         <IconButton aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} aria-expanded={!collapsed} onClick={() => setCollapsed(value => !value)} sx={{ display: { xs: "none", md: "inline-flex" } }}><MenuOpenIcon /></IconButton>
-        <Link href="/" aria-label={`${constant.siteName} home`}><Box component="img" src={mode === "light" ? "/logo-grey-320x320.png" : "/logo-white-320x320.png"} alt="" sx={{ height: 25, display: "block" }} /></Link>
+        <Link href="/" aria-label={`${constant.siteName} home`} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 44, minHeight: 44, flexShrink: 0 }}><Image src={mode === "light" ? "/logo-grey-320x320.png" : "/logo-white-320x320.png"} alt="" width={25} height={25} sizes="25px" style={{ display: "block" }} /></Link>
         <Box sx={{ flex: 1, display: {xs: 'block', lg: 'none'} }} />
         {CustomToolbar}
       </Toolbar>

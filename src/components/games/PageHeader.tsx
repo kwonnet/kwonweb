@@ -14,7 +14,7 @@ const PageHeader = ({ title }: { title: string }) => {
     <Box sx={{ py: 1 }}>
       <Box sx={{ position: "relative" }}>
         <Box sx={{ position: "absolute" }}>
-          <IconButton color="inherit" onClick={() => handleClick()}>
+          <IconButton aria-label="Go back" color="inherit" onClick={() => handleClick()}>
             <ArrowBackIosNewOutlined />
           </IconButton>
         </Box>

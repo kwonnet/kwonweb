@@ -32,7 +32,7 @@ const DisplayMessage = ({
           alignItems: "center",
           justifyContent: "center"
         }}>
-        <IconButton color="warning">
+        <IconButton aria-label="View warning" color="warning">
           <WarningAmberOutlined />
         </IconButton>
         <Typography>{message}</Typography>

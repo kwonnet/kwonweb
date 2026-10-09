@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import Box from "@mui/material/Box";
-import { Container, IconButton, Stack, Typography } from "@mui/material";
+import { Container, Stack, Typography } from "@mui/material";
 import Link from "next/link";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -98,7 +98,7 @@ const buttons = (pathname: string) => {
     // },
     {
       id: 8,
-      title: "Connect",
+      title: "Network",
       icon: pathname === paths.people ? <GroupAddOutlinedIcon /> : <GroupAddOutlinedIcon />,
       isSmallOnly: false,
       path: paths.people,
@@ -147,36 +147,28 @@ const AppBottomNav = () => {
             {buttons(pathname).map((item) => (
               <Stack
                 key={item.id}
-                spacing={-2}
                 component={Link}
                 href={item.path}
-                sx={[(theme) => (
-                  {
-                    alignItems: "center",
-                    textDecoration: "none"
-                  }
-                )]}
+                aria-label={item.title}
+                aria-current={pathname === item.path ? "page" : undefined}
+                spacing={0.25}
+                sx={{
+                  flex: 1,
+                  minWidth: 44,
+                  minHeight: 56,
+                  py: 0.5,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textDecoration: "none",
+                  color: pathname === item.path ? "text.primary" : "text.secondary",
+                  borderRadius: 1,
+                  "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: -2 },
+                }}
               >
-                <IconButton
-                  sx={[(theme) => ({
-                    boxShadow: 0,
-                    ...(pathname !== item.path && {
-                      color: "text.disabled",
-                    }),
-                  })]}
-                  size={"large"}
-                  
-                >
+                <Box component="span" aria-hidden="true" sx={{ display: "inline-flex", p: 0.5 }}>
                   {item.icon}
-                </IconButton>
-                <Typography sx={[(theme) => ({ 
-                  fontFamily: "PlayFair",
-                  // fontSize: "8px",
-                  ...(pathname === item.path ? {  
-                    color: theme.vars.palette.text.primary,                  
-                    
-                  } : {color: "text.disabled"}),
-                  })]} variant="caption">
+                </Box>
+                <Typography sx={{ fontFamily: "PlayFair" }} variant="caption">
                   {item.title}
                 </Typography>
               </Stack>

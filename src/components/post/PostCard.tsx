@@ -30,7 +30,7 @@ const PostCard = ({ index }: { index: number }) => {
           </Stack>
         </Stack>
         <Box>
-          <IconButton size="small">
+          <IconButton aria-label="More options" size="small">
             <MoreHorizOutlinedIcon />
           </IconButton>
         </Box>

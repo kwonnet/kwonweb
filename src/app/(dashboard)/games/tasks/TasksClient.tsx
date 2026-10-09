@@ -66,7 +66,7 @@ const TasksClient = () => {
             }}
           >
             <Fade delay={100} direction="left">
-              <IconButton
+              <IconButton aria-label="Add task"
                 size="small"
                 disableRipple
                 sx={{

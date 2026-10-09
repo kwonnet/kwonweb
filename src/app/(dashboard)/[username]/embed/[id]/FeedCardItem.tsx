@@ -173,7 +173,7 @@ const FeedCardItem = ({
             >
               <Stack onClick={(ev) => redirectToProfile(ev, item.author)}>
               <Link
-                  style={{ textDecoration: "none", color: "inherit" }}
+                  style={{ textDecoration: "none", color: "inherit", display: "inline-flex", alignItems: "center", minHeight: 24, minWidth: 24 }}
                   href={`${appUrl}/@${item?.author?.username}`}
                   target="_blank"
                 >
@@ -181,7 +181,7 @@ const FeedCardItem = ({
                     <Typography sx={{ fontWeight: "bold" }} variant="subtitle1">
                       {item?.author?.name}
                     </Typography>
-                    <IconButton
+                    <IconButton aria-label="Verified account"
                       disableFocusRipple
                       disableRipple
                       disableTouchRipple
@@ -203,7 +203,7 @@ const FeedCardItem = ({
                   spacing={0.3}
                 >
                   <Link
-                    style={{ textDecoration: "none", color: "inherit" }}
+                    style={{ textDecoration: "none", color: "inherit", display: "inline-flex", alignItems: "center", minHeight: 24, minWidth: 24 }}
                     href={`${appUrl}/@${item?.author?.username}`}
                     target="_blank"
                   >
@@ -327,7 +327,7 @@ const FeedCardItem = ({
                       }}
                       spacing={-0.7}
                     >
-                      <IconButton
+                      <IconButton aria-label="Reply"
                         disabled={!item.actions.canReply}
                         
                       >
@@ -351,7 +351,7 @@ const FeedCardItem = ({
                       }}
                       spacing={-0.7}
                     >
-                      <IconButton
+                      <IconButton aria-label="Repost"
                         onClick={(ev) => {
                           ev.stopPropagation();
                           setAnchorEl(ev.currentTarget);
@@ -401,7 +401,7 @@ const FeedCardItem = ({
                       }}
                       spacing={-0.7}
                     >
-                      <IconButton
+                      <IconButton aria-label="View post analytics"
                         color="default"
                         disableFocusRipple
                         disableTouchRipple
@@ -427,7 +427,7 @@ const FeedCardItem = ({
                       }}
                       spacing={-0.7}
                     >
-                      <IconButton
+                      <IconButton aria-pressed={!!item?.actions?.hasSaved} aria-label={item?.actions?.hasSaved ? "Unsave post" : "Save post"}
                         onClick={(ev) =>
                         {}
                         }
@@ -464,7 +464,7 @@ const FeedCardItem = ({
                       }}
                       spacing={-0.7}
                     >
-                      <IconButton onClick={(ev) => {}}>
+                      <IconButton aria-label="Share" onClick={(ev) => {}}>
                         <IosShareOutlinedIcon
                           sx={{
                             height: 16,

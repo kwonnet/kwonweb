@@ -136,8 +136,8 @@ const PageClient = ({
                 anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
               >
                 <Box>
-                  <Link
-                    style={{ textDecoration: "none", cursor: "pointer" }}
+                  <Link aria-label={`View ${post?.author?.name || 'user'} profile`}
+                    style={{ textDecoration: "none", cursor: "pointer" , display: "inline-flex", alignItems: "center", minHeight: 24, minWidth: 24 }}
                     href={`/@${post?.author?.username}`}
                   >
                     <Avatar

@@ -38,7 +38,7 @@ const PageHeader = ({
           ]}
         >
           <Box sx={{ position: "relative" }}>
-            <IconButton color="inherit" onClick={() => handleClick()}>
+            <IconButton aria-label="Go back" color="inherit" onClick={() => handleClick()}>
               <ArrowBackIosNewOutlined />
             </IconButton>
           </Box>
