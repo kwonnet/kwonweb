@@ -12,7 +12,7 @@ export default function Page() {
 }
 
 export const metadata = {
-  ...pageMetadata('Kwonnet — Connecting the dots and nodes, join the conversation', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet.', '/', true), title: { absolute: 'Kwonnet — Connecting the dots and nodes, join the conversation, discover and play', template: '%s — Kwonnet' },
+  ...pageMetadata('Kwonnet — Connecting the dots and nodes, join the conversation', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet.', '/', true), title: { absolute: 'Kwonnet — Connecting the dots and nodes, join the conversation', template: '%s — Kwonnet' },
   openGraph: {
     ...pageMetadata('Kwonnet — Connecting the dots and nodes, join the conversation', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet', '/', true).openGraph,
     title: 'Kwonnet — Connecting the dots and nodes, join the conversation, discover and play',

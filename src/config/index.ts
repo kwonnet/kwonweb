@@ -1,6 +1,6 @@
 import { publicEnv } from "@/config/public-env";
 export const constant = {
-  siteName: "Kwonnet", //"Torazon" | "Kuonnet" | "Kounnet",
+  siteName: "Kwonnet",
   siteDescription:
     "Discover fresh conversations, connect with creators, play rewarding games, and grow your community by sharing what matters on Kwonnet.",
 };
