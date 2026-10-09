@@ -27,7 +27,9 @@ test('legal pages bypass authentication and sanitize spoofed public-route header
   assert.equal(policy.isPublicLegalPath('/privacy-policy/private'), false);
 });
 test('legal rendering skips session refresh even with an expired session and omits dashboard auth/realtime gates', async () => {
+  const React = require('react');
   const component = () => null;
+  const SessionProvider = () => null;
   const Root = load('src/app/layout.tsx', {
     '@/config/public-env': {publicEnvScript: () => ''}, '@/config': {constant: {siteName: 'Kwonnet'}},
     'next/headers': {headers: async () => new Headers({[policy.PUBLIC_LEGAL_HEADER]: '1'})},
@@ -35,7 +37,8 @@ test('legal rendering skips session refresh even with an expired session and omi
     '@/lib/server-session': {getServerSession: () => {throw new Error('Expired sessions must not block legal pages');}},
     '@/components/common/AppLoadingShell': {__esModule: true, default: component},
     '@mui/material-nextjs/v16-appRouter': {AppRouterCacheProvider: component},
-    'next-auth/react': {SessionProvider: component},
+    'next-auth/react': {SessionProvider},
+    '@next/third-parties/google': {GoogleTagManager: component, GoogleAnalytics: component},
     '@/providers/AuthSessionBoundary': {__esModule: true, default: component},
     '@/providers/NextjsAppProvider': {__esModule: true, default: component},
     '@/context/SocketIoContext': {__esModule: true, default: component},
@@ -45,7 +48,9 @@ test('legal rendering skips session refresh even with an expired session and omi
   }).default;
   const legal = {type: 'legal-content'};
   const tree = await Root({children: legal});
-  const provider = tree.props.children[1].props.children;
+  const body = React.Children.toArray(tree.props.children).find(child => child.type === 'body');
+  const provider = React.Children.toArray(body.props.children).find(child => child.type === SessionProvider);
+  assert.ok(provider, 'legal pages retain the session provider alongside optional analytics');
   assert.equal(provider.props.session, null);
   const theme = provider.props.children.props.children;
   assert.equal(theme.props.children, legal);
