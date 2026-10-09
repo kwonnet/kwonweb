@@ -100,7 +100,7 @@ export default function ChatBoxClient({ params }: {
             usedInitialSync.current = true;
             const result = await refresh(convo.id, peer.id, initial);
             if (result)
-                setConvo(previous => previous ? { ...previous, ...result.conversation } : previous);
+                setConvo(previous => previous ? { ...previous, ...result.conversation, initiator: { ...previous.initiator, ...result.conversation.initiator }, responder: { ...previous.responder, ...result.conversation.responder } } : previous);
         }
         catch (e) {
             setError(e instanceof Error ? e.message : 'Unable to load messages');
@@ -112,7 +112,7 @@ export default function ChatBoxClient({ params }: {
     useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 3000); return () => clearInterval(timer); }, []);
     useEffect(() => {
         const update = convo?.id ? conversationUpdates?.[convo.id] : undefined;
-        if (update) setConvo(previous => previous ? { ...previous, ...update } : previous);
+        if (update) setConvo(previous => previous ? { ...previous, ...update, initiator: { ...previous.initiator, ...update.initiator }, responder: { ...previous.responder, ...update.responder } } : previous);
     }, [convo?.id, conversationUpdates]);
     useEffect(() => { receiptEpoch.current++;clearTimeout(receiptTimer.current); receiptTimer.current = undefined; receiptQueue.current.clear(); delivered.current.clear(); read.current.clear(); visible.current.clear(); viewed.current.clear(); followBottom.current = true; lastPositioned.current = undefined; setReply(undefined); }, [convo?.id]);
     useEffect(() => {

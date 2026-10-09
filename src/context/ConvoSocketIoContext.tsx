@@ -10,7 +10,7 @@ import { hasMessagingVault, unlockMessaging, restoreRememberedMessaging, forgetR
 import { setMessagingSocket, syncMessages, resetLocalMessaging, enroll, decryptWire, localConversation, messagingAPI, flushMessagingOutbox, sendReceiptBatch, type SyncResult } from '@/lib/conversations/messaging';
 import type { MessagingDevice, LocalMessage } from '@/lib/signal/contracts';
 import { usePathname } from 'next/navigation';
-import type { Conversation } from '@/types/conversation';
+import type { Conversation, ConversationMetadata } from '@/types/conversation';
 import { getUserChatConversations } from '@/lib/conversations';
 import { useSWRConfig } from 'swr';
 export type InitialMessagingSync = { userId: string; deviceId: string; result: SyncResult };
@@ -30,7 +30,7 @@ type State = {
     openOptions: (anchor: HTMLElement) => void;
     warmConversations: (conversations: Conversation[]) => void;
     loadingConversations: Record<string, boolean>;
-    conversationUpdates?: Record<string, Partial<Conversation>>;
+    conversationUpdates?: Record<string, Partial<ConversationMetadata>>;
     receiptTotals: Record<string, { unreadCount: number; unseenCount: number }>;
     processed: {
         id: string;
@@ -70,7 +70,7 @@ export default function ConvoSocketIoProvider({ children }: {
     const userId = user?.id ?? '';
     const { convoSocketIo } = useSocketIoContext();
     const { mutate } = useSWRConfig();
-    const [conversationUpdates, setConversationUpdates] = useState<Record<string, Partial<Conversation>>>({});
+    const [conversationUpdates, setConversationUpdates] = useState<Record<string, Partial<ConversationMetadata>>>({});
     const [receiptTotals, setReceiptTotals] = useState<Record<string, { unreadCount: number; unseenCount: number }>>({});
     const [optionsAnchor, setOptionsAnchor] = useState<HTMLElement | null>(null);
     const [viewportHeight, setViewportHeight] = useState<number>();
@@ -259,7 +259,7 @@ export default function ConvoSocketIoProvider({ children }: {
                 knownConversations.current.set(conversationId, { peerId, stamp: `${result.conversation.lastSequence ?? result.conversation.updatedAt}:${result.conversation.state}` });
                 // Persist authenticated reads before publishing account totals. A message
                 // in the open pane must never briefly appear in the navbar as unread.
-                let totals: (Partial<Conversation> & { totalUnreadMsg?: number; totalUnseenMsg?: number }) | undefined = result.accountTotals ? { ...result.conversation, ...result.accountTotals } : undefined;
+                let totals: (Partial<ConversationMetadata> & { totalUnreadMsg?: number; totalUnseenMsg?: number }) | undefined = result.accountTotals ? { ...result.conversation, ...result.accountTotals } : undefined;
                 if (result.conversation.state === 'ACCEPTED') {
                     const focused = activeConversation.current === conversationId && document.visibilityState === 'visible';
                     const ids = await r.vault.atomic(async draft => result!.messages.filter(wire => {

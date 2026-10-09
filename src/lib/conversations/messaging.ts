@@ -5,7 +5,7 @@ import { currentMessagingRuntime, signMessaging } from '@/lib/signal/deviceManag
 import { DraftSignalStore, encryptBatch, decryptAndCommit, Target } from '@/lib/signal/signal';
 import { base64, unbase64, encryptAttachment, decryptAttachment, validateImageUploads } from '@/lib/signal/attachments';
 import { eventSchema, attachmentSchema, deleteSigningBytes, type MessagingEvent, type MessagingDevice, type MessagingWire, type LocalMessage, type Content } from '@/lib/signal/contracts';
-import type { Conversation } from '@/types/conversation';
+import type { Conversation, ConversationMetadata } from '@/types/conversation';
 export class MessageQueuedError extends Error {
     constructor() { super('Message is saved on this browser and will retry when delivery is available.'); }
 }
@@ -178,7 +178,7 @@ export interface SyncResult {
     }[];
     nextCursor: string;
     nextReceiptCursor: string;
-    conversation: Conversation;
+    conversation: ConversationMetadata;
 }
 export async function decryptWire(userId: string, wire: MessagingWire): Promise<{
     wire: MessagingWire;

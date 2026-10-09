@@ -50,7 +50,13 @@ const ChatClientList = ({convoList, slug, initialFetchFailed = false}: { convoLi
     // Patch known rows in place; only unknown/new conversations require a list fetch.
     const revalidate = inboxRevision === undefined || lastInboxRevision.current !== inboxRevision;
     lastInboxRevision.current = inboxRevision;
-    if (revision) void mutate(pages => pages?.map(page => page.map(item => ({ ...item, ...conversationUpdates?.[item.id], ...receiptTotals?.[item.id] }))), { revalidate }).catch(() => {});
+    if (revision) void mutate(pages => pages?.map(page => page.map(item => {
+      const update = conversationUpdates?.[item.id];
+      return { ...item, ...update, ...receiptTotals?.[item.id],
+        initiator: { ...item.initiator, ...update?.initiator, user: item.initiator.user },
+        responder: { ...item.responder, ...update?.responder, user: item.responder.user },
+      };
+    })), { revalidate }).catch(() => {});
   }, [revision, inboxRevision, mutate, receiptTotals, conversationUpdates]);
 
   const isReachingEnd =

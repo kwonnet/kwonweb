@@ -21,6 +21,11 @@ export interface Conversation {
   updatedAt: string;
   lastSequence?: string;
 }
+// Relay sync carries membership metadata, not the profiles returned by the inbox.
+export type ConversationMetadata = Omit<Conversation, 'initiator' | 'responder'> & {
+  initiator: Omit<Participant, 'user'>;
+  responder: Omit<Participant, 'user'>;
+};
 // HTTP list metadata and client-decrypted summaries have distinct types.
 export type EncryptedConversation = Conversation;
 export interface DecryptedConversation extends Conversation {lastMessage?: LocalMessage; previewLoading?: boolean}

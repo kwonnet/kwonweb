@@ -5,7 +5,7 @@ test('receipt revision refreshes every loaded conversation page and its badges t
  const dom=new JSDOM('<div id="root"></div>',{url:'https://kwonnet.test/messages'});global.window=dom.window;global.document=dom.window.document;global.IS_REACT_ACT_ENVIRONMENT=true;
  const {createRoot}=require('react-dom/client');const {SWRConfig}=require('swr');
  let revision=0,unread=2,inboxRevision=0,receiptTotals={};const pages=[];
- const rows=page=>Array.from({length:page===1?21:1},(_,index)=>({id:`${page}-${index}`,unreadCount:unread}));
+ const rows=page=>Array.from({length:page===1?21:1},(_,index)=>({id:`${page}-${index}`,unreadCount:unread,initiator:{id:'user',user:{id:'user',name:'You'}},responder:{id:'peer',user:{id:'peer',name:'Peer'}}}));
  const List=load('src/app/(dashboard)/messages/[[...slug]]/ChatListClient.tsx',{
   '@/context/ConvoSocketIoContext':{useConvoSocketIoContext:()=>({liveReady:true,revision,inboxRevision,receiptTotals})},
   '@/hooks':{useAuthSession:()=>({user:{id:'user'},token:'token'})},
@@ -95,4 +95,30 @@ test('navbar message badge counts unread messages even after background delivery
  const render=()=>require('react-dom/server').renderToStaticMarkup(React.createElement(Toolbar,{}));
  assert.match(render(),/data-message-count="3"/,'delivery alone does not erase unread navbar badge');
  stats={totalUnreadMsg:0,totalUnseenMsg:3};assert.match(render(),/data-message-count="0"/,'acknowledged reads clear the badge');
+});
+
+test('live sync metadata preserves participant profiles when updating the rendered conversation list',async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'https://kwonnet.test/messages'});global.window=dom.window;global.document=dom.window.document;global.IS_REACT_ACT_ENVIRONMENT=true;
+ let renderedRows;const ui=({children})=>React.createElement('div',null,children);
+ const context={revision:0,inboxRevision:0,receiptTotals:{},conversationUpdates:{},messages:[],ready:false,liveReady:true};
+ const row={id:'room',state:'ACCEPTED',kind:'chat',updatedAt:new Date().toISOString(),unreadCount:0,unseenCount:0,initiator:{id:'user',user:{id:'user',name:'You',username:'you'}},responder:{id:'peer',user:{id:'peer',name:'Peer',username:'peer',avatar:'/peer.png'}}};
+ const Display=load('src/app/(dashboard)/messages/[[...slug]]/DisplayChatList.tsx',{
+  '@/context/ConvoSocketIoContext':{useConvoSocketIoContext:()=>context},'@/hooks':{useAuthSession:()=>({user:{id:'user'}})},'@/utils':{formatRelativeTime:()=> 'now'},
+  '@mui/icons-material':{CheckOutlined:ui,DoneAllOutlined:ui},'@mui/material':{Avatar:({src,alt})=>React.createElement('img',{src,alt}),Box:ui,Stack:ui,Typography:ui},'next/navigation':{usePathname:()=>'/messages',useRouter:()=>({push(){}})},
+ }).default;
+ const List=load('src/app/(dashboard)/messages/[[...slug]]/ChatListClient.tsx',{
+  '@/context/ConvoSocketIoContext':{useConvoSocketIoContext:()=>context},'@/hooks':{useAuthSession:()=>({user:{id:'user'},token:'token'})},'@/lib/conversations':{getUserChatConversations:async()=>[row]},'lodash/debounce':{__esModule:true,default:fn=>fn},'./DisplayChatList':{__esModule:true,default:props=>{renderedRows=props.convoList;return React.createElement(Display,props);}},'@mui/material':{Box:ui,Button:ui},
+ }).default;
+ class Boundary extends React.Component{state={error:false};static getDerivedStateFromError(){return {error:true};}render(){return this.state.error?'CRASHED':this.props.children;}}
+ const {SWRConfig}=require('swr'),root=require('react-dom/client').createRoot(document.getElementById('root'),{onCaughtError:()=>{}}),cache=new Map();
+ const render=()=>root.render(React.createElement(SWRConfig,{value:{provider:()=>cache}},React.createElement(Boundary,null,React.createElement(List,{slug:'chat',convoList:[row],initialFetchFailed:true}))));
+ try{
+  await React.act(async()=>render());assert.match(document.body.textContent,/Peer/);
+  for(const unread of [1,0]){
+   context.conversationUpdates={room:{id:'room',state:'ACCEPTED',updatedAt:new Date().toISOString(),initiator:{id:'user',isPaid:false},responder:{id:'peer',isPaid:false},unreadCount:unread,unseenCount:unread}};context.revision++;
+   await React.act(async()=>render());await React.act(async()=>new Promise(resolve=>setTimeout(resolve,20)));
+   assert.doesNotMatch(document.body.textContent,/CRASHED/,'sending/receiving sync must not remove the profile required by the list row');
+   assert.equal(renderedRows[0].unreadCount,unread,'the live update was applied to the row');assert.match(document.body.textContent,/Peer/);assert.equal(document.querySelector('img').getAttribute('src'),'/peer.png');
+  }
+ }finally{await React.act(async()=>root.unmount());dom.window.close();}
 });
