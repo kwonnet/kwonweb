@@ -338,7 +338,7 @@ const FeedCardReplyItem = ({
                 height: 14,
                 width: 14,
                 transform: "rotate(90deg)",
-                color: (theme) => theme.vars.palette.text.disabled,
+                color: (theme) => theme.vars.palette.text.secondary,
               }}
             />
             <Typography
@@ -350,7 +350,7 @@ const FeedCardReplyItem = ({
                 my: 0,
               }}
               variant="body2"
-              color="textDisabled"
+              color="text.secondary"
             >
               {post?.author.name} reposted
             </Typography>
@@ -360,7 +360,7 @@ const FeedCardReplyItem = ({
         {!isDeleted && (
           <Stack direction={"row"} sx={{ gap: 1, minWidth: 0, mb: 1 }}>
             <Box>
-              <Badge
+              <Badge slotProps={{ badge: { "aria-hidden": false } }}
                 overlap="circular"
                 anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                 badgeContent={
@@ -441,7 +441,7 @@ const FeedCardReplyItem = ({
                   </Typography>
                   <Typography
                     sx={{ display: "block" }}
-                    color="textDisabled"
+                    color="text.secondary"
                     variant="caption"
                   >
                     {formatRelativeTime(item?.createdAt)}
@@ -464,7 +464,7 @@ const FeedCardReplyItem = ({
                       sx={{
                         height: 20,
                         width: 20,
-                        color: (theme) => theme.vars.palette.text.disabled,
+                        color: (theme) => theme.vars.palette.text.secondary,
                       }}
                     />
                   </IconButton>
@@ -497,7 +497,7 @@ const FeedCardReplyItem = ({
             {isDeleted && item.totalReplies > 0 && (
               <Box>
                 <Typography
-                  color="textDisabled"
+                  color="text.secondary"
                   sx={{
                     textAlign: "center",
                     pt: 4
@@ -527,7 +527,7 @@ const FeedCardReplyItem = ({
                       alignItems: "center"
                     }}
                   >
-                    <Typography color="textDisabled" variant="caption">
+                    <Typography color="text.secondary" variant="caption">
                       replying to{" "}
                     </Typography>
                     <Typography
@@ -575,10 +575,10 @@ const FeedCardReplyItem = ({
                         cursor: "pointer"
                       }}>
                       <LoyaltyOutlinedIcon
-                        sx={{ color: "text.disabled", width: 12, height: 12 }}
+                        sx={{ color: "text.secondary", width: 12, height: 12 }}
                       />
                       <Typography
-                        color="textDisabled"
+                        color="text.secondary"
                         sx={{
                           display: "-webkit-box",
                           WebkitLineClamp: 1, // Number of lines before truncating
@@ -614,10 +614,10 @@ const FeedCardReplyItem = ({
                         cursor: "pointer"
                       }}>
                       <AlternateEmailOutlinedIcon
-                        sx={{ color: "text.disabled", width: 12, height: 12 }}
+                        sx={{ color: "text.secondary", width: 12, height: 12 }}
                       />
                       <Typography
-                        color="textDisabled"
+                        color="text.secondary"
                         sx={{
                           display: "-webkit-box",
                           WebkitLineClamp: 1, // Number of lines before truncating
@@ -635,7 +635,7 @@ const FeedCardReplyItem = ({
 
                 {item.type === PostType.POLL && item?.poll?.isMultiVote && (
                   <Typography
-                    color="textDisabled"
+                    color="text.secondary"
                     sx={{
                       display: "-webkit-box",
                       WebkitLineClamp: 4, // Number of lines before truncating
@@ -697,7 +697,7 @@ const FeedCardReplyItem = ({
                     direction={"row"}
                     sx={{
                       alignItems: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -717,7 +717,7 @@ const FeedCardReplyItem = ({
                         sx={{
                           height: 16,
                           width: 16,
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                       />
                     </IconButton>
@@ -729,7 +729,7 @@ const FeedCardReplyItem = ({
                     direction={"row"}
                     sx={{
                       alignItems: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -747,7 +747,7 @@ const FeedCardReplyItem = ({
                           color: (theme) =>
                             item.actions.hasReposted
                               ? theme.vars.palette.success.light
-                              : theme.vars.palette.text.disabled,
+                              : theme.vars.palette.text.secondary,
                         }}
                       />
                     </IconButton>
@@ -761,7 +761,7 @@ const FeedCardReplyItem = ({
                     direction={"row"}
                     sx={{
                       alignItems: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -779,7 +779,7 @@ const FeedCardReplyItem = ({
                     direction={"row"}
                     sx={{
                       alignItems: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -793,7 +793,7 @@ const FeedCardReplyItem = ({
                         sx={{
                           height: 16,
                           width: 16,
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                       />
                     </IconButton>
@@ -805,7 +805,7 @@ const FeedCardReplyItem = ({
                     direction={"row"}
                     sx={{
                       alignItems: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -819,7 +819,7 @@ const FeedCardReplyItem = ({
                           sx={{
                             height: 16,
                             width: 16,
-                            color: (theme) => theme.vars.palette.text.disabled,
+                            color: (theme) => theme.vars.palette.text.secondary,
                           }}
                         />
                       ) : (
@@ -842,7 +842,7 @@ const FeedCardReplyItem = ({
                     sx={{
                       alignItems: "center",
                       // justifyContent: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -851,7 +851,7 @@ const FeedCardReplyItem = ({
                         sx={{
                           height: 16,
                           width: 16,
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                       />
                     </IconButton>
@@ -864,7 +864,7 @@ const FeedCardReplyItem = ({
                     sx={{
                       alignItems: "center",
                       // justifyContent: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -873,7 +873,7 @@ const FeedCardReplyItem = ({
                         sx={{
                           height: 16,
                           width: 16,
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                       />
                     </IconButton>

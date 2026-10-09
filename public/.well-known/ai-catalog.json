@@ -1,0 +1,22 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "Kwonnet",
+    "documentationUrl": "https://kwonnet.com/llms.txt",
+    "logoUrl": "https://kwonnet.com/android-chrome-512x512.png"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:kwonnet.com:docs:overview",
+      "displayName": "Kwonnet public website overview",
+      "type": "text/plain",
+      "url": "https://kwonnet.com/llms.txt",
+      "description": "Kwonnet overview, public reference links, policies, and sitemap. Kwonnet - Connecting the dots and nodes.",
+      "tags": [
+        "documentation",
+        "social-platform",
+        "public-reference"
+      ]
+    }
+  ]
+}

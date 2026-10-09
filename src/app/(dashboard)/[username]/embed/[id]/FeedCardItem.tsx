@@ -122,7 +122,7 @@ const FeedCardItem = ({
                   height: 14,
                   width: 14,
                   transform: "rotate(90deg)",
-                  color: (theme) => theme.palette.text.disabled,
+                  color: (theme) => theme.palette.text.secondary,
                 }}
               />
               <Typography
@@ -134,7 +134,7 @@ const FeedCardItem = ({
                   my: -2,
                 }}
                 variant="body2"
-                color="textDisabled"
+                color="text.secondary"
               >
                 {post?.author.name} reposted
               </Typography>
@@ -209,7 +209,7 @@ const FeedCardItem = ({
                   >
                     <Typography
                       sx={{ display: "block" }}
-                      color="textDisabled"
+                      color="text.secondary"
                       variant="caption"
                     >
                       @{item?.author?.username}
@@ -224,7 +224,7 @@ const FeedCardItem = ({
                   </Typography>
                   <Typography
                     sx={{ display: "block" }}
-                    color="textDisabled"
+                    color="text.secondary"
                     variant="caption"
                   >
                     {formatRelativeTime(item?.createdAt)}
@@ -255,7 +255,7 @@ const FeedCardItem = ({
                 {/* repost */}
                 {item.type === PostType.POLL && item?.poll?.isMultiVote && (
                   <Typography
-                    color="textDisabled"
+                    color="text.secondary"
                     sx={{
                       display: "-webkit-box",
                       WebkitLineClamp: 4, // Number of lines before truncating
@@ -298,7 +298,7 @@ const FeedCardItem = ({
                   >
                     <Typography
                       sx={{ display: "block" }}
-                      color="textDisabled"
+                      color="text.secondary"
                       variant="caption"
                     >
                       {formatDateTime(post?.createdAt)}
@@ -323,7 +323,7 @@ const FeedCardItem = ({
                       direction={"row"}
                       sx={{
                         alignItems: "center",
-                        color: (theme) => theme.palette.text.disabled,
+                        color: (theme) => theme.palette.text.secondary,
                       }}
                       spacing={-0.7}
                     >
@@ -335,7 +335,7 @@ const FeedCardItem = ({
                           sx={{
                             height: 16,
                             width: 16,
-                            color: (theme) => theme.palette.text.disabled,
+                            color: (theme) => theme.palette.text.secondary,
                           }}
                         />
                       </IconButton>
@@ -347,7 +347,7 @@ const FeedCardItem = ({
                       direction={"row"}
                       sx={{
                         alignItems: "center",
-                        color: (theme) => theme.palette.text.disabled,
+                        color: (theme) => theme.palette.text.secondary,
                       }}
                       spacing={-0.7}
                     >
@@ -365,7 +365,7 @@ const FeedCardItem = ({
                             color: (theme) =>
                               item.actions.hasReposted
                                 ? theme.vars.palette.success.light
-                                : theme.vars.palette.text.disabled,
+                                : theme.vars.palette.text.secondary,
                           }}
                         />
                       </IconButton>
@@ -379,7 +379,7 @@ const FeedCardItem = ({
                       direction={"row"}
                       sx={{
                         alignItems: "center",
-                        color: (theme) => theme.palette.text.disabled,
+                        color: (theme) => theme.palette.text.secondary,
                       }}
                       spacing={-0.7}
                     >
@@ -397,7 +397,7 @@ const FeedCardItem = ({
                       direction={"row"}
                       sx={{
                         alignItems: "center",
-                        color: (theme) => theme.palette.text.disabled,
+                        color: (theme) => theme.palette.text.secondary,
                       }}
                       spacing={-0.7}
                     >
@@ -411,7 +411,7 @@ const FeedCardItem = ({
                           sx={{
                             height: 16,
                             width: 16,
-                            color: (theme) => theme.palette.text.disabled,
+                            color: (theme) => theme.palette.text.secondary,
                           }}
                         />
                       </IconButton>
@@ -423,7 +423,7 @@ const FeedCardItem = ({
                       direction={"row"}
                       sx={{
                         alignItems: "center",
-                        color: (theme) => theme.palette.text.disabled,
+                        color: (theme) => theme.palette.text.secondary,
                       }}
                       spacing={-0.7}
                     >
@@ -437,7 +437,7 @@ const FeedCardItem = ({
                             sx={{
                               height: 16,
                               width: 16,
-                              color: (theme) => theme.palette.text.disabled,
+                              color: (theme) => theme.palette.text.secondary,
                             }}
                           />
                         ) : (
@@ -460,7 +460,7 @@ const FeedCardItem = ({
                       sx={{
                         alignItems: "center",
                         // justifyContent: "center",
-                        color: (theme) => theme.palette.text.disabled,
+                        color: (theme) => theme.palette.text.secondary,
                       }}
                       spacing={-0.7}
                     >
@@ -469,7 +469,7 @@ const FeedCardItem = ({
                           sx={{
                             height: 16,
                             width: 16,
-                            color: (theme) => theme.palette.text.disabled,
+                            color: (theme) => theme.palette.text.secondary,
                           }}
                         />
                       </IconButton>

@@ -845,7 +845,7 @@ export default function CreateQuoteDrawer({
                             </Tooltip>
                             <Typography
                               variant="caption"
-                              color="textDisabled"
+                              color="text.secondary"
                               sx={{ fontFamily: "PlayFair" }}
                             >
                               Media
@@ -880,7 +880,7 @@ export default function CreateQuoteDrawer({
                             </IconButton>
                             <Typography
                               variant="caption"
-                              color="textDisabled"
+                              color="text.secondary"
                               sx={{ fontFamily: "PlayFair" }}
                             >
                               Poll
@@ -916,7 +916,7 @@ export default function CreateQuoteDrawer({
                             </Tooltip>
                             <Typography
                               variant="caption"
-                              color="textDisabled"
+                              color="text.secondary"
                               sx={{
                                 fontFamily: "PlayFair",
                                 whiteSpace: "nowrap", // Prevents wrapping

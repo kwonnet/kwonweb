@@ -1006,7 +1006,7 @@ export default function CreatePostDrawer({
                             </Tooltip>
                             <Typography
                               variant="caption"
-                              color="textDisabled"
+                              color="text.secondary"
                               sx={{ fontFamily: "PlayFair" }}
                             >
                               Media
@@ -1042,7 +1042,7 @@ export default function CreatePostDrawer({
                             </IconButton>
                             <Typography
                               variant="caption"
-                              color="textDisabled"
+                              color="text.secondary"
                               sx={{ fontFamily: "PlayFair" }}
                             >
                               Poll
@@ -1077,7 +1077,7 @@ export default function CreatePostDrawer({
                             </IconButton>
                             <Typography
                               variant="caption"
-                              color="textDisabled"
+                              color="text.secondary"
                               sx={{ fontFamily: "PlayFair" }}
                             >
                               Quiz
@@ -1112,7 +1112,7 @@ export default function CreatePostDrawer({
                             </Tooltip>
                             <Typography
                               variant="caption"
-                              color="textDisabled"
+                              color="text.secondary"
                               sx={{
                                 fontFamily: "PlayFair",
                                 whiteSpace: "nowrap", // Prevents wrapping

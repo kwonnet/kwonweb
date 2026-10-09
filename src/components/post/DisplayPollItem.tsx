@@ -99,7 +99,7 @@ const DisplayPollItem = ({
                 post.userId === user.id || poll.isExpired ? (
                   <Typography
                     variant="caption"
-                    color="textDisabled"
+                    color="text.secondary"
                     sx={{ px: 1 }}
 
                   >
@@ -113,7 +113,7 @@ const DisplayPollItem = ({
                     return (
                       <Typography
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                         sx={{ px: 1 }}
                         key={voter.id}
                       >
@@ -176,14 +176,14 @@ const DisplayPollItem = ({
                 }}>
                 <Typography
                   sx={{ fontSize: 10 }}
-                  color="textDisabled"
+                  color="text.secondary"
                   variant="caption"
                 >
                   Participants
                 </Typography>
                 <Typography
                   sx={{ fontSize: 10 }}
-                  color="textDisabled"
+                  color="text.secondary"
                   variant="caption"
                 >
                   {formatNumber(totalVotes)}
@@ -200,7 +200,7 @@ const DisplayPollItem = ({
                   alignItems: "center"
                 }}>
                 <Typography
-                  color="textDisabled"
+                  color="text.secondary"
                   variant="caption"
                   sx={{ fontSize: 10 }}
                 >
@@ -218,14 +218,14 @@ const DisplayPollItem = ({
             ) : (
               <Stack direction={"row"} sx={{ alignItems: "center" }}>
                 <Typography
-                  color="textDisabled"
+                  color="text.secondary"
                   variant="caption"
                   sx={{ fontSize: 10 }}
                 >
                   Ended:
                 </Typography>
                 <Typography
-                  color="textDisabled"
+                  color="text.secondary"
                   variant="caption"
                   sx={{ fontSize: 10 }}
                 >
@@ -284,7 +284,7 @@ const DisplayPollItem = ({
               post.userId === user.id || poll.isExpired ? (
                 <Typography
                   variant="caption"
-                  color="textDisabled"
+                  color="text.secondary"
                   sx={{ px: 1 }}
                 >
                   {item.votes > 0
@@ -297,7 +297,7 @@ const DisplayPollItem = ({
                   return (
                     <Typography
                       variant="caption"
-                      color="textDisabled"
+                      color="text.secondary"
                       sx={{ px: 1 }}
                       key={voter.id}
                     >
@@ -354,14 +354,14 @@ const DisplayPollItem = ({
               }}>
               <Typography
                 sx={{ fontSize: 10 }}
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
               >
                 Participants
               </Typography>
               <Typography
                 sx={{ fontSize: 10 }}
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
               >
                 {formatNumber(totalVotes)}
@@ -378,7 +378,7 @@ const DisplayPollItem = ({
                 alignItems: "center"
               }}>
               <Typography
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
                 sx={{ fontSize: 10 }}
               >
@@ -396,14 +396,14 @@ const DisplayPollItem = ({
           ) : (
             <Stack direction={"row"} sx={{ alignItems: "center" }}>
               <Typography
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
                 sx={{ fontSize: 10 }}
               >
                 Ended:
               </Typography>
               <Typography
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
                 sx={{ fontSize: 10 }}
               >

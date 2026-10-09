@@ -115,7 +115,7 @@ const ConnectionCard = ({
                 overflow: "hidden",
                 textOverflow: "ellipsis",
               }}
-              color="textDisabled"
+              color="text.secondary"
               variant="caption"
             >
               @{item.username}
@@ -144,7 +144,7 @@ const ConnectionCard = ({
         </Button>}
       </Stack>
       {!mini && (<Box sx={{ px: 2, py: 1 }}>
-        <Typography color="textDisabled" component={"p"} variant="caption">
+        <Typography color="text.secondary" component={"p"} variant="caption">
           {shortenText(
             "Lorem ipsum dolor sit amet consectetur adipisicing elit. Deleniti ratione alias eveniet corporis rem saepe consectetur hic ipsam ea cum! Blanditiis deserunt totam including lead management, analytics",
             60

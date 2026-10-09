@@ -101,7 +101,7 @@ export default function BadgeAvatar({
                 fontStyle: "italic", 
                 position: "relative", 
               }}
-              color="textDisabled"
+              color="text.secondary"
               variant="caption"
             >
               @{user.username}

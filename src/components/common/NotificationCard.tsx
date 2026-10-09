@@ -84,7 +84,7 @@ const NotificationCard = ({
                   }}>
                     <Typography
                     variant="body2"
-                    color={item.isSeen ? "textDisabled" : "textPrimary"}
+                    color={item.isSeen ? "text.secondary" : "textPrimary"}
                     sx={{ alignItems: "center" }}
                   >
                     {item.message} 
@@ -95,7 +95,7 @@ const NotificationCard = ({
                   
                   </Stack>
                   {isReply && <Stack direction={"row"} spacing={0.5}>
-                    <Typography variant="caption" color="textDisabled">Replying to </Typography>
+                    <Typography variant="caption" color="text.secondary">Replying to </Typography>
                     <Typography component={Link} href={`/@${item?.post?.parent?.user?.username}`} sx={{textDecoration: "none"}} variant="caption" color="info">@{item?.post?.parent?.user?.username}</Typography>
                     </Stack>}
                   {isPost && <Box 
@@ -110,9 +110,9 @@ const NotificationCard = ({
                     {<PostText disablePadding={true} content={item?.post.content} />}
                   </Box>}
                   <Stack spacing={0.5} direction={"row"}>
-                    <Typography style={{fontStyle: "italic"}} variant="caption" color="textDisabled">{formatRelativeTime(item.createdAt)}</Typography>
-                    <Typography variant="caption" color="textDisabled">•</Typography>
-                  <Typography style={{fontStyle: "italic"}} variant="caption" color="textDisabled">{formatDateTime(item.createdAt, "short", "medium")}</Typography>
+                    <Typography style={{fontStyle: "italic"}} variant="caption" color="text.secondary">{formatRelativeTime(item.createdAt)}</Typography>
+                    <Typography variant="caption" color="text.secondary">•</Typography>
+                  <Typography style={{fontStyle: "italic"}} variant="caption" color="text.secondary">{formatDateTime(item.createdAt, "short", "medium")}</Typography>
                   </Stack>
                 </Box>
               </Grid>

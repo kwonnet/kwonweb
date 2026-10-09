@@ -94,7 +94,7 @@ const FeedQuoteActionDrawer = ({
                     height: 16,
                     width: 16,
                     transform: "rotate(90deg)",
-                    color: (theme) => hasReposted ? theme.vars.palette.success.light : theme.vars.palette.text.disabled,
+                    color: (theme) => hasReposted ? theme.vars.palette.success.light : theme.vars.palette.text.secondary,
                   }}
                 />
               </ListItemIcon>
@@ -109,7 +109,7 @@ const FeedQuoteActionDrawer = ({
                   sx={{
                     height: 16,
                     width: 16,
-                    color: (theme) => theme.palette.text.disabled,
+                    color: (theme) => theme.palette.text.secondary,
                   }}
                 />
               </ListItemIcon>

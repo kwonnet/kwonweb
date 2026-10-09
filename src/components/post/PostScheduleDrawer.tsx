@@ -106,7 +106,7 @@ const PostScheduleDrawer = ({
         <Container maxWidth="xl" sx={{ mt: 0, pb: 2 }}>
           <Box>
             <Typography
-              color="textDisabled"
+              color="text.secondary"
               sx={{ fontFamily: "PlayFair", py: 2 }}
               variant="subtitle1"
             >

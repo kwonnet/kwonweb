@@ -335,7 +335,7 @@ export default function PostReportModal({
                   Mute @{post.author.username}
                 </Button>
               </Box>
-              <Typography variant="caption" color="textDisabled">
+              <Typography variant="caption" color="text.secondary">
                 Block @{post.author.username} from following or messaging you.
                 They will be able to see your public posts, but will no longer
                 be able to engage with them. You also won&apos;t see any posts
@@ -350,7 +350,7 @@ export default function PostReportModal({
                   Block @{post.author.username}
                 </Button>
               </Box>
-              <Typography variant="caption" color="textDisabled">
+              <Typography variant="caption" color="text.secondary">
                 Please note that reporting {isPostReport ? "a post" : "a user"}{" "}
                 does not guarantee{" "}
                 {isPostReport ? "its removal" : "their suspension"}. Our team

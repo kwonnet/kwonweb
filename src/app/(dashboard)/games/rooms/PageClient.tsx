@@ -143,7 +143,7 @@ const PageClient = ({
                         </Typography>
                         <Typography
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                           sx={{ fontFamily: "PlayFair" }}
                         >
                           {item.description}

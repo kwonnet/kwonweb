@@ -144,6 +144,13 @@ const theme = createTheme({
     colorSchemes: {
       light: {
         palette: {
+          background: { default: '#ffffff', paper: '#ffffff' },
+          text: { primary: '#17212b', secondary: '#4b5563' },
+          primary: { main: '#1565c0', contrastText: '#ffffff' },
+          info: { main: '#006b9b', contrastText: '#ffffff' },
+          success: { main: '#2e7d32', contrastText: '#ffffff' },
+          warning: { main: '#8a4b00', contrastText: '#ffffff' },
+          error: { main: '#c62828', contrastText: '#ffffff' },
           // background: {
           //   default: '#F9F9FE',
           //   paper: '#EEEEF9',
@@ -215,6 +222,12 @@ const theme = createTheme({
       },
       dark: {
         palette: {
+          text: { primary: '#f3f4f6', secondary: '#b0b8c4' },
+          primary: { main: '#90caf9', contrastText: '#102030' },
+          info: { main: '#81d4fa', contrastText: '#102030' },
+          success: { main: '#81c784', contrastText: '#102030' },
+          warning: { main: '#ffcc80', contrastText: '#102030' },
+          error: { main: '#ff8a80', contrastText: '#102030' },
           // primary: {
           //   main: "#031d37",
           //   contrastText: "#fff",

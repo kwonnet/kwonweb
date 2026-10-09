@@ -349,7 +349,7 @@ const ThreadCardItem = ({
                 height: 14,
                 width: 14,
                 transform: "rotate(90deg)",
-                color: (theme) => theme.vars.palette.text.disabled,
+                color: (theme) => theme.vars.palette.text.secondary,
               }}
             />
             <Typography
@@ -361,7 +361,7 @@ const ThreadCardItem = ({
                 my: -2,
               }}
               variant="body2"
-              color="textDisabled"
+              color="text.secondary"
             >
               {post?.author.name} reposted
             </Typography>
@@ -371,7 +371,7 @@ const ThreadCardItem = ({
         {!isDeleted && (
           <Stack direction={"row"}>
             <Box>
-              <Badge
+              <Badge slotProps={{ badge: { "aria-hidden": false } }}
                 overlap="circular"
                 anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                 badgeContent={
@@ -454,7 +454,7 @@ const ThreadCardItem = ({
                   </Typography>
                   <Typography
                     sx={{ display: "block" }}
-                    color="textDisabled"
+                    color="text.secondary"
                     variant="caption"
                   >
                     {formatRelativeTime(item?.createdAt)}
@@ -477,7 +477,7 @@ const ThreadCardItem = ({
                       sx={{
                         height: 20,
                         width: 20,
-                        color: (theme) => theme.vars.palette.text.disabled,
+                        color: (theme) => theme.vars.palette.text.secondary,
                       }}
                     />
                   </IconButton>
@@ -509,7 +509,7 @@ const ThreadCardItem = ({
             {isDeleted && item.totalReplies > 0 && (
               <Box>
                 <Typography
-                  color="textDisabled"
+                  color="text.secondary"
                   sx={{
                     textAlign: "center",
                     pt: 4
@@ -539,7 +539,7 @@ const ThreadCardItem = ({
                       alignItems: "center",
                       mt: -0.5
                     }}>
-                    <Typography color="textDisabled" variant="caption">
+                    <Typography color="text.secondary" variant="caption">
                       replying to{" "}
                     </Typography>
                     <Typography
@@ -587,10 +587,10 @@ const ThreadCardItem = ({
                         cursor: "pointer"
                       }}>
                       <LoyaltyOutlinedIcon
-                        sx={{ color: "text.disabled", width: 12, height: 12 }}
+                        sx={{ color: "text.secondary", width: 12, height: 12 }}
                       />
                       <Typography
-                        color="textDisabled"
+                        color="text.secondary"
                         sx={{
                           display: "-webkit-box",
                           WebkitLineClamp: 1, // Number of lines before truncating
@@ -626,10 +626,10 @@ const ThreadCardItem = ({
                         cursor: "pointer"
                       }}>
                       <AlternateEmailOutlinedIcon
-                        sx={{ color: "text.disabled", width: 12, height: 12 }}
+                        sx={{ color: "text.secondary", width: 12, height: 12 }}
                       />
                       <Typography
-                        color="textDisabled"
+                        color="text.secondary"
                         sx={{
                           display: "-webkit-box",
                           WebkitLineClamp: 1, // Number of lines before truncating
@@ -647,7 +647,7 @@ const ThreadCardItem = ({
 
                 {item.type === PostType.POLL && item?.poll?.isMultiVote && (
                   <Typography
-                    color="textDisabled"
+                    color="text.secondary"
                     sx={{
                       display: "-webkit-box",
                       WebkitLineClamp: 4, // Number of lines before truncating
@@ -702,7 +702,7 @@ const ThreadCardItem = ({
                     >
                       <Typography
                         sx={{ display: "block" }}
-                        color="textDisabled"
+                        color="text.secondary"
                         variant="caption"
                       >
                         {formatDateTime(item?.createdAt)}
@@ -711,13 +711,13 @@ const ThreadCardItem = ({
                       <Typography
                         sx={{ display: "block", position: "relative" }}
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                       >
                         •
                       </Typography>
                       <Typography
                         sx={{ display: "block" }}
-                        color="textDisabled"
+                        color="text.secondary"
                         variant="caption"
                       >
                         {formatFeedNumber(item?.totalViews)}
@@ -725,21 +725,21 @@ const ThreadCardItem = ({
                       <Typography
                         sx={{ display: "block", position: "relative" }}
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                       >
                         Views
                       </Typography>
                       <Typography
                         sx={{ display: "block", position: "relative" }}
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                       >
                         •
                       </Typography>
 
                       <Typography
                         sx={{ display: "block" }}
-                        color="textDisabled"
+                        color="text.secondary"
                         variant="caption"
                       >
                         {formatFeedNumber(item?.totalLikes)}
@@ -747,14 +747,14 @@ const ThreadCardItem = ({
                       <Typography
                         sx={{ display: "block", position: "relative" }}
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                       >
                         Likes
                       </Typography>
                       <Typography
                         sx={{ display: "block", position: "relative" }}
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                       >
                         •
                       </Typography>
@@ -774,7 +774,7 @@ const ThreadCardItem = ({
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           Bookmarks
                         </Typography>
@@ -782,13 +782,13 @@ const ThreadCardItem = ({
                       <Typography
                         sx={{ display: "block", position: "relative" }}
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                       >
                         •
                       </Typography>
                       <Typography
                         sx={{ display: "block" }}
-                        color="textDisabled"
+                        color="text.secondary"
                         variant="caption"
                       >
                         {formatFeedNumber(item?.totalReplies)}
@@ -796,20 +796,20 @@ const ThreadCardItem = ({
                       <Typography
                         sx={{ display: "block", position: "relative" }}
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                       >
                         Replies
                       </Typography>
                       <Typography
                         sx={{ display: "block", position: "relative" }}
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                       >
                         •
                       </Typography>
                       <Typography
                         sx={{ display: "block" }}
-                        color="textDisabled"
+                        color="text.secondary"
                         variant="caption"
                       >
                         {formatFeedNumber(item?.totalShares)}
@@ -817,14 +817,14 @@ const ThreadCardItem = ({
                       <Typography
                         sx={{ display: "block", position: "relative" }}
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                       >
                         Shares
                       </Typography>
                       <Typography
                         sx={{ display: "block", position: "relative" }}
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                       >
                         •
                       </Typography>
@@ -844,7 +844,7 @@ const ThreadCardItem = ({
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           Reposts
                         </Typography>
@@ -852,7 +852,7 @@ const ThreadCardItem = ({
                       <Typography
                         sx={{ display: "block", position: "relative" }}
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                       >
                         •
                       </Typography>
@@ -872,7 +872,7 @@ const ThreadCardItem = ({
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           Quotes
                         </Typography>
@@ -900,7 +900,7 @@ const ThreadCardItem = ({
                     direction={"row"}
                     sx={{
                       alignItems: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -920,7 +920,7 @@ const ThreadCardItem = ({
                         sx={{
                           height: 16,
                           width: 16,
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                       />
                     </IconButton>
@@ -932,7 +932,7 @@ const ThreadCardItem = ({
                     direction={"row"}
                     sx={{
                       alignItems: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -950,7 +950,7 @@ const ThreadCardItem = ({
                           color: (theme) =>
                             item.actions.hasReposted
                               ? theme.vars.palette.success.light
-                              : theme.vars.palette.text.disabled,
+                              : theme.vars.palette.text.secondary,
                         }}
                       />
                     </IconButton>
@@ -964,7 +964,7 @@ const ThreadCardItem = ({
                     direction={"row"}
                     sx={{
                       alignItems: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -982,7 +982,7 @@ const ThreadCardItem = ({
                     direction={"row"}
                     sx={{
                       alignItems: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -996,7 +996,7 @@ const ThreadCardItem = ({
                         sx={{
                           height: 16,
                           width: 16,
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                       />
                     </IconButton>
@@ -1008,7 +1008,7 @@ const ThreadCardItem = ({
                     direction={"row"}
                     sx={{
                       alignItems: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -1022,7 +1022,7 @@ const ThreadCardItem = ({
                           sx={{
                             height: 16,
                             width: 16,
-                            color: (theme) => theme.vars.palette.text.disabled,
+                            color: (theme) => theme.vars.palette.text.secondary,
                           }}
                         />
                       ) : (
@@ -1045,7 +1045,7 @@ const ThreadCardItem = ({
                     sx={{
                       alignItems: "center",
                       // justifyContent: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -1054,7 +1054,7 @@ const ThreadCardItem = ({
                         sx={{
                           height: 16,
                           width: 16,
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                       />
                     </IconButton>
@@ -1067,7 +1067,7 @@ const ThreadCardItem = ({
                     sx={{
                       alignItems: "center",
                       // justifyContent: "center",
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                     spacing={-0.7}
                   >
@@ -1076,7 +1076,7 @@ const ThreadCardItem = ({
                         sx={{
                           height: 16,
                           width: 16,
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                       />
                     </IconButton>

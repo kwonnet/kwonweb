@@ -333,7 +333,7 @@ export default function ReportUserModal({
                           : "Mute"} @{state?.user.username}
                 </Button>
               </Box>
-              <Typography variant="caption" color="textDisabled">
+              <Typography variant="caption" color="text.secondary">
                 Block @{state?.user.username} from following or messaging you. They
                 will be able to see your public posts, but will no longer be
                 able to engage with them. You also won&apos;t see any posts or
@@ -350,7 +350,7 @@ export default function ReportUserModal({
                           : "Block"} @{state?.user.username}
                 </Button>
               </Box>
-              <Typography variant="caption" color="textDisabled">
+              <Typography variant="caption" color="text.secondary">
                 Please note that reporting a user does not guarantee their
                 suspension. Our team will review the report and take appropriate
                 action.

@@ -207,7 +207,7 @@ const UserPostsFeed = ({ posts, userId, kind }: { posts?: FeedPost[], userId: st
       />}
       {isLoading ? null : !isReachingEnd ? <div ref={ref} style={{padding: "10px 0px 10px 0px"}} /> : <Typography
         variant="caption"
-        color="textDisabled"
+        color="text.secondary"
         sx={{
           textAlign: "center",
           display: "block"

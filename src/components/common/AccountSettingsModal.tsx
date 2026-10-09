@@ -189,7 +189,7 @@ export default function AccountSettingsModal({
                   : "Make Account Private"}
               </Button>
             </Box>
-            <Typography sx={{ py: 1 }} variant="h5" color="textDisabled">
+            <Typography sx={{ py: 1 }} variant="h5" color="text.secondary">
               Deactivate or Restore your account
             </Typography>
             <Stack direction={"row"} spacing={1}>

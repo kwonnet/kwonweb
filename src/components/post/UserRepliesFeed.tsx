@@ -291,7 +291,7 @@ const UserRepliesFeed = ({
       ) : (
         <Typography
           variant="caption"
-          color="textDisabled"
+          color="text.secondary"
           sx={{
             textAlign: "center",
             display: "block"

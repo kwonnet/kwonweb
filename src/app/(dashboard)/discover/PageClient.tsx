@@ -61,7 +61,7 @@ const PageClient = ({ trends, topic }: { trends: TrendingTopics[]; topic?: strin
               alignItems: "center"
             }}>
             <Typography
-              color="textDisabled"
+              color="text.secondary"
               variant="caption"
             >{`${index + 1} . Trending in ${item.country}`}</Typography>
             <IconButton aria-label="More options" size="small">
@@ -70,7 +70,7 @@ const PageClient = ({ trends, topic }: { trends: TrendingTopics[]; topic?: strin
           </Stack>
           <Typography component={Link} href={searchHref(item.trend)} variant="subtitle1" sx={{ display: "block", color: "text.primary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>{item.trend}</Typography>
           <Typography
-            color="textDisabled"
+            color="text.secondary"
             variant="caption"
           >{`${formatNumber(item.last_24_posts)} Posts - ${formatNumber(item.last_24_users)} Users in the last 24 hours`}</Typography>
           {/* <Divider /> */}

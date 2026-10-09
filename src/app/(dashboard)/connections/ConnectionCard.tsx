@@ -122,13 +122,13 @@ const ConnectionCard = ({
                 overflow: "hidden",
                 textOverflow: "ellipsis",
               }}
-              color="textDisabled"
+              color="text.secondary"
               variant="caption"
             >
               @{item.username}
             </Typography>
           </Stack>
-          <Typography color="textDisabled" component={"p"} variant="caption">
+          <Typography color="text.secondary" component={"p"} variant="caption">
             {shortenText(
               "Lorem ipsum dolor sit amet consectetur adipisicing elit. Deleniti ratione alias eveniet corporis rem saepe consectetur hic ipsam ea cum! Blanditiis deserunt totam",
               60
@@ -181,7 +181,7 @@ const ConnectionCard = ({
                   display: "block",
                   whiteSpace: "pre-line",
                 }}
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
               >
                 {composeMutualText({

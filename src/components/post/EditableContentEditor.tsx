@@ -180,7 +180,7 @@ const ContentEditor = ({
               {counter > 0 && (
                 <Typography
                   variant="caption"
-                  color={counter > 500 ? "error" : "textDisabled"}
+                  color={counter > 500 ? "error" : "text.secondary"}
                 >
                   {counter}
                 </Typography>

@@ -179,7 +179,7 @@ const AuthorHoverPreview = ({
         >
           <Typography
             sx={{ display: "block" }}
-            color="textDisabled"
+            color="text.secondary"
             variant="caption"
           >
             @{author?.username}
@@ -212,7 +212,7 @@ const AuthorHoverPreview = ({
           >
             <Stack direction={"row"} sx={{ justifyContent: "space-between" }}>
               <Box>
-                <Badge
+                <Badge slotProps={{ badge: { "aria-hidden": false } }}
                   overlap="circular"
                   anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                   badgeContent={
@@ -271,7 +271,7 @@ const AuthorHoverPreview = ({
                 {author?.name}
               </Typography>
               <Typography
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
                 sx={{
                   fontWeight: "bold"
@@ -301,7 +301,7 @@ const AuthorHoverPreview = ({
                     <Typography variant="caption">
                       {formatNumber(data.conn.followerCount)}
                     </Typography>
-                    <Typography variant="caption" color="textDisabled">
+                    <Typography variant="caption" color="text.secondary">
                       Followers
                     </Typography>
                   </Stack>
@@ -313,7 +313,7 @@ const AuthorHoverPreview = ({
                     <Typography variant="caption">
                       {formatNumber(data.conn.followingCount)}
                     </Typography>
-                    <Typography variant="caption" color="textDisabled">
+                    <Typography variant="caption" color="text.secondary">
                       Following
                     </Typography>
                   </Stack>
@@ -338,7 +338,7 @@ const AuthorHoverPreview = ({
                           display: "block",
                           whiteSpace: "pre-line",
                         }}
-                        color="textDisabled"
+                        color="text.secondary"
                         variant="caption"
                       >
                         {composeMutualText(

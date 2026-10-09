@@ -659,7 +659,7 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
               </IconButton>
             )}
           </Typography>
-          <Typography color="textDisabled" variant="caption">
+          <Typography color="text.secondary" variant="caption">
             @{visitedUser.username}
           </Typography>
         </Stack>
@@ -683,7 +683,7 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
                   }}>
                   <LocationOn sx={{ height: 15, width: 15 }} color="disabled" />
                   <Typography
-                    color="textDisabled"
+                    color="text.secondary"
                     variant="caption"
                     sx={{ textDecoration: "none" }}
                   >
@@ -710,7 +710,7 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
                   color="disabled"
                 />
                 <Typography
-                  color="textDisabled"
+                  color="text.secondary"
                   variant="caption"
                   sx={{ textDecoration: "none" }}
                 >
@@ -732,7 +732,7 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
                   color="disabled"
                 />
                 <Typography
-                  color="textDisabled"
+                  color="text.secondary"
                   variant="caption"
                   sx={{ textDecoration: "none" }}
                 >
@@ -789,7 +789,7 @@ const ProfileClient = (params: { user: UserMiniProfile }) => {
                       display: "block",
                       whiteSpace: "pre-line",
                     }}
-                    color="textDisabled"
+                    color="text.secondary"
                     variant="caption"
                   >
                     {composeMutualText({

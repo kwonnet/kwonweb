@@ -93,7 +93,7 @@ const DisplayQuizItem = ({
   return (
     <React.Fragment>
       <Box sx={{ mb: 1.5 }}>
-        <Typography variant="caption" color={"textDisabled"}>
+        <Typography variant="caption" color={"text.secondary"}>
           {quiz.isPaid
             ? `This is a rewarded quiz. Reward of ${formatNumber(quiz.rewardAmount)} coins will be randomly shared to ${formatNumber(quiz.maxWinners)} winners. Good luck`
             : "This quiz is free. No reward for participants. Good luck."}
@@ -119,7 +119,7 @@ const DisplayQuizItem = ({
               state.post.userId === user.id || quiz.isExpired ? (
                 <Typography
                   variant="caption"
-                  color="textDisabled"
+                  color="text.secondary"
                   sx={{ px: 1 }}
                 >
                   {item.votes > 0
@@ -138,7 +138,7 @@ const DisplayQuizItem = ({
                         />
                         <Typography
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                           sx={{ px: 1 }}
                         >
                           {item.votes > 0
@@ -157,7 +157,7 @@ const DisplayQuizItem = ({
                       />
                       <Typography
                         variant="caption"
-                        color="textDisabled"
+                        color="text.secondary"
                         sx={{ px: 1 }}
                       >
                         {item.votes > 0
@@ -212,14 +212,14 @@ const DisplayQuizItem = ({
               }}>
               <Typography
                 sx={{ fontSize: 10 }}
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
               >
                 Participants
               </Typography>
               <Typography
                 sx={{ fontSize: 10 }}
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
               >
                 {formatNumber(totalVotes)}
@@ -237,7 +237,7 @@ const DisplayQuizItem = ({
                 alignItems: "center"
               }}>
               <Typography
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
                 sx={{ fontSize: 10 }}
               >
@@ -260,7 +260,7 @@ const DisplayQuizItem = ({
                 alignItems: "center"
               }}>
               <Typography
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
                 sx={{ fontSize: 10 }}
               >
@@ -268,7 +268,7 @@ const DisplayQuizItem = ({
               </Typography>
               <Typography
                 suppressHydrationWarning
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
                 sx={{ fontSize: 10 }}
               >

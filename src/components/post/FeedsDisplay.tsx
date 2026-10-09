@@ -257,7 +257,7 @@ const FeedsDisplay = ({ posts, feed, search, availableSince }: { posts: FeedPost
       </Box>}
       {!isReachingEnd ? <div ref={ref} style={{padding: "10px 0px 10px 0px"}} /> : <Typography
         variant="caption"
-        color="textDisabled"
+        color="text.secondary"
         sx={{
           textAlign: "center",
           display: "block"

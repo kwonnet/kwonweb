@@ -655,7 +655,7 @@ export default function CreateReplyDrawer({
                           </IconButton>
                           <Typography
                             variant="caption"
-                            color="textDisabled"
+                            color="text.secondary"
                             sx={{ fontFamily: "PlayFair" }}
                           >
                             Poll

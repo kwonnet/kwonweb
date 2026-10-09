@@ -107,7 +107,7 @@ const SearchVideoCard: React.FC<VideoCardProps> = ({
                 }}
               />
               <Typography
-                color="textDisabled"
+                color="text.secondary"
                 sx={[(theme) => ({
                     "& .highlight": {
                       backgroundColor: theme.vars.palette.warning.light,

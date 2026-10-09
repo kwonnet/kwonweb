@@ -117,7 +117,7 @@ const PageClient = ({
           return (
             <Grid key={item.title} size={{ lg: 3, md: 3, sm: 6, xs: 6 }}>
               <Paper sx={{ height: "100%", p: 1 }}>
-                <Typography color="textDisabled" variant="subtitle2">
+                <Typography color="text.secondary" variant="subtitle2">
                   {item.title}
                 </Typography>
                 <Stack direction={"row"} spacing={1}>

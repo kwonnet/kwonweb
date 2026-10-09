@@ -181,7 +181,7 @@ const PageClient = ({
                   <Stack spacing={-1}>
                     <Typography>{post?.author?.name}</Typography>
                     <Stack direction={"row"} spacing={1}>
-                      <Typography variant="caption" color="textDisabled">
+                      <Typography variant="caption" color="text.secondary">
                         @{post?.author?.username}
                       </Typography>
                       <Typography
@@ -192,7 +192,7 @@ const PageClient = ({
                       </Typography>
                       <Typography
                         sx={{ display: "block" }}
-                        color="textDisabled"
+                        color="text.secondary"
                         variant="caption"
                       >
                         {formatRelativeTime(post?.createdAt)}
@@ -243,7 +243,7 @@ const PageClient = ({
             return (
               <Grid key={item.title} size={{ lg: 3, md: 3, sm: 6, xs: 6 }}>
                 <Paper sx={{ height: "100%", p: 1 }}>
-                  <Typography color="textDisabled" variant="subtitle2">
+                  <Typography color="text.secondary" variant="subtitle2">
                     {item.title}
                   </Typography>
                   <Stack direction={"row"} spacing={1}>

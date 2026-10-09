@@ -380,7 +380,7 @@ const QuizSettingsDrawer = ({
                 is this free or rewarded quiz?
               </Typography>
               <Typography
-                color={!state.isPaid ? "warning" : "textDisabled"}
+                color={!state.isPaid ? "warning" : "text.secondary"}
                 variant="caption"
                 sx={{ fontFamily: "PlayFair", textWrap: "nowrap" }}
               >

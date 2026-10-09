@@ -76,7 +76,7 @@ test('legal layout does not pass a function through MUI server/client props', ()
 test('LLM overview and all sitemap assets bypass login while unrelated sitemap paths stay guarded',async()=>{
  let called=0;
  const {proxy}=load('src/proxy.ts',{'./lib/auth-redirect':policy,'./auth':{auth:async()=>async()=>{called++;return new Response(null,{status:401});}}});
- for(const path of ['/llms.txt','/robots.txt','/sitemap.xml','/sitemaps/static/sitemap.xml','/sitemaps/posts/0.xml','/sitemaps/posts/12.xml']) assert.equal((await proxy(new NextRequest('https://kwonnet.com'+path))).status,200);
+ for(const path of ['/ai-catalog.json','/.well-known/ai-catalog.json','/llms.txt','/robots.txt','/sitemap.xml','/sitemaps/static/sitemap.xml','/sitemaps/posts/0.xml','/sitemaps/posts/12.xml']) assert.equal((await proxy(new NextRequest('https://kwonnet.com'+path))).status,200);
  assert.equal(called,0);
  assert.equal((await proxy(new NextRequest('https://kwonnet.com/sitemaps/private'))).status,401);
  assert.equal((await proxy(new NextRequest('https://kwonnet.com/llms/private.txt'))).status,401);

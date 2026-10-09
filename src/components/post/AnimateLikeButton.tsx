@@ -12,7 +12,7 @@ const AnimateLikeButton = ({ handleReaction, liked = false }: {
     aria-label={liked ? "Unlike post" : "Like post"}
     aria-pressed={liked}
     onClick={handleReaction}
-    sx={{ color: liked ? 'error.main' : 'text.disabled', '&:active': { transform: 'scale(0.92)' } }}
+    sx={{ color: liked ? 'error.main' : 'text.secondary', '&:active': { transform: 'scale(0.92)' } }}
   >
     {liked ? <FavoriteOutlinedIcon sx={{ height: 16, width: 16 }} /> : <FavoriteBorderOutlinedIcon sx={{ height: 16, width: 16 }} />}
   </IconButton>

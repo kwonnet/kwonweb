@@ -104,7 +104,7 @@ const FeedQuoteItem = ({
         {!showPost && state.muted && (
           <Box>
             <Typography
-              color="textDisabled"
+              color="text.secondary"
               sx={{
                 textAlign: "center",
                 py: 3
@@ -187,7 +187,7 @@ const FeedQuoteItem = ({
                       </Typography>
                       <Typography
                         sx={{ display: "block" }}
-                        color="textDisabled"
+                        color="text.secondary"
                         variant="caption"
                       >
                         {formatRelativeTime(item?.createdAt)}

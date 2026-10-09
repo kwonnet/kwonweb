@@ -116,7 +116,7 @@ const PostLocationDrawer = ({
               Choose Location?
             </Typography>
             <Typography
-              color="textDisabled"
+              color="text.secondary"
               sx={{ fontFamily: "PlayFair" }}
               variant="body2"
             >

@@ -337,7 +337,7 @@ const FeedCardItem = ({
                   height: 14,
                   width: 14,
                   transform: "rotate(90deg)",
-                  color: (theme) => theme.vars.palette.text.disabled,
+                  color: (theme) => theme.vars.palette.text.secondary,
                 }}
               />
               <Typography
@@ -349,7 +349,7 @@ const FeedCardItem = ({
                   my: -2,
                 }}
                 variant="body2"
-                color="textDisabled"
+                color="text.secondary"
               >
                 {post?.author.name} reposted
               </Typography>
@@ -359,7 +359,7 @@ const FeedCardItem = ({
           {!isDeleted && (
             <Stack direction={"row"}>
               <Box>
-                <Badge
+                <Badge slotProps={{ badge: { "aria-hidden": false } }}
                   overlap="circular"
                   anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                   badgeContent={
@@ -441,7 +441,7 @@ const FeedCardItem = ({
                     </Typography>
                     <Typography
                       sx={{ display: "block" }}
-                      color="textDisabled"
+                      color="text.secondary"
                       variant="caption"
                     >
                       {formatRelativeTime(item?.createdAt)}
@@ -464,7 +464,7 @@ const FeedCardItem = ({
                         sx={{
                           height: 20,
                           width: 20,
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                       />
                     </IconButton>
@@ -497,7 +497,7 @@ const FeedCardItem = ({
               >
                 {isDeleted && (
                   <Typography
-                    color="textDisabled"
+                    color="text.secondary"
                     sx={{
                       textAlign: "center",
                       py: 4
@@ -541,13 +541,13 @@ const FeedCardItem = ({
                           }}>
                           <LoyaltyOutlinedIcon
                             sx={{
-                              color: "text.disabled",
+                              color: "text.secondary",
                               width: 12,
                               height: 12,
                             }}
                           />
                           <Typography
-                            color="textDisabled"
+                            color="text.secondary"
                             sx={{
                               display: "-webkit-box",
                               WebkitLineClamp: 1, // Number of lines before truncating
@@ -584,13 +584,13 @@ const FeedCardItem = ({
                           }}>
                           <AlternateEmailOutlinedIcon
                             sx={{
-                              color: "text.disabled",
+                              color: "text.secondary",
                               width: 12,
                               height: 12,
                             }}
                           />
                           <Typography
-                            color="textDisabled"
+                            color="text.secondary"
                             sx={{
                               display: "-webkit-box",
                               WebkitLineClamp: 1, // Number of lines before truncating
@@ -607,7 +607,7 @@ const FeedCardItem = ({
                     </Stack>
                     {item.type === PostType.POLL && item?.poll?.isMultiVote && (
                       <Typography
-                        color="textDisabled"
+                        color="text.secondary"
                         sx={{
                           display: "-webkit-box",
                           WebkitLineClamp: 4, // Number of lines before truncating
@@ -673,7 +673,7 @@ const FeedCardItem = ({
                       >
                         <Typography
                           sx={{ display: "block" }}
-                          color="textDisabled"
+                          color="text.secondary"
                           variant="caption"
                         >
                           {formatDateTime(post?.createdAt)}
@@ -682,13 +682,13 @@ const FeedCardItem = ({
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           •
                         </Typography>
                         <Typography
                           sx={{ display: "block" }}
-                          color="textDisabled"
+                          color="text.secondary"
                           variant="caption"
                         >
                           {formatFeedNumber(post?.totalViews)}
@@ -696,21 +696,21 @@ const FeedCardItem = ({
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           Views
                         </Typography>
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           •
                         </Typography>
 
                         <Typography
                           sx={{ display: "block" }}
-                          color="textDisabled"
+                          color="text.secondary"
                           variant="caption"
                         >
                           {formatFeedNumber(post?.totalLikes)}
@@ -718,20 +718,20 @@ const FeedCardItem = ({
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           Likes
                         </Typography>
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           •
                         </Typography>
                         <Typography
                           sx={{ display: "block" }}
-                          color="textDisabled"
+                          color="text.secondary"
                           variant="caption"
                         >
                           {formatFeedNumber(post?.totalReplies)}
@@ -739,7 +739,7 @@ const FeedCardItem = ({
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           Replies
                         </Typography>
@@ -760,7 +760,7 @@ const FeedCardItem = ({
                             position: "relative",
                           }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           •
                         </Typography>
@@ -781,14 +781,14 @@ const FeedCardItem = ({
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           Reposts
                         </Typography>
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           •
                         </Typography>
@@ -803,20 +803,20 @@ const FeedCardItem = ({
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           Quotes
                         </Typography>
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           •
                         </Typography>
                         <Typography
                           sx={{ display: "block" }}
-                          color="textDisabled"
+                          color="text.secondary"
                           variant="caption"
                         >
                           {formatFeedNumber(post?.totalShares)}
@@ -824,14 +824,14 @@ const FeedCardItem = ({
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           Shares
                         </Typography>
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           •
                         </Typography>
@@ -846,7 +846,7 @@ const FeedCardItem = ({
                         <Typography
                           sx={{ display: "block", position: "relative" }}
                           variant="caption"
-                          color="textDisabled"
+                          color="text.secondary"
                         >
                           Bookmarks
                         </Typography>
@@ -872,7 +872,7 @@ const FeedCardItem = ({
                         direction={"row"}
                         sx={{
                           alignItems: "center",
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                         spacing={-0.7}
                       >
@@ -893,7 +893,7 @@ const FeedCardItem = ({
                               height: 16,
                               width: 16,
                               color: (theme) =>
-                                theme.vars.palette.text.disabled,
+                                theme.vars.palette.text.secondary,
                             }}
                           />
                         </IconButton>
@@ -905,7 +905,7 @@ const FeedCardItem = ({
                         direction={"row"}
                         sx={{
                           alignItems: "center",
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                         spacing={-0.7}
                       >
@@ -923,7 +923,7 @@ const FeedCardItem = ({
                               color: (theme) =>
                                 item.actions.hasReposted
                                   ? theme.vars.palette.success.light
-                                  : theme.vars.palette.text.disabled,
+                                  : theme.vars.palette.text.secondary,
                             }}
                           />
                         </IconButton>
@@ -937,7 +937,7 @@ const FeedCardItem = ({
                         direction={"row"}
                         sx={{
                           alignItems: "center",
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                         spacing={-0.7}
                       >
@@ -955,7 +955,7 @@ const FeedCardItem = ({
                         direction={"row"}
                         sx={{
                           alignItems: "center",
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                         spacing={-0.7}
                       >
@@ -970,7 +970,7 @@ const FeedCardItem = ({
                               height: 16,
                               width: 16,
                               color: (theme) =>
-                                theme.vars.palette.text.disabled,
+                                theme.vars.palette.text.secondary,
                             }}
                           />
                         </IconButton>
@@ -982,7 +982,7 @@ const FeedCardItem = ({
                         direction={"row"}
                         sx={{
                           alignItems: "center",
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                         spacing={-0.7}
                       >
@@ -997,7 +997,7 @@ const FeedCardItem = ({
                                 height: 16,
                                 width: 16,
                                 color: (theme) =>
-                                  theme.vars.palette.text.disabled,
+                                  theme.vars.palette.text.secondary,
                               }}
                             />
                           ) : (
@@ -1021,7 +1021,7 @@ const FeedCardItem = ({
                         sx={{
                           alignItems: "center",
                           // justifyContent: "center",
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                         spacing={-0.7}
                       >
@@ -1031,7 +1031,7 @@ const FeedCardItem = ({
                               height: 16,
                               width: 16,
                               color: (theme) =>
-                                theme.vars.palette.text.disabled,
+                                theme.vars.palette.text.secondary,
                             }}
                           />
                         </IconButton>
@@ -1044,7 +1044,7 @@ const FeedCardItem = ({
                         sx={{
                           alignItems: "center",
                           // justifyContent: "center",
-                          color: (theme) => theme.vars.palette.text.disabled,
+                          color: (theme) => theme.vars.palette.text.secondary,
                         }}
                         spacing={-0.7}
                       >
@@ -1054,7 +1054,7 @@ const FeedCardItem = ({
                               height: 16,
                               width: 16,
                               color: (theme) =>
-                                theme.vars.palette.text.disabled,
+                                theme.vars.palette.text.secondary,
                             }}
                           />
                         </IconButton>

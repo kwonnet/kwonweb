@@ -24,7 +24,7 @@ const PostCard = ({ index }: { index: number }) => {
           <Avatar src="/avatar.jpeg" alt={"user"} />
           <Stack>
             <Typography>John Kenneth Doe</Typography>
-            <Typography variant="caption" color="textDisabled">
+            <Typography variant="caption" color="text.secondary">
               @johnkennethdoe
             </Typography>
           </Stack>

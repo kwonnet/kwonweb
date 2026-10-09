@@ -90,7 +90,7 @@ const UpdateAltText = memo(
               placeholder="Describe media"
             />
             <Box>
-              <Typography variant="caption" color="textDisabled">
+              <Typography variant="caption" color="text.secondary">
                 Describing your media files will make more accessible to people
                 with disablity and more exposure to search engines
               </Typography>

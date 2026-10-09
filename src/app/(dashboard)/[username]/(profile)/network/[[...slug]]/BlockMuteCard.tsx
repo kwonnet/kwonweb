@@ -75,7 +75,7 @@ const BlockMuteCard = ({
           alignItems: "center"
         }}>
           <Box>
-            <Badge
+            <Badge slotProps={{ badge: { "aria-hidden": false } }}
               overlap="circular"
               anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
               badgeContent={
@@ -124,7 +124,7 @@ const BlockMuteCard = ({
               <Stack spacing={-1}>
               <Typography
                 sx={{ textWrap: "wrap" }}
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
               >
                 @{shortenText(item.username, 15)}
@@ -161,7 +161,7 @@ const BlockMuteCard = ({
           </Stack>
         </Stack>
         <Box sx={{ px: 2, py: 1 }}>
-          <Typography color="textDisabled" component={"p"} variant="subtitle2">
+          <Typography color="text.secondary" component={"p"} variant="subtitle2">
             {shortenText(item.bio, 60)}{" "}
           </Typography>
 
@@ -170,7 +170,7 @@ const BlockMuteCard = ({
               gap: 2
             }}>
               <Typography
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
                 sx={{ textDecoration: "none" }}
                 component={Link}
@@ -180,7 +180,7 @@ const BlockMuteCard = ({
               </Typography>
 
               <Typography
-                color="textDisabled"
+                color="text.secondary"
                 variant="caption"
                 sx={{ textDecoration: "none" }}
                 component={Link}

@@ -260,7 +260,7 @@ const PostSettingsDrawer = ({
               Who can reply?
             </Typography>
             <Typography
-              color="textDisabled"
+              color="text.secondary"
               sx={{ fontFamily: "PlayFair", pt: 0.5 }}
               variant="body2"
             >

@@ -46,6 +46,7 @@ export default async function RootLayout({
     <html lang="en" data-toolpad-color-scheme="system" suppressHydrationWarning>
       <head>
         <link rel="describedby" href="/llms.txt" />
+        <link rel="ai-catalog" type="application/json" href="/.well-known/ai-catalog.json" />
         <script id="kwonnet-public-env" dangerouslySetInnerHTML={{ __html: publicEnvScript() }} />
       </head>
       <body>

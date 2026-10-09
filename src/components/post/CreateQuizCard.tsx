@@ -185,7 +185,7 @@ const CreateQuizCard = ({
                           <Typography
                             sx={{ pl: 0.7 }}
                             variant="caption"
-                            color="textDisabled"
+                            color="text.secondary"
                           >
                             {state.textCount - item.text.length}
                           </Typography>

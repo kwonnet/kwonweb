@@ -326,7 +326,7 @@ const FeedCardItem = ({
                 height: 14,
                 width: 14,
                 transform: "rotate(90deg)",
-                color: (theme) => theme.vars.palette.text.disabled,
+                color: (theme) => theme.vars.palette.text.secondary,
               }}
             />
             <Typography
@@ -338,7 +338,7 @@ const FeedCardItem = ({
                 my: 0,
               }}
               variant="body2"
-              color="textDisabled"
+              color="text.secondary"
             >
               {post?.author?.id === user?.id ? "You" : post?.author?.name}{" "}
               reposted
@@ -347,7 +347,7 @@ const FeedCardItem = ({
         )}
         <Stack direction={"row"} sx={{ display: "contents" }}>
           <Box>
-            <Badge
+            <Badge slotProps={{ badge: { "aria-hidden": false } }}
               overlap="circular"
               anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
               badgeContent={
@@ -427,7 +427,7 @@ const FeedCardItem = ({
                 </Typography>
                 <Typography
                   sx={{ display: "block" }}
-                  color="textDisabled"
+                  color="text.secondary"
                   variant="caption"
                 >
                   {formatRelativeTime(item?.createdAt)}
@@ -450,7 +450,7 @@ const FeedCardItem = ({
                     sx={{
                       height: 20,
                       width: 20,
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                   />
                 </IconButton>
@@ -512,10 +512,10 @@ const FeedCardItem = ({
                   cursor: "pointer"
                 }}>
                 <LoyaltyOutlinedIcon
-                  sx={{ color: "text.disabled", width: 12, height: 12 }}
+                  sx={{ color: "text.secondary", width: 12, height: 12 }}
                 />
                 <Typography
-                  color="textDisabled"
+                  color="text.secondary"
                   sx={{
                     display: "-webkit-box",
                     WebkitLineClamp: 1, // Number of lines before truncating
@@ -545,10 +545,10 @@ const FeedCardItem = ({
                   cursor: "pointer"
                 }}>
                 <AlternateEmailOutlinedIcon
-                  sx={{ color: "text.disabled", width: 12, height: 12 }}
+                  sx={{ color: "text.secondary", width: 12, height: 12 }}
                 />
                 <Typography
-                  color="textDisabled"
+                  color="text.secondary"
                   sx={{
                     display: "-webkit-box",
                     WebkitLineClamp: 1, // Number of lines before truncating
@@ -566,7 +566,7 @@ const FeedCardItem = ({
 
           {item.type === PostType.POLL && item?.poll?.isMultiVote && (
             <Typography
-              color="textDisabled"
+              color="text.secondary"
               sx={{
                 display: "-webkit-box",
                 WebkitLineClamp: 4, // Number of lines before truncating
@@ -623,7 +623,7 @@ const FeedCardItem = ({
                 direction={"row"}
                 sx={{
                   alignItems: "center",
-                  color: (theme) => theme.vars.palette.text.disabled,
+                  color: (theme) => theme.vars.palette.text.secondary,
                 }}
                 spacing={-0.7}
               >
@@ -632,7 +632,7 @@ const FeedCardItem = ({
                     sx={{
                       height: 16,
                       width: 16,
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                   />
                 </IconButton>
@@ -654,7 +654,7 @@ const FeedCardItem = ({
                 direction={"row"}
                 sx={{
                   alignItems: "center",
-                  color: (theme) => theme.vars.palette.text.disabled,
+                  color: (theme) => theme.vars.palette.text.secondary,
                 }}
                 spacing={-0.7}
               >
@@ -667,7 +667,7 @@ const FeedCardItem = ({
                       color: (theme) =>
                         item?.actions.hasReposted
                           ? theme.vars.palette.success.light
-                          : theme.vars.palette.text.disabled,
+                          : theme.vars.palette.text.secondary,
                     }}
                   />
                 </IconButton>
@@ -691,7 +691,7 @@ const FeedCardItem = ({
                 direction={"row"}
                 sx={{
                   alignItems: "center",
-                  color: (theme) => theme.vars.palette.text.disabled,
+                  color: (theme) => theme.vars.palette.text.secondary,
                 }}
                 spacing={-0.7}
               >
@@ -709,7 +709,7 @@ const FeedCardItem = ({
                 direction={"row"}
                 sx={{
                   alignItems: "center",
-                  color: (theme) => theme.vars.palette.text.disabled,
+                  color: (theme) => theme.vars.palette.text.secondary,
                 }}
                 spacing={-0.7}
               >
@@ -723,7 +723,7 @@ const FeedCardItem = ({
                     sx={{
                       height: 16,
                       width: 16,
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                   />
                 </IconButton>
@@ -743,7 +743,7 @@ const FeedCardItem = ({
                 direction={"row"}
                 sx={{
                   alignItems: "center",
-                  color: (theme) => theme.vars.palette.text.disabled,
+                  color: (theme) => theme.vars.palette.text.secondary,
                 }}
                 spacing={-0.7}
               >
@@ -757,7 +757,7 @@ const FeedCardItem = ({
                       sx={{
                         height: 16,
                         width: 16,
-                        color: (theme) => theme.vars.palette.text.disabled,
+                        color: (theme) => theme.vars.palette.text.secondary,
                       }}
                     />
                   ) : (
@@ -788,7 +788,7 @@ const FeedCardItem = ({
                 sx={{
                   alignItems: "center",
                   // justifyContent: "center",
-                  color: (theme) => theme.vars.palette.text.disabled,
+                  color: (theme) => theme.vars.palette.text.secondary,
                 }}
                 spacing={-0.7}
               >
@@ -797,7 +797,7 @@ const FeedCardItem = ({
                     sx={{
                       height: 16,
                       width: 16,
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                   />
                 </IconButton>
@@ -810,7 +810,7 @@ const FeedCardItem = ({
                 sx={{
                   alignItems: "center",
                   // justifyContent: "center",
-                  color: (theme) => theme.vars.palette.text.disabled,
+                  color: (theme) => theme.vars.palette.text.secondary,
                 }}
                 spacing={-0.7}
               >
@@ -819,7 +819,7 @@ const FeedCardItem = ({
                     sx={{
                       height: 16,
                       width: 16,
-                      color: (theme) => theme.vars.palette.text.disabled,
+                      color: (theme) => theme.vars.palette.text.secondary,
                     }}
                   />
                 </IconButton>
