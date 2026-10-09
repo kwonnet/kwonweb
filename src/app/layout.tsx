@@ -23,7 +23,7 @@ import ConvoSocketIoProvider from "@/context/ConvoSocketIoContext";
 import SocketIoProvider from "@/context/SocketIoContext";
 import { constant } from "@/config";
 import SSEContextProvider from "@/context/SSEContext";
-import { GoogleTagManager } from '@next/third-parties/google'
+import { GoogleTagManager, GoogleAnalytics } from '@next/third-parties/google'
 
 export const dynamic = "force-dynamic";
 export const viewport: Viewport = {
@@ -78,6 +78,7 @@ export default async function RootLayout({
 
           </AppRouterCacheProvider>
         </SessionProvider>
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
       </body>
     </html>
   );
