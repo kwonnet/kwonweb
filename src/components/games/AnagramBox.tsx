@@ -1,4 +1,5 @@
 "use client";
+import { handleGameInputEnter, stopGameInputEnterKeyUp } from "@/utils/game-input";
 import React, { useEffect, useState } from "react";
 import { Box, TextField, Button, Typography, Stack } from "@mui/material";
 import { useSocketIoContext } from "@/context/SocketIoContext";
@@ -15,27 +16,29 @@ const AnagramBox = () => {
 
   const notif = useNotifications()
 
-  const handleAnswer = (answer: string) => {
-    if(!energy) {
-      return notif.show("You don't have have enough energy to play, please switch to energy tab & recharge!", { severity: "warning", autoHideDuration: 4000})
+  const handleAnswer = (answer: string): boolean => {
+    if (!energy) {
+      notif.show("You don't have have enough energy to play, please switch to energy tab & recharge!", { severity: "warning", autoHideDuration: 4000 });
+      return false;
     }
-    if(energy?.gauge <= 5 || energy?.turbo <= 5) {
-      return notif.show("Your game energy is low, please switch to energy tab & recharge!", { severity: "warning", autoHideDuration: 4000})
+    if (energy.gauge <= 5 || energy.turbo <= 5) {
+      notif.show("Your game energy is low, please switch to energy tab & recharge!", { severity: "warning", autoHideDuration: 4000 });
+      return false;
     }
-    socketIo?.emit(GameEventEnum.GAME_ROOM_ANSWER, {
-      answer,
-      timer: countdown,
-      qId: question?.id, roundId: question?.roundId,
-      gameType: gameRoomInfo?.gameType,
-      catType: gameRoomInfo?.catType
+    if (!socketIo) return false;
+    socketIo.emit(GameEventEnum.GAME_ROOM_ANSWER, {
+      answer, timer: countdown, qId: question?.id, roundId: question?.roundId,
+      gameType: gameRoomInfo?.gameType, catType: gameRoomInfo?.catType,
     });
-    setState((prev) => ({ ...prev, prevAnswer: answer, timer: countdown }));
+    setState(prev => ({ ...prev, prevAnswer: answer, timer: countdown }));
+    return true;
   };
 
   const handleSendMessage = () => {
     if (state.answer.trim()) {
-      handleAnswer(state.answer.trim());
+      const submitted = handleAnswer(state.answer.trim());
       setState((prev) => ({ ...prev, answer: "" }));
+      return submitted;
     }
   };
 
@@ -170,14 +173,11 @@ const AnagramBox = () => {
               // bgcolor: "background.paper",
             },
           }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }}
+          onKeyDown={event => handleGameInputEnter(event, handleSendMessage)}
+          onKeyUp={stopGameInputEnterKeyUp}
         />
         <Button
+          type="button"
           onClick={() => handleSendMessage()}
           variant="contained"
           // color="primary"

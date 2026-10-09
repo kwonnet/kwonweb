@@ -1,4 +1,5 @@
 "use client";
+import { handleGameInputEnter, stopGameInputEnterKeyUp } from "@/utils/game-input";
 import React, { useEffect, useRef, useState } from "react";
 import { Box, TextField, Button, IconButton, Fade } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -48,6 +49,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
     if (newMessage.trim()) {
       onSendMessage(newMessage);
       setNewMessage("");
+      return true;
     }
   };
 
@@ -151,14 +153,11 @@ const ChatBox: React.FC<ChatBoxProps> = ({
               // bgcolor: "background.paper",
             },
           }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }}
+          onKeyDown={event => handleGameInputEnter(event, handleSendMessage)}
+          onKeyUp={stopGameInputEnterKeyUp}
         />
         <Button
+          type="button"
           onClick={() => handleSendMessage()}
           variant="contained"
           color="inherit"

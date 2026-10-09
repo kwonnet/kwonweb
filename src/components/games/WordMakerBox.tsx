@@ -1,4 +1,5 @@
 "use client";
+import { handleGameInputEnter, stopGameInputEnterKeyUp } from "@/utils/game-input";
 import React, { useEffect, useState } from "react";
 import { Box, TextField, Button, Typography, Chip } from "@mui/material";
 import { useSocketIoContext } from "@/context/SocketIoContext";
@@ -19,30 +20,31 @@ const WordMakerBox = () => {
     timer: number;
 }>({ answer: "", entries: [], timer: 0 });
 
-  const handleAnswer = (answer: string) => {
-    if(!energy) {
-      return notif.show("You don't have have enough energy to play, please switch to energy tab & recharge!", { severity: "warning", autoHideDuration: 4000})
+  const handleAnswer = (answer: string): boolean => {
+    if (!energy) {
+      notif.show("You don't have have enough energy to play, please switch to energy tab & recharge!", { severity: "warning", autoHideDuration: 4000 });
+      return false;
     }
-    if(energy?.gauge <= 5 || energy?.turbo <= 5) {
-      return notif.show("Your game energy is low, please switch to energy tab & recharge!", { severity: "warning", autoHideDuration: 4000})
+    if (energy.gauge <= 5 || energy.turbo <= 5) {
+      notif.show("Your game energy is low, please switch to energy tab & recharge!", { severity: "warning", autoHideDuration: 4000 });
+      return false;
     }
-    socketIo?.emit(GameEventEnum.GAME_ROOM_ANSWER, {
-      answer,
-      timer: countdown,
-      qId: question?.id, roundId: question?.roundId,
-      gameType: gameRoomInfo?.gameType,
-      catType: gameRoomInfo?.catType
+    if (!socketIo) return false;
+    socketIo.emit(GameEventEnum.GAME_ROOM_ANSWER, {
+      answer, timer: countdown, qId: question?.id, roundId: question?.roundId,
+      gameType: gameRoomInfo?.gameType, catType: gameRoomInfo?.catType,
     });
-    setState((prev) => ({ ...prev, entries: [...prev.entries.filter(item => item !== answer), answer], timer: countdown }));
+    setState(prev => ({ ...prev, entries: [...prev.entries.filter(item => item !== answer), answer], timer: countdown }));
+    return true;
   };
 
   const handleSendMessage = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.KeyboardEvent<HTMLDivElement>) => {
     ev.preventDefault();
     const val = state?.answer?.toLowerCase().trim()
     if (!val || val.length < 3 || val === question?.question?.toLowerCase().trim()) return
-    handleAnswer(val);
+    const submitted = handleAnswer(val);
     setState((prev) => ({ ...prev, answer: "" }));
-    
+    return submitted;
   };
 
   useEffect(() => {
@@ -149,13 +151,11 @@ const WordMakerBox = () => {
               // bgcolor: "background.paper",
             },
           }}
-          onKeyDown={(ev) => {
-            if (ev.key === "Enter" && !ev.shiftKey) {
-              handleSendMessage(ev);
-            }
-          }}
+          onKeyDown={event => handleGameInputEnter(event, () => handleSendMessage(event))}
+          onKeyUp={stopGameInputEnterKeyUp}
         />
         <Button
+          type="button"
           onClick={(ev) => handleSendMessage(ev)}
           variant="contained"
           // color="primary"
