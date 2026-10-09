@@ -1,6 +1,7 @@
 // Explicit allowlist: these settings are intentionally visible to browsers.
 export const publicEnvKeys = [
   "NEXT_PUBLIC_API_URL",
+  "NEXT_PUBLIC_REGISTRATION_ENABLED",
   "NEXT_PUBLIC_APP_LOGO",
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_FLUTTERWAVE_PUBK",

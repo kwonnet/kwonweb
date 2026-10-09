@@ -13,6 +13,7 @@ test('authentication preserves input when switching modes and sends the correct 
   let form, resolveSignIn;
   const element = ({ children }) => React.createElement('div', null, children);
   const mocks = {
+    '@/config/public-env': {publicEnv:()=> 'true'},
     "next/link": {__esModule: true, default: ({children, href}) => React.createElement("a", {href}, children)},
     '@/lib/account-actions': { rememberCurrentAccount: async () => {} },
     '@mui/material': {
@@ -91,6 +92,7 @@ test('configured Google authentication starts OAuth with the safe application re
   const calls = [];
   const element = ({children}) => React.createElement('div', null, children);
   const mocks = {
+    '@/config/public-env': {publicEnv:()=> 'true'},
     "next/link": {__esModule: true, default: ({children, href}) => React.createElement("a", {href}, children)},
     '@mui/material': {Box: element, Stack: element, Typography: element, Alert: element,
       TextField: () => null, Button: ({children, onClick, disabled, type}) => React.createElement('button', {onClick, disabled, type}, children)},
@@ -113,4 +115,26 @@ test('configured Google authentication starts OAuth with the safe application re
     await React.act(async () => google.click());
     assert.deepEqual(calls, [['google', {redirectTo: 'https://kwonnet.com/'}]]);
   } finally {await React.act(async () => root.unmount()); dom.window.close();}
+});
+
+test('closed registration renders sign-in even for signup links and preserves credentials and Google login',async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'https://kwonnet.com/?auth=signup'});global.window=dom.window;global.document=dom.window.document;global.IS_REACT_ACT_ENVIRONMENT=true;
+ let form;const fields={},calls=[];const element=({children})=>React.createElement('div',null,children);
+ const mocks={
+  '@/config/public-env':{publicEnv:()=>undefined},'@/lib/auth-redirect':{safeAuthRedirect:()=> '/'},
+  '@/lib/auth':{registerCredentialAccount:()=>{throw new Error('Registration must not run');},requestAccountEmail:async()=>({message:'Sent'})},
+  '@/components/common/PasswordTextField':{__esModule:true,default:props=>{fields.password=props;return React.createElement('input',{name:'password',readOnly:true,value:props.value});}},
+  'next-auth/react':{getProviders:async()=>({google:{}}),signIn:async(...args)=>{calls.push(args);return {error:'CredentialsSignin',code:'Invalid credentials'};}},
+  'next/link':{__esModule:true,default:({children,href})=>React.createElement('a',{href},children)},
+  '@mui/material':{Box:props=>{form=props;return React.createElement('form',{onSubmit:props.onSubmit},props.children);},Stack:element,Typography:element,Alert:element,TextField:props=>{fields[props.name]=props;return React.createElement('input',{name:props.name,value:props.value,readOnly:true});},Button:({loading,variant,size,component,...props})=>React.createElement('button',props)},
+ };
+ const module={exports:{}};new Function('require','module','exports',ts.transpileModule(readFileSync('src/components/auth/AuthForm.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText)(name=>name in mocks?mocks[name]:require(name),module,module.exports);
+ const root=createRoot(document.getElementById('root'));
+ try{
+  await React.act(async()=>root.render(React.createElement(module.exports.default,{initialMode:'signup'})));
+  assert.match(document.body.textContent,/registrations are temporarily disabled/);assert.match(document.body.textContent,/Log in/);assert.doesNotMatch(document.body.textContent,/Create account|New to Kwonnet/);assert.equal(document.querySelector('[name="name"]'),null);
+  await React.act(async()=>{fields.email.onChange({target:{value:'existing@test.invalid'}});fields.password.onChange({target:{value:'existing-password'}});});
+  await React.act(async()=>form.onSubmit({preventDefault(){}}));assert.equal(calls[0][0],'credentials-in');
+  await React.act(async()=>[...document.querySelectorAll('button')].find(button=>button.textContent==='Continue with Google').click());assert.equal(calls[1][0],'google');
+ }finally{await React.act(async()=>root.unmount());dom.window.close();}
 });

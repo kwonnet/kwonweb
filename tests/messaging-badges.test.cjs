@@ -113,7 +113,13 @@ test('live sync metadata preserves participant profiles when updating the render
  const {SWRConfig}=require('swr'),root=require('react-dom/client').createRoot(document.getElementById('root'),{onCaughtError:()=>{}}),cache=new Map();
  const render=()=>root.render(React.createElement(SWRConfig,{value:{provider:()=>cache}},React.createElement(Boundary,null,React.createElement(List,{slug:'chat',convoList:[row],initialFetchFailed:true}))));
  try{
-  await React.act(async()=>render());assert.match(document.body.textContent,/Peer/);
+  await React.act(async()=>render());
+  // Wait for the initial SWR request to commit before testing a live patch.
+  for(let attempt=0;attempt<25;attempt++){
+   if([...cache.values()].some(entry=>Array.isArray(entry.data)&&entry.data[0]?.id==='room'&&!entry.isValidating))break;
+   await React.act(async()=>new Promise(resolve=>setTimeout(resolve,20)));
+  }
+  assert.match(document.body.textContent,/Peer/);
   for(const unread of [1,0]){
    context.conversationUpdates={room:{id:'room',state:'ACCEPTED',updatedAt:new Date().toISOString(),initiator:{id:'user',isPaid:false},responder:{id:'peer',isPaid:false},unreadCount:unread,unseenCount:unread}};context.revision++;
    await React.act(async()=>render());await React.act(async()=>new Promise(resolve=>setTimeout(resolve,20)));

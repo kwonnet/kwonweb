@@ -7,6 +7,8 @@ import Link from "next/link";
 import { safeAuthRedirect } from "@/lib/auth-redirect";
 import {registerCredentialAccount, requestAccountEmail} from '@/lib/auth';
 
+import { publicEnv } from '@/config/public-env';
+
 export default function AuthForm({ initialMode = "signin", initialEmail = "" }: { initialMode?: "signin" | "signup"; initialEmail?: string }) {
   const [mode, setMode] = useState(initialMode);
   const [loading, setLoading] = useState(false);
@@ -16,7 +18,8 @@ export default function AuthForm({ initialMode = "signin", initialEmail = "" }: 
   const [name, setName] = useState("");
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
-  const isSignIn = mode === "signin";
+  const registrationEnabled = publicEnv("NEXT_PUBLIC_REGISTRATION_ENABLED") === "true";
+  const isSignIn = !registrationEnabled || mode === "signin";
   const [googleEnabled, setGoogleEnabled] = useState(false);
   useEffect(() => {
     let active = true;
@@ -71,8 +74,9 @@ export default function AuthForm({ initialMode = "signin", initialEmail = "" }: 
         {isSignIn ? "Welcome back to Kwonnet" : "Join the conversation"}
       </Typography>
       <Typography id="guest-auth-description" color="text.secondary">
-        Sign up or log in to keep exploring, share posts, and connect with people.
+        {registrationEnabled ? "Sign up or log in to keep exploring, share posts, and connect with people." : "Log in to keep exploring, share posts, and connect with people."}
       </Typography>
+      {!registrationEnabled && <Alert severity="info">New registrations are temporarily disabled. Existing users can still sign in.</Alert>}
       {message && <Alert severity={success ? 'success' : 'error'} role="alert">{message}</Alert>}
       {!isSignIn && <TextField label="Name" name="name" autoComplete="name" value={name} onChange={e => setName(e.target.value)} required fullWidth disabled={loading} />}
       <TextField label={isSignIn ? "Email or username" : "Email"} name="email" type={isSignIn ? "text" : "email"}
@@ -89,9 +93,9 @@ export default function AuthForm({ initialMode = "signin", initialEmail = "" }: 
         catch(error){setMessage(error instanceof Error?error.message:'Unable to send verification email.');}
         finally{setLoading(false);}
       }}>Resend verification email</Button>}</>}
-      <Button type="button" disabled={loading} onClick={() => { setMode(isSignIn ? "signup" : "signin"); setMessage(""); setVerificationRequired(false); }}>
+      {registrationEnabled && <Button type="button" disabled={loading} onClick={() => { setMode(isSignIn ? "signup" : "signin"); setMessage(""); setVerificationRequired(false); }}>
         {isSignIn ? "New to Kwonnet? Sign up" : "Already have an account? Log in"}
-      </Button>
+      </Button>}
       {googleEnabled && <Button type="button" variant="outlined" size="large" disabled={loading} onClick={googleSignIn}>
         Continue with Google
       </Button>}
