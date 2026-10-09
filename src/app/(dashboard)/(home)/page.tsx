@@ -3,6 +3,7 @@ import ServerFeed from "@/components/post/ServerFeed";
 import { FeedTypeEnum } from "@/types/post";
 
 export default function Page() {
+  const title = 'Kwonnet — Connecting the dots and nodes, join the conversation, discover and play';
   const origin = siteOrigin();
   const schema = {'@context': 'https://schema.org', '@graph': [
     {'@type': 'Organization', '@id': `${origin}/#organization`, name: 'Kwonnet', url: origin, logo: `${origin}/android-chrome-512x512.png`},
@@ -12,10 +13,10 @@ export default function Page() {
 }
 
 export const metadata = {
-  ...pageMetadata('Kwonnet - Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet.', '/', true), title: { absolute: 'Kwonnet — Connecting the dots and nodes, discover and play', template: '%s — Kwonnet' },
+  ...pageMetadata('Kwonnet — Connecting the dots and nodes, join the conversation, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet.', '/', true), title: { absolute: 'Kwonnet — Connecting the dots and nodes, join the conversation, discover and play', template: '%s — Kwonnet' },
   openGraph: {
-    ...pageMetadata('Kwonnet - Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet', '/', true).openGraph,
-    title: 'Kwonnet — Connecting the dots and nodes, discover and play',
+    ...pageMetadata('Kwonnet — Connecting the dots and nodes, join the conversation, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet', '/', true).openGraph,
+    title: 'Kwonnet — Connecting the dots and nodes, join the conversation, discover and play',
 
     url: 'https://kwonnet.com/',
     images: [
@@ -23,13 +24,13 @@ export const metadata = {
         url: 'https://kwonnet.com/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Kwonnet — Connecting the dots and nodes, discover and play',
+        alt: 'Kwonnet — Connecting the dots and nodes, join the conversation, discover and play',
       },
     ],
   },
   twitter: {
-    ...pageMetadata('Kwonnet - Connecting the dots and nodes, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet', '/', true).twitter, 
-    title: 'Kwonnet — Connecting the dots and nodes, discover and play',
+    ...pageMetadata('Kwonnet — Connecting the dots and nodes, join the conversation, discover and play', 'Discover fresh conversations, connect with creators, play rewarding games, create and share what matters on Kwonnet', '/', true).twitter, 
+    title: 'Kwonnet — Connecting the dots and nodes, join the conversation, discover and play',
     site: "@kwonnet45",
     creator: "@torver213",
     card: "summary_large_image",
@@ -38,7 +39,7 @@ export const metadata = {
         url: 'https://kwonnet.com/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Kwonnet — Connecting the dots and nodes, discover and play',
+        alt: 'Kwonnet — Connecting the dots and nodes, join the conversation, discover and play',
         
       },
       
