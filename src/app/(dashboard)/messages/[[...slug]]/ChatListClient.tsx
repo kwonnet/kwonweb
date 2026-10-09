@@ -15,7 +15,7 @@ const ChatClientList = ({convoList, slug, initialFetchFailed = false}: { convoLi
 
     const { token, user } = useAuthSession();
 
-    const {liveReady, revision, receiptTotals, messages, warmConversations, ready}=useConvoSocketIoContext();
+    const {liveReady, revision, inboxRevision, conversationUpdates, receiptTotals, messages, warmConversations, ready}=useConvoSocketIoContext();
     const userId = user.id
 
   const getKey = (pageIndex: number, previousPageData?: any[]) => {
@@ -44,11 +44,14 @@ const ChatClientList = ({convoList, slug, initialFetchFailed = false}: { convoLi
   const flatData = data ? data.flat().map(item => ({ ...item, lastMessage: messages?.filter(message => message.conversation === item.id).at(-1) })) : [];
   React.useEffect(() => { if (ready && data) warmConversations(data.flat()); }, [data, ready, warmConversations]);
 
+  const lastInboxRevision = React.useRef(inboxRevision);
   React.useEffect(() => {
     // SWRInfinite owns an aggregate cache in addition to its page caches.
-    // Its bound mutate refreshes every loaded page when receipt totals change.
-    if (revision) void mutate(pages => pages?.map(page => page.map(item => ({ ...item, ...receiptTotals?.[item.id] }))), { revalidate: true }).catch(() => {});
-  }, [revision, mutate, receiptTotals]);
+    // Patch known rows in place; only unknown/new conversations require a list fetch.
+    const revalidate = inboxRevision === undefined || lastInboxRevision.current !== inboxRevision;
+    lastInboxRevision.current = inboxRevision;
+    if (revision) void mutate(pages => pages?.map(page => page.map(item => ({ ...item, ...conversationUpdates?.[item.id], ...receiptTotals?.[item.id] }))), { revalidate }).catch(() => {});
+  }, [revision, inboxRevision, mutate, receiptTotals, conversationUpdates]);
 
   const isReachingEnd =
     (data && data[data.length - 1]?.length < PAGE_SIZE) || !!error;

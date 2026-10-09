@@ -2,7 +2,7 @@
 import PasswordTextField from '@/components/common/PasswordTextField';
 import MoreVert from '@mui/icons-material/MoreVert';
 import MessagingHistoryTransfer from '@/components/common/MessagingHistoryTransfer';
-import { createContext, useContext, useEffect, useCallback, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useCallback, useRef, useState, type ReactNode } from 'react';
 import { Alert, Box, Button, Dialog, DialogContent, DialogTitle, Paper, Stack, Typography, IconButton, Menu, MenuItem, Checkbox, FormControlLabel } from '@mui/material';
 import { useAuthSession } from '@/hooks';
 import { useSocketIoContext } from './SocketIoContext';
@@ -24,6 +24,7 @@ type State = {
     setActiveConversationId?: (id?: string) => void;
     viewportHeight?: number;
     revision: number;
+    inboxRevision?: number;
     liveReady: boolean;
     refreshInbox: (conversationId?: string, totals?: { unreadCount?: number; unseenCount?: number; totalUnreadMsg?: number; totalUnseenMsg?: number }) => void;
     openOptions: (anchor: HTMLElement) => void;
@@ -92,6 +93,10 @@ export default function ConvoSocketIoProvider({ children }: {
     const [liveReady, setLiveReady] = useState(false);
     const [devices, setDevices] = useState<MessagingDevice[]>([]), [showDevices, setShowDevices] = useState(false);
     const [messages, setMessages] = useState<LocalMessage[]>([]), [revision, setRevision] = useState(0);
+    const [inboxRevision, setInboxRevision] = useState(0);
+    const activeConversationId = messagingPage && !pathname.split('/').includes('list') && pageVisible && ready && !restoring ? selectedConversationId : undefined;
+    const activeConversation = useRef<string | undefined>(undefined);
+    useLayoutEffect(() => { activeConversation.current = activeConversationId; }, [activeConversationId]);
     const inboxSeeded = useRef(false);
     const initialSyncs = useRef(new Map<string, InitialMessagingSync>());
     const inFlight = useRef(new Map<string, Promise<SyncResult | undefined>>());
@@ -102,11 +107,12 @@ export default function ConvoSocketIoProvider({ children }: {
             setReceiptTotals(previous => ({ ...previous, [conversationId]: { unreadCount: totals.unreadCount!, unseenCount: totals.unseenCount! } }));
         }
         setRevision(value => value + 1);
+        if (!conversationId || !totals) setInboxRevision(value => value + 1);
         // Receipts have already committed; refresh authoritative totals directly,
         // including when the socket hint is delayed or HTTP fallback was used.
         const statsKey = (key: unknown) => Array.isArray(key) && key[0] === `/v1/users/${userId}/stats`;
         if (typeof totals?.totalUnreadMsg === 'number' && typeof totals?.totalUnseenMsg === 'number') {
-            void mutate(statsKey, (current: any) => current ? { ...current, totalUnreadMsg: totals.totalUnreadMsg, totalUnseenMsg: totals.totalUnseenMsg } : current, { revalidate: true }).catch(() => {});
+            void mutate(statsKey, (current: any) => current ? { ...current, totalUnreadMsg: totals.totalUnreadMsg, totalUnseenMsg: totals.totalUnseenMsg } : current, { revalidate: false }).catch(() => {});
         } else void mutate(statsKey).catch(() => {});
     }, [mutate, userId]);
     useEffect(() => {
@@ -177,9 +183,21 @@ export default function ConvoSocketIoProvider({ children }: {
             const publishCache = async () => {
                 const local = await localConversation(userId, conversationId, peerId);
                 if (epoch !== generation.current) return;
-                setMessages(previous => previous.filter(message => message.conversation !== conversationId).concat(local));
+                setMessages(previous => {
+                    const cached = previous.filter(message => message.conversation === conversationId);
+                    const byId = new Map(cached.map(message => [message.id, message]));
+                    const next = local.map(message => {
+                        const prior = byId.get(message.id);
+                        return prior && JSON.stringify(prior) === JSON.stringify(message) ? prior : message;
+                    });
+                    if (cached.length === next.length && cached.every((message, index) => message === next[index])) return previous;
+                    return previous.filter(message => message.conversation !== conversationId).concat(next);
+                });
                 const processedMessages = await r.vault.atomic(async draft => Object.entries(draft.records).filter(([key]) => key.startsWith('wire:')).map(([, value]) => JSON.parse(value)).filter(wire => wire.conversation === conversationId && !draft.records[`failed:${wire.id}`] && new Date(wire.createdAt).getTime() > Date.now() - 90 * 86400000 && !(JSON.parse(draft.records[`hidden:${conversationId}`] ?? '[]') as string[]).includes(wire.id)).map(wire => ({ id: wire.id, fromUserId: wire.fromUserId, conversationId, eventId: wire.eventId, action: !['text','media'].includes(JSON.parse(draft.records[`event:${wire.eventId}`]).content.kind) })));
-                if (epoch === generation.current) setProcessed(previous => previous.filter(message => message.conversationId !== conversationId).concat(processedMessages));
+                if (epoch === generation.current) setProcessed(previous => {
+                    const cached = previous.filter(message => message.conversationId === conversationId);
+                    return JSON.stringify(cached) === JSON.stringify(processedMessages) ? previous : previous.filter(message => message.conversationId !== conversationId).concat(processedMessages);
+                });
             };
             await publishCache(); // Render cached messages before any relay or outbox work.
             void flushMessagingOutbox(userId, token).catch(() => {});
@@ -238,18 +256,32 @@ export default function ConvoSocketIoProvider({ children }: {
                 });
                 cursor = result.nextCursor;
                 receiptCursor = result.nextReceiptCursor;
-                if (epoch === generation.current) setConversationUpdates(previous => ({ ...previous, [conversationId]: result!.conversation }));
-                await publishCache();
-                if (result.accountTotals) refreshInbox(conversationId, { ...result.conversation, ...result.accountTotals });
+                knownConversations.current.set(conversationId, { peerId, stamp: `${result.conversation.lastSequence ?? result.conversation.updatedAt}:${result.conversation.state}` });
+                // Persist authenticated reads before publishing account totals. A message
+                // in the open pane must never briefly appear in the navbar as unread.
+                let totals: (Partial<Conversation> & { totalUnreadMsg?: number; totalUnseenMsg?: number }) | undefined = result.accountTotals ? { ...result.conversation, ...result.accountTotals } : undefined;
                 if (result.conversation.state === 'ACCEPTED') {
-                    const ids = await r.vault.atomic(async draft => result!.messages.filter(wire => wire.fromUserId !== userId && !draft.records[`failed:${wire.id}`] && !draft.records[`receipt:${wire.id}:${userId}`]).map(wire => wire.id));
+                    const focused = activeConversation.current === conversationId && document.visibilityState === 'visible';
+                    const ids = await r.vault.atomic(async draft => result!.messages.filter(wire => {
+                        const receipt = JSON.parse(draft.records[`receipt:${wire.id}:${userId}`] ?? 'null');
+                        return wire.fromUserId !== userId && !draft.records[`failed:${wire.id}`] && (focused ? !receipt?.readAt : !receipt);
+                    }).map(wire => wire.id));
                     if (ids.length) {
-                        try { const totals = await sendReceiptBatch(userId, token, conversationId, ids, []); if (!totals.suppressed) refreshInbox(conversationId, totals); }
-                        catch (error) { setError(error instanceof Error ? error.message : 'Delivery acknowledgement will retry'); }
+                        try {
+                            // Re-check after vault work so leaving the chat never sends a read.
+                            const readNow = focused && activeConversation.current === conversationId && document.visibilityState === 'visible';
+                            const acknowledged = await sendReceiptBatch(userId, token, conversationId, readNow ? [] : ids, readNow ? ids : []);
+                            if (!acknowledged.suppressed) totals = { ...result.conversation, ...acknowledged };
+                        } catch (error) { setError(error instanceof Error ? error.message : 'Delivery acknowledgement will retry'); }
                     }
                 }
+                if (epoch !== generation.current) return;
+                const update = { ...result.conversation, ...totals };
+                setConversationUpdates(previous => JSON.stringify(previous[conversationId]) === JSON.stringify(update) ? previous : { ...previous, [conversationId]: update });
+                await publishCache();
+                if (totals) refreshInbox(conversationId, totals);
+
             } while (result.messages.length === 100 || result.receipts.length === 100 || dirty.current.has(conversationId));
-            await publishCache();
             return result;
         })();
         inFlight.current.set(conversationId, work);
@@ -315,7 +347,7 @@ export default function ConvoSocketIoProvider({ children }: {
         const bindingEpoch = generation.current;
         const hinted = new Set<string>();
         const available = (hint?: { conversationId?: string }) => { if (hint?.conversationId) hinted.add(hint.conversationId); if (hintTimer)
-            return; hintTimer = setTimeout(() => { hintTimer = undefined; setReceiptTotals({}); refreshInbox(); let unknown = false; for (const id of hinted) { const known = knownConversations.current.get(id); if (known) void refresh(id, known.peerId).catch(() => {}); else unknown = true; } if (unknown) void getUserChatConversations({ userId, kind: 'chat', page: 1, limit: 21 }, token).then(conversations => { if (bindingEpoch === generation.current) warmConversations(conversations); }).catch(() => {}); hinted.clear(); }, 100); };
+            return; hintTimer = setTimeout(() => { hintTimer = undefined; let unknown = false; for (const id of hinted) { const known = knownConversations.current.get(id); if (known) void refresh(id, known.peerId).catch(() => {}); else unknown = true; } if (unknown) void getUserChatConversations({ userId, kind: 'chat', page: 1, limit: 21 }, token).then(conversations => { if (bindingEpoch === generation.current) warmConversations(conversations); refreshInbox(); }).catch(() => {}); hinted.clear(); }, 100); };
         const disconnected = () => { setMessagingSocket(userId); setLiveReady(false); };
         const connected = () => convoSocketIo.emit('device:challenge');
         convoSocketIo.on('connect', connected);
@@ -366,5 +398,5 @@ export default function ConvoSocketIoProvider({ children }: {
                         setError(e instanceof Error ? e.message : 'Unable to reset local messaging');
                     }
                 }}>Reset messaging on this browser</Button>}</Stack></Paper></Box>;
-    return <Context.Provider value={{ convoSocketIo, messages, ready, activeConversationId: messagingPage && !pathname.split('/').includes('list') && pageVisible && ready && !restoring ? selectedConversationId : undefined, setActiveConversationId, messagingRestoring: restoring, messagingGate, viewportHeight, revision, liveReady, processed, refresh, refreshInbox, conversationUpdates, receiptTotals, loadingConversations, warmConversations, openOptions: setOptionsAnchor }}>{messagingPage && ready && error && <Alert severity="error" sx={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 1300 }} onClose={() => setError('')}>{error}</Alert>}<Menu anchorEl={optionsAnchor} open={!!optionsAnchor} onClose={() => setOptionsAnchor(null)}><MenuItem onClick={() => { setOptionsAnchor(null); void listDevices(); }}>Messaging devices</MenuItem><MenuItem onClick={() => { setOptionsAnchor(null); generation.current++; lockMessaging(); setReady(false); setMessages([]); setProcessed([]); void forgetRememberedMessaging(userId).catch(() => setError('Unable to forget automatic unlock. Clear site storage before leaving a shared browser.')); }}>Lock messages</MenuItem></Menu><Dialog open={showDevices} onClose={() => setShowDevices(false)}><DialogTitle>Messaging devices</DialogTitle><DialogContent><Typography>Each browser keeps separate keys. New devices receive future messages automatically; transfer older history below. Revoke devices you no longer use.</Typography>{devices.map(d => <Box key={d.deviceId} sx={{ my: 2 }}><Typography variant="body2">{d.deviceId}</Typography><Button color="error" onClick={() => revoke(d.deviceId)}>Revoke device</Button></Box>)}<MessagingHistoryTransfer userId={userId} onRestored={() => { for (const [id, conversation] of knownConversations.current) void refresh(id, conversation.peerId).catch(() => {}); refreshInbox(); }} /></DialogContent></Dialog>{children}</Context.Provider>;
+    return <Context.Provider value={{ convoSocketIo, messages, ready, activeConversationId, setActiveConversationId, messagingRestoring: restoring, messagingGate, viewportHeight, revision, inboxRevision, liveReady, processed, refresh, refreshInbox, conversationUpdates, receiptTotals, loadingConversations, warmConversations, openOptions: setOptionsAnchor }}>{messagingPage && ready && error && <Alert severity="error" sx={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 1300 }} onClose={() => setError('')}>{error}</Alert>}<Menu anchorEl={optionsAnchor} open={!!optionsAnchor} onClose={() => setOptionsAnchor(null)}><MenuItem onClick={() => { setOptionsAnchor(null); void listDevices(); }}>Messaging devices</MenuItem><MenuItem onClick={() => { setOptionsAnchor(null); generation.current++; lockMessaging(); setReady(false); setMessages([]); setProcessed([]); void forgetRememberedMessaging(userId).catch(() => setError('Unable to forget automatic unlock. Clear site storage before leaving a shared browser.')); }}>Lock messages</MenuItem></Menu><Dialog open={showDevices} onClose={() => setShowDevices(false)}><DialogTitle>Messaging devices</DialogTitle><DialogContent><Typography>Each browser keeps separate keys. New devices receive future messages automatically; transfer older history below. Revoke devices you no longer use.</Typography>{devices.map(d => <Box key={d.deviceId} sx={{ my: 2 }}><Typography variant="body2">{d.deviceId}</Typography><Button color="error" onClick={() => revoke(d.deviceId)}>Revoke device</Button></Box>)}<MessagingHistoryTransfer userId={userId} onRestored={() => { for (const [id, conversation] of knownConversations.current) void refresh(id, conversation.peerId).catch(() => {}); refreshInbox(); }} /></DialogContent></Dialog>{children}</Context.Provider>;
 }

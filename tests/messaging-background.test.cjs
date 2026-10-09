@@ -1,22 +1,22 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript'),React=require('react');const {JSDOM}=require('jsdom');
-for(const state of ['ACCEPTED','PENDING_REQUEST'])for(const source of ['relay','matching-seed','wrong-device','wrong-account'])test(`background ${state} ${source} catch-up renders cached history before relay work and acknowledges only accepted delivery`,async()=>{
- const dom=new JSDOM('<div id="root"></div>',{url:'https://kwonnet.test/messages'});global.window=dom.window;global.document=dom.window.document;global.IS_REACT_ACT_ENVIRONMENT=true;
+for(const state of ['ACCEPTED','PENDING_REQUEST'])for(const source of ['relay','matching-seed','wrong-device','wrong-account','active-relay'])test(`background ${state} ${source} catch-up renders cached history before relay work and acknowledges only accepted delivery`,async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'https://kwonnet.test/messages'});global.window=dom.window;global.document=dom.window.document;global.IS_REACT_ACT_ENVIRONMENT=true;Object.defineProperty(document,'visibilityState',{value:'visible',configurable:true});
  const room=crypto.randomUUID(),convo={id:room,state,initiator:{id:'peer'},responder:{id:'user'},updatedAt:new Date().toISOString(),lastSequence:'2'},createdAt=new Date().toISOString();
  const cached={id:'cached',eventId:'cached',conversation:room,fromUserId:'peer',content:'Cached history',event:{eventId:'cached'},createdAt,seen:[],read:[]};const fresh={id:'new',eventId:'new',conversation:room,fromUserId:'peer',content:'Newest conversation message',event:{eventId:'new'},createdAt,seen:[],read:[]};
  const records={'wire:cached':JSON.stringify(cached),'event:cached':JSON.stringify({content:{kind:'text'}})};let local=[cached],context,release,started=0,inboxFetches=0;const handlers=new Map(),socket={on:(event,fn)=>handlers.set(event,fn),off:event=>handlers.delete(event),emit:()=>{}};const receipts=[];
  const box=({children})=>React.createElement('div',null,children);
- const mutate=async()=>{};
+ const snapshots=[];const mutate=async(filter,update)=>{if(update)snapshots.push(update({totalUnreadMsg:0,totalUnseenMsg:0}));};
  const mocks={
-  'next/navigation':{usePathname:()=>'/messages'},'@/hooks':{useAuthSession:()=>({user:{id:'user'},token:'token'})},'./SocketIoContext':{useSocketIoContext:()=>({convoSocketIo:socket})},
+  'next/navigation':{usePathname:()=>source==='active-relay'?'/messages/peer/chat':'/messages'},'@/hooks':{useAuthSession:()=>({user:{id:'user'},token:'token'})},'./SocketIoContext':{useSocketIoContext:()=>({convoSocketIo:socket})},
   '@/components/common/PasswordTextField':{__esModule:true,default:()=>null},'@mui/icons-material/MoreVert':{__esModule:true,default:()=>null},'@/components/common/MessagingHistoryTransfer':{__esModule:true,default:()=>null},
   '@mui/material':Object.fromEntries(['Alert','Box','Button','Dialog','DialogContent','DialogTitle','Paper','Stack','Typography','IconButton','Menu','MenuItem','Checkbox','FormControlLabel','CircularProgress'].map(name=>[name,name==='Dialog'||name==='Menu'?({open,children})=>open?box({children}):null:box])),
   '@/lib/signal/deviceManager':{hasMessagingVault:async()=>true,restoreRememberedMessaging:async()=>({}),forgetRememberedMessaging:async()=>{},lockMessaging:()=>{},currentMessagingRuntime:()=>({deviceId:'device',vault:{atomic:async work=>work({records})}})},
   '@/lib/conversations':{getUserChatConversations:async()=>{inboxFetches++;return source==='matching-seed'?[]:[convo];}},
-  '@/lib/conversations/messaging':{setMessagingSocket:()=>{},enroll:async()=>{},flushMessagingOutbox:async()=>{},localConversation:async()=>local,syncMessages:async()=>{started++;return new Promise(resolve=>release=()=>resolve({conversation:convo,messages:[fresh],receipts:[],nextCursor:'2',nextReceiptCursor:'0'}));},decryptWire:async(userId,wire)=>{records['wire:new']=JSON.stringify(wire);records['event:new']=JSON.stringify({content:{kind:'text'}});local=[cached,fresh];},sendReceiptBatch:async(...args)=>{receipts.push(args);return {suppressed:false,unreadCount:2,unseenCount:0,totalUnreadMsg:2,totalUnseenMsg:0};}},
+  '@/lib/conversations/messaging':{setMessagingSocket:()=>{},enroll:async()=>{},flushMessagingOutbox:async()=>{},localConversation:async()=>local,syncMessages:async()=>{started++;return new Promise(resolve=>release=()=>resolve({conversation:convo,messages:[fresh],receipts:[],nextCursor:'2',nextReceiptCursor:'0',accountTotals:{totalUnreadMsg:2,totalUnseenMsg:2}}));},decryptWire:async(userId,wire)=>{records['wire:new']=JSON.stringify(wire);records['event:new']=JSON.stringify({content:{kind:'text'}});local=[cached,fresh];},sendReceiptBatch:async(...args)=>{receipts.push(args);return {suppressed:false,unreadCount:args[4].length?0:2,unseenCount:0,totalUnreadMsg:args[4].length?0:2,totalUnseenMsg:0};}},
   'swr':{useSWRConfig:()=>({mutate})}
  };
  const module={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('src/context/ConvoSocketIoContext.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText)(id=>mocks[id]??require(id),module,module.exports);
- function Child(){context=module.exports.useConvoSocketIoContext();React.useEffect(()=>{if(context.ready&&source!=='relay')void context.refresh(room,'peer',{userId:source==='wrong-account'?'another':'user',deviceId:source==='wrong-device'?'another':'device',result:{conversation:convo,messages:[fresh],receipts:[],nextCursor:'2',nextReceiptCursor:'0'}});},[context.ready]);return React.createElement('div',null,context.messages.map(message=>message.content).join('|'));}
+ function Child(){context=module.exports.useConvoSocketIoContext();React.useLayoutEffect(()=>{if(context.ready&&source==='active-relay')context.setActiveConversationId(room);},[context.ready]);React.useEffect(()=>{if(context.ready&&!['relay','active-relay'].includes(source))void context.refresh(room,'peer',{userId:source==='wrong-account'?'another':'user',deviceId:source==='wrong-device'?'another':'device',result:{conversation:convo,messages:[fresh],receipts:[],nextCursor:'2',nextReceiptCursor:'0'}});},[context.ready]);return React.createElement('div',null,context.messages.map(message=>message.content).join('|'));}
  const root=require('react-dom/client').createRoot(document.getElementById('root'));
  try{
   await React.act(async()=>root.render(React.createElement(module.exports.default,null,React.createElement(Child))));
@@ -27,14 +27,17 @@ for(const state of ['ACCEPTED','PENDING_REQUEST'])for(const source of ['relay','
     await React.act(async()=>release());
   }
   assert.match(document.body.textContent,/Newest conversation message/);assert.equal(context.loadingConversations[room],false);
-  if(state==='ACCEPTED')assert.deepEqual(receipts,[['user','token',room,['new'],[]]],'inbox catch-up sends delivered, never read');else assert.deepEqual(receipts,[],'request preview remains silent');
+  if(state==='ACCEPTED')assert.deepEqual(receipts,[['user','token',room,source==='active-relay'?[]:['new'],source==='active-relay'?['new']:[]]],'only the visible active chat sends immediate reads; background catch-up sends delivery');else assert.deepEqual(receipts,[],'request preview remains silent');
   assert.equal(context.processed.length,2,JSON.stringify(context.processed));
+  if(source==='active-relay'&&state==='ACCEPTED')assert.ok(snapshots.every(snapshot=>snapshot.totalUnreadMsg===0),'active reads commit before publishing navbar totals, without a transient unread snapshot');
   if(source==='matching-seed'){
-    const before=inboxFetches;
+    const before=inboxFetches,previousMessages=context.messages,previousCached=context.messages[0];
     await React.act(async()=>{handlers.get('message:available')({conversationId:room});await new Promise(resolve=>setTimeout(resolve,120));});
     assert.equal(started,1,'a deep-linked chat outside the inbox pages receives targeted relay catch-up');
     assert.equal(inboxFetches,before,'known direct-link hints do not refetch the inbox to discover the peer');
     await React.act(async()=>release());
+    assert.equal(context.messages,previousMessages,'unchanged catch-up keeps the message array identity');
+    assert.equal(context.messages[0],previousCached,'unchanged history retains its message references');
   }
  }finally{await React.act(async()=>root.unmount());dom.window.close();}
 });

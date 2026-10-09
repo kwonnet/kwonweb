@@ -4,7 +4,7 @@ function compile(file,mocks){const module={exports:{}};new Function('require','m
 test('send appears before network acknowledgement, preserves new input and reconciles by event ID without duplicates',async()=>{
  const dom=new JSDOM('<div id="root"></div>',{url:'https://kwonnet.test/messages/peer/chat'});global.window=dom.window;global.document=dom.window.document;global.IS_REACT_ACT_ENVIRONMENT=true;document.hasFocus=()=>true;Object.defineProperty(document,'visibilityState',{value:'visible'});dom.window.HTMLElement.prototype.scrollIntoView=()=>{};global.IntersectionObserver=class{observe(){}disconnect(){}};
  const convo={id:crypto.randomUUID(),state:'ACCEPTED',initiator:{id:'user'},responder:{id:'peer'}};
- let input,resolveSend,rejectSend,calls=[],badgeRefreshes=0;
+ let input,resolveSend,rejectSend,calls=[],badgeRefreshes=0;const bubbleRenders=new Map();
  const context={messages:[],processed:[],liveReady:true,revision:0,refreshInbox:()=>badgeRefreshes++,refresh:async()=>({conversation:convo}),convoSocketIo:{on(){},off(){},emit(){}}};
  const ui=({children,ref,...props})=>React.createElement('div',{ref,'data-message-id':props['data-message-id']},children);
  class MessageQueuedError extends Error{}
@@ -12,7 +12,7 @@ test('send appears before network acknowledgement, preserves new input and recon
  '@mui/material':Object.fromEntries(['Alert','Avatar','Box','Button','Dialog','DialogContent','DialogTitle','IconButton','Paper','Stack','TextField','Typography'].map(name=>[name,name==='TextField'?props=>{input=props;return React.createElement('textarea',{value:props.value,onChange:props.onChange});}:name==='IconButton'?({children,onClick,disabled,...props})=>React.createElement('button',{onClick,disabled,'aria-label':props['aria-label']},children):ui])),
  '@mui/icons-material':{ArrowBackIosNewOutlined:ui,AttachFile:ui,SendOutlined:ui,LockOutlined:ui},'next/link':{__esModule:true,default:ui},'next/navigation':{useRouter:()=>({})},'@/hooks':{useAuthSession:()=>({user:{id:'user'},token:'token'})},'@/context/ConvoSocketIoContext':{useConvoSocketIoContext:()=>context,MessagingOptionsButton:()=>null},'@/lib/conversations':{},'@/lib/signal/attachments':{IMAGE_TYPES:['image/png'],validateImageUploads:()=>{}},
  '@/lib/conversations/messaging':{MessageQueuedError,sendContent:(...args)=>{calls.push(args);return new Promise((resolve,reject)=>{resolveSend=resolve;rejectSend=reject;});}},
- './ChatBubble':{__esModule:true,default:({message})=>React.createElement('span',{'data-event-id':message.eventId},`${message.content}:${message.sendingState??'confirmed'}`)}};
+ './ChatBubble':{__esModule:true,default:({message})=>{bubbleRenders.set(message.id,(bubbleRenders.get(message.id)??0)+1);return React.createElement('span',{'data-event-id':message.eventId},`${message.content}:${message.sendingState??'confirmed'}`);}}};
  const Chat=compile('src/app/(dashboard)/messages/[[...slug]]/ChatBoxClient.tsx',mocks),root=require('react-dom/client').createRoot(document.getElementById('root'));
  const render=()=>root.render(React.createElement(Chat,{params:{recipient:{id:'peer',name:'Peer',username:'peer'},convo}}));
  try{
@@ -25,6 +25,7 @@ test('send appears before network acknowledgement, preserves new input and recon
   await React.act(async()=>resolveSend({eventId}));assert.match(document.body.textContent,/hello:sent/);assert.equal(input.value,'next message');assert.equal(badgeRefreshes,1);
   context.messages=[{id:'server-id',eventId,conversation:convo.id,fromUserId:'user',content:'hello',seen:[],read:[],event:{eventId},hash:'hash'}];
   await React.act(async()=>render());assert.equal(document.querySelectorAll('[data-event-id]').length,1);assert.match(document.body.textContent,/hello:confirmed/);
+  const existingRenders=bubbleRenders.get('server-id');context.messages=context.messages.concat({...context.messages[0],id:'another-message',eventId:'another-event',content:'another arrival'});await React.act(async()=>render());assert.equal(bubbleRenders.get('server-id'),existingRenders,'an incoming message does not redraw unchanged history bubbles');await React.act(async()=>input.onChange({target:{value:'next message'}}));assert.equal(bubbleRenders.get('server-id'),existingRenders,'typing in the composer does not redraw old messages');
   await React.act(async()=>document.querySelector('[aria-label="Send message"]').click());
   await React.act(async()=>rejectSend(new Error('Recipient has not enrolled')));assert.match(document.body.textContent,/next message:failed/);assert.equal(input.value,'next message','failed preflight preserves text for retry');
  }finally{await React.act(async()=>root.unmount());dom.window.close();delete global.IntersectionObserver;}

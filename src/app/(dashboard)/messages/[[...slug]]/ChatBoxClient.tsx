@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, Avatar, Box, Button, Dialog, DialogContent, DialogTitle, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
 import { ArrowBackIosNewOutlined, AttachFile, SendOutlined, LockOutlined } from '@mui/icons-material';
 import Link from 'next/link';
@@ -13,6 +13,17 @@ import type { MessagingDevice, LocalMessage, Content } from '@/lib/signal/contra
 import type { UserPublic } from '@/types/user';
 import ChatBubble from './ChatBubble';
 import { IMAGE_TYPES, validateImageUploads } from '@/lib/signal/attachments';
+type MessageAction = 'reply' | 'edit' | 'delete' | 'hide' | 'reaction';
+const MessageRow = memo(function MessageRow({ message, userId, token, disabled, replyMessage, onAction, onReplyClick }: {
+    message: LocalMessage; userId: string; token: string; disabled: boolean;
+    replyMessage?: LocalMessage;
+    onAction: (message: LocalMessage, kind: MessageAction, value?: string) => void;
+    onReplyClick: (targetId: string) => void;
+}) {
+    return <Box data-event-id={message.eventId} data-message-id={message.sendingState || message.queued ? undefined : message.id}>
+        <ChatBubble message={message} isSender={message.fromUserId === userId} onAction={(kind, value) => onAction(message, kind, value)} disabled={disabled} userId={userId} token={token} replyMessage={replyMessage} onReplyClick={onReplyClick} />
+    </Box>;
+});
 export default function ChatBoxClient({ params }: {
     params: {
         initialSync?: InitialMessagingSync;
@@ -131,6 +142,9 @@ export default function ChatBoxClient({ params }: {
         const received = [...new Map([...(processed?.filter(m => m.conversationId === convo.id) ?? []), ...chats.filter(m => !m.queued && !m.sendingState && !m.integrityFailed && new Date(m.createdAt).getTime() > Date.now() - 90 * 86400000).map(m => ({ id: m.id, fromUserId: m.fromUserId, action: false }))].map(message => [message.id, message])).values()].filter(m => m.fromUserId !== user.id);
         const focused = activeConversationId === convo.id && document.visibilityState === 'visible';
         for (const m of received) {
+            const saved = chats.find(message => message.id === m.id);
+            if (saved?.seen.some(receipt => receipt.userId === user.id)) delivered.current.add(m.id);
+            if (saved?.read.some(receipt => receipt.userId === user.id)) read.current.add(m.id);
             // Opening an accepted conversation reads its authenticated history through the latest message.
             const status = focused && !read.current.has(m.id) ? 'READ' : !delivered.current.has(m.id) ? 'DELIVERED' : undefined;
             if (status && (status === 'READ' || receiptQueue.current.get(m.id) !== 'READ'))
@@ -326,11 +340,11 @@ export default function ChatBoxClient({ params }: {
         if (kind === 'delete')
             await send({ ...target, kind: 'delete', signature: '' });
     };
-    return <Stack sx={{ height: '100%', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
-  <Paper sx={{ p: 1, flexShrink: 0 }} elevation={0}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><IconButton aria-label="Go back" component={Link} href="/messages"><ArrowBackIosNewOutlined /></IconButton><Avatar src={peer.avatar ?? undefined}/><Box sx={{ flex: 1, minWidth: 0 }}><Typography noWrap sx={{ fontWeight: 700 }}>{peer.name}</Typography><Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>@{peer.username} </Typography></Box><IconButton aria-label="Verify E2E encryption" title="End-to-end encrypted · verify keys" onClick={verifyKeys}><LockOutlined fontSize="small" /></IconButton><MessagingOptionsButton /></Stack></Paper>
-  <Dialog open={showKeys} onClose={() => setShowKeys(false)}><DialogTitle>Verify device identities</DialogTitle><DialogContent><Typography>Compare these fingerprints with your contact through a trusted channel. First-use trust alone does not prove who owns a key.</Typography>{fingerprints.map(f => <Box key={f.id} sx={{ my: 2, overflowWrap: 'anywhere' }}><Typography variant="caption">{f.id}</Typography><Typography sx={{ fontFamily: 'monospace' }}>{f.hash}</Typography></Box>)}</DialogContent></Dialog>
-  {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
-  <Box ref={pane} data-message-pane onScroll={() => { const element = pane.current; if (element) followBottom.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80; }} aria-busy={!!loadingConversations?.[convo?.id ?? '']} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', p: 1 }}>{chats.map(m => <Box key={m.id} data-event-id={m.eventId} data-message-id={m.sendingState || m.queued ? undefined : m.id}><ChatBubble message={m} isSender={m.fromUserId === user.id} onAction={(kind, value) => action(m, kind, value)} disabled={busy || !!pending || !!m.queued || !!m.sendingState || !!m.integrityFailed} userId={user.id} token={token} replyMessage={chats.find(original => original.eventId === m.reply?.targetId && original.hash === m.reply?.targetHash)} onReplyClick={targetId => {
+    // Keep row callbacks stable while actions always use the latest conversation state.
+    const actionRef = useRef(action);
+    useLayoutEffect(() => { actionRef.current = action; });
+    const dispatchAction = useCallback((message: LocalMessage, kind: MessageAction, value?: string) => { void actionRef.current(message, kind, value); }, []);
+    const scrollToReply = useCallback((targetId: string) => {
         const target = Array.from(pane.current?.querySelectorAll<HTMLElement>('[data-event-id]') ?? []).find(element => element.dataset.eventId === targetId);
         const element = pane.current;
         if (target && element) {
@@ -339,7 +353,12 @@ export default function ChatBoxClient({ params }: {
             element.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
         }
         target?.animate?.([{ backgroundColor: 'rgba(100,181,246,.3)' }, { backgroundColor: 'transparent' }], { duration: 1200 });
-    }}/></Box>)}</Box>
+    }, []);
+    return <Stack sx={{ height: '100%', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
+  <Paper sx={{ p: 1, flexShrink: 0 }} elevation={0}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><IconButton aria-label="Go back" component={Link} href="/messages"><ArrowBackIosNewOutlined /></IconButton><Avatar src={peer.avatar ?? undefined}/><Box sx={{ flex: 1, minWidth: 0 }}><Typography noWrap sx={{ fontWeight: 700 }}>{peer.name}</Typography><Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>@{peer.username} </Typography></Box><IconButton aria-label="Verify E2E encryption" title="End-to-end encrypted · verify keys" onClick={verifyKeys}><LockOutlined fontSize="small" /></IconButton><MessagingOptionsButton /></Stack></Paper>
+  <Dialog open={showKeys} onClose={() => setShowKeys(false)}><DialogTitle>Verify device identities</DialogTitle><DialogContent><Typography>Compare these fingerprints with your contact through a trusted channel. First-use trust alone does not prove who owns a key.</Typography>{fingerprints.map(f => <Box key={f.id} sx={{ my: 2, overflowWrap: 'anywhere' }}><Typography variant="caption">{f.id}</Typography><Typography sx={{ fontFamily: 'monospace' }}>{f.hash}</Typography></Box>)}</DialogContent></Dialog>
+  {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
+  <Box ref={pane} data-message-pane onScroll={() => { const element = pane.current; if (element) followBottom.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80; }} aria-busy={!!loadingConversations?.[convo?.id ?? '']} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', p: 1 }}>{chats.map(m => <MessageRow key={m.id} message={m} userId={user.id} token={token} onAction={dispatchAction} disabled={busy || !!pending || !!m.queued || !!m.sendingState || !!m.integrityFailed} replyMessage={chats.find(original => original.eventId === m.reply?.targetId && original.hash === m.reply?.targetHash)} onReplyClick={scrollToReply} />)}</Box>
   {incoming ? <Paper sx={{ p: 2 }}><Typography>Preview privately. No delivered or read receipts are sent until you accept.</Typography><Stack direction="row" spacing={1}><Button disabled={busy} onClick={() => resolve('accept')}>Accept</Button><Button disabled={busy} onClick={() => resolve('reject')}>Reject</Button><Button disabled={busy} color="error" onClick={() => resolve('block')}>Block</Button></Stack></Paper> : <Box sx={{ p: 1, flexShrink: 0, pb: 'max(8px, env(safe-area-inset-bottom))' }}>
    {waitingAcceptance && <Typography variant="caption" role="status">Message request sent. Wait for this person to accept before sending more messages.</Typography>}
    {!pending && typingUntil > now && <Typography variant="caption">{peer.name} is typing…</Typography>}
