@@ -62,6 +62,7 @@ test('session broadcasts synchronize another tab and country currency without sw
     '@mui/material': {CssBaseline: () => null, ThemeProvider: passthrough},
     '@mui/material/InitColorSchemeScript': {default: () => null, __esModule: true},
     './NotificationsProvider': {NotificationsProvider: passthrough},
+    './PwaProvider': {__esModule: true, default: passthrough},
     './theme': {},
     'next-auth/react': {useSession: () => ({data: {user}})},
     swr: {SWRConfig: passthrough, unstable_serialize: key => JSON.stringify(key), useSWRConfig: () => ({cache: {get: key => key === JSON.stringify(['profile', 'u']) ? {data: cached} : key === JSON.stringify(['account-settings']) ? {data: {username: 'old', hasPassword: false}} : {data: undefined}}, mutate: async (filter, mapper) => {

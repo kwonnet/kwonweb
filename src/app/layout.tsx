@@ -3,7 +3,7 @@ import AuthSessionBoundary from "@/providers/AuthSessionBoundary";
 import { headers } from "next/headers";
 import { PUBLIC_LEGAL_HEADER } from "@/lib/auth-redirect";
 import { publicEnvScript } from "@/config/public-env";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { SessionProvider } from "next-auth/react";
 import React from "react";
@@ -23,11 +23,21 @@ import { constant } from "@/config";
 import SSEContextProvider from "@/context/SSEContext";
 
 export const dynamic = "force-dynamic";
+export const viewport: Viewport = {
+  width: 'device-width', initialScale: 1, viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#1565c0' },
+    { media: '(prefers-color-scheme: dark)', color: '#111111' },
+  ],
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
   title: {default: constant.siteName, template: '%s | Kwonnet'},
   applicationName: 'Kwonnet',
+  manifest: '/site.webmanifest',
+  appleWebApp: { capable: true, title: 'Kwonnet', statusBarStyle: 'default' },
+  icons: { icon: '/favicon.ico', apple: '/apple-touch-icon.png' },
   verification: {google: process.env.GOOGLE_SITE_VERIFICATION, other: process.env.BING_SITE_VERIFICATION ? {'msvalidate.01': process.env.BING_SITE_VERIFICATION} : undefined},
   robots: {index: false, follow: false},
   openGraph: {siteName: 'Kwonnet', type: 'website', title: 'Kwonnet', description: constant.siteDescription, images: ['/android-chrome-512x512.png']},

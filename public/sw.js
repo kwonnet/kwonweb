@@ -25,5 +25,32 @@ self.addEventListener('notificationclick', event => {
     return self.clients.openWindow(target.href);
   })());
 });
-self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
-self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+// Cache only this explicit public allowlist. Never store navigations, API/RSC
+// responses, user media, or authenticated HTML in Cache Storage.
+const PWA_CACHE = 'kwonnet-pwa-v1';
+const OFFLINE_URL = '/offline.html';
+const PUBLIC_ASSETS = [OFFLINE_URL, '/android-chrome-192x192.png', '/android-chrome-512x512.png', '/apple-touch-icon.png', '/site.webmanifest'];
+self.addEventListener('install', event => event.waitUntil((async () => {
+  const cache = await caches.open(PWA_CACHE);
+  await cache.addAll(PUBLIC_ASSETS.map(url => new Request(url, {cache: 'reload'})));
+  await self.skipWaiting();
+})()));
+self.addEventListener('activate', event => event.waitUntil((async () => {
+  const names = await caches.keys();
+  await Promise.all(names.filter(name => name.startsWith('kwonnet-pwa-') && name !== PWA_CACHE).map(name => caches.delete(name)));
+  await self.clients.claim();
+})()));
+self.addEventListener('fetch', event => {
+  const request = event.request, url = new URL(request.url);
+  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try { return await fetch(request); }
+      catch {
+        return await caches.match(OFFLINE_URL, {cacheName: PWA_CACHE}) || new Response('Kwonnet is offline. Reconnect and try again.', {status: 503, headers: {'Content-Type': 'text/plain; charset=utf-8'}});
+      }
+    })());
+  } else if (!url.search && PUBLIC_ASSETS.includes(url.pathname)) {
+    event.respondWith(caches.match(request, {cacheName: PWA_CACHE}).then(cached => cached || fetch(request)));
+  }
+});

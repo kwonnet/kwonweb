@@ -50,7 +50,7 @@ test('header logo emits intrinsic dimensions and reserves an adequate home-link 
  const ui=({children,component,sx,...props})=>React.createElement(component||'div',null,children);
  const Component=load('src/app/(dashboard)/CustomLayout.tsx',{
   '@mui/material':{AppBar:ui,Box:ui,Divider:ui,Drawer:()=>null,IconButton:ui,List:ui,ListItemButton:ui,ListItemIcon:ui,ListItemText:ui,Toolbar:ui,Tooltip:ui,Typography:ui,useColorScheme:()=>({mode:'dark'}),useTheme:()=>({})},
-  'next/link':{__esModule:true,default:({children,...props})=>React.createElement('a',props,children)},'next/navigation':{usePathname:()=>'/foryou'},'next-auth/react':{useSession:()=>({})},'@/config':{constant:{siteName:'Kwonnet'}},'@/providers/navigation':{getNavigationItems:()=>[]},'@/components/common/CustomThemeSwitcher':{__esModule:true,default:()=>null},
+  'next/link':{__esModule:true,default:({children,...props})=>React.createElement('a',props,children)},'next/navigation':{usePathname:()=>'/foryou'},'next-auth/react':{useSession:()=>({})},'@/config':{constant:{siteName:'Kwonnet'}},'@/providers/navigation':{getNavigationItems:()=>[]},'@/components/common/CustomThemeSwitcher':{__esModule:true,default:()=>null},'@/components/common/PwaInstallButton':{__esModule:true,default:()=>null},
  });
  const dom=new JSDOM(renderToStaticMarkup(React.createElement(Component,{children:'Page'})));const image=dom.window.document.querySelector('img');assert.equal(image.getAttribute('width'),'25');assert.equal(image.getAttribute('height'),'25');const anchor=image.closest('a');assert.equal(anchor.style.minWidth,'44px');assert.equal(anchor.style.minHeight,'44px');dom.window.close();
 });

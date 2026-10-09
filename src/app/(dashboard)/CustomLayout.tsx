@@ -4,6 +4,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import Link from "next/link";
 import Image from "next/image";
+import PwaInstallButton from "@/components/common/PwaInstallButton";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useState, type ReactNode } from "react";
@@ -37,6 +38,7 @@ export default function CustomLayout({ children, CustomToolbar }: { children: Re
         })}
       </List>
       {!mini && <Box component="footer" sx={{textAlign: "center", p: 2}}>
+        <PwaInstallButton />
         <Box sx={{display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 1, mb: 1, fontSize: 12, '& a': {color: "text.secondary"}}}>
           <Link href="/privacy-policy">Privacy Policy</Link><Link href="/terms-of-service">Terms of Service</Link>
         </Box>
