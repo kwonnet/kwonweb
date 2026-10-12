@@ -427,3 +427,10 @@ test("redirects and Cloudflare challenges are reported instead of parsed as JSON
     /security challenge/,
   );
 });
+test("publishes server-assigned media paths without changing Stream playback URLs",async(t)=>{
+  const filePath=`media/${"b".repeat(64)}/${id}`;
+  setup(t,async(_url,options)=>options.method==="POST"?Response.json({...session,filePath},{status:201}):Response.json({...ready,filePath}));
+  class Tus {constructor(_file,options){this.options=options;}start(){this.options.onSuccess();}async abort(){}}
+  const result=await uploadStreamVideo({file:new File(["video"],"structured.mp4",{type:"video/mp4"})},{owner:"structured-user",signal:new AbortController().signal,onProgress:()=>{},controls:()=>{}},{Upload:Tus,pollInterval:0});
+  assert.equal(result.filePath,filePath);assert.equal(result.url,url);assert.equal(result.fileId,id);
+});

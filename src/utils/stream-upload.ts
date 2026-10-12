@@ -26,6 +26,7 @@ type Session = {
   expiresAt: string;
   maxDurationSeconds: number;
   uploaded?: boolean;
+  filePath?: string;
 };
 type Status = {
   ready: boolean;
@@ -35,6 +36,7 @@ type Status = {
   error?: string;
   url?: string;
   thumbnailUrl?: string;
+  filePath?: string;
   width?: number;
   height?: number;
 };
@@ -390,7 +392,7 @@ export async function uploadStreamVideo(
     size: file.size,
     thumbnailUrl: status.thumbnailUrl!,
     fileType: file.type,
-    filePath: `stream/${session.id}`,
+    filePath: session.filePath || status.filePath || `stream/${session.id}`,
     altText: input.altText || "",
     flags: input.flags || [],
   };

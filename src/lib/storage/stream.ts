@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 
+export const STREAM_ALLOWED_ORIGINS = Object.freeze(["kwonnet.com", "*.kwonnet.com"]);
+
 export const MAX_VIDEO_BYTES = 1024 * 1024 * 1024;
 const UID = /^[a-f0-9]{32}$/i;
 const MIME = new Set([
@@ -22,6 +24,11 @@ export class StreamError extends Error {
 }
 export const creatorId = (userId: string) =>
   createHash("sha256").update(`kwonnet:${userId}`).digest("hex");
+// Logical media path; Stream continues to deliver video by its immutable UID.
+// Use the same owner hash as R2 images without changing Stream creator ownership.
+export const streamMediaPath = (userId: string, id: string) =>
+  `media/${createHash("sha256").update(userId).digest("hex")}/${id}`;
+
 export type StreamConfig = {
   accountId: string;
   token: string;
@@ -181,6 +188,36 @@ export function createStreamService(
       );
     }
   }
+  async function configurePlaybackOrigins(id: string, userId: string, file: { name: string; type: string }) {
+    // Use the documented JSON API for the origin array rather than relying on
+    // how the tus endpoint parses multi-origin metadata values.
+    const response = await request(`${base}/${id}`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        uid: id,
+        allowedOrigins: STREAM_ALLOWED_ORIGINS,
+        meta: {
+          name: streamMediaPath(userId, id),
+          folder: "media",
+          owner: createHash("sha256").update(userId).digest("hex"),
+          filename: file.name,
+          filetype: file.type,
+          provider: "stream",
+          filePath: streamMediaPath(userId, id),
+        },
+      }),
+      signal: AbortSignal.timeout(15_000),
+      cache: "no-store",
+      redirect: "error",
+    }, "playback_origins");
+    if (!response.ok) return providerFailure(response, "playback_origins");
+    const body = await response.json().catch(() => undefined);
+    if (!body?.success || !Array.isArray(body.result?.allowedOrigins) ||
+      !STREAM_ALLOWED_ORIGINS.every(origin => body.result.allowedOrigins.includes(origin))) {
+      throw new StreamError("Video playback permissions could not be configured. Please try again.", 502);
+    }
+  }
   return {
     async create(userId: string, input: unknown) {
       const file = validateVideo(input);
@@ -225,9 +262,11 @@ export function createStreamService(
           "create",
           !UID.test(id) ? "missing_media_id" : "invalid_upload_url",
         );
+      await configurePlaybackOrigins(id, userId, file);
       return {
         id,
         uploadUrl,
+        filePath: streamMediaPath(userId, id),
         expiresAt,
         maxDurationSeconds: config.maxDuration,
       };
@@ -265,6 +304,7 @@ export function createStreamService(
         video.input?.height > 0;
       return {
         id,
+        filePath: video.meta?.folder === "media" ? streamMediaPath(userId, id) : `stream/${id}`,
         ready,
         failed,
         state: String(video.status?.state || "pendingupload"),

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "stream:origins": "node --experimental-strip-types scripts/update-stream-origins.mjs",
     "generate:pwa-splash": "node scripts/generate-pwa-splash.cjs",
     "build": "next build",
     "start": "next start",

@@ -440,3 +440,40 @@ cannot be guaranteed. Reference: [Google's sitemap guidance](https://developers.
 Sitemap tests cover static inventory, robots discovery, availability without the
 API, and disabled post shards making no post requests. Retained XML and public API
 helpers are tested for future re-enablement.
+
+
+### Cloudflare Stream playback domains
+
+New upload reservations configure playback for `kwonnet.com` and `*.kwonnet.com`
+through the Stream edit API before returning the upload URL. Upload authentication,
+origin checks, ownership, and signed-video settings are unaffected.
+
+Existing videos require a one-time update. With `CLOUDFLARE_ACCOUNT_ID` and
+`CLOUDFLARE_ACCOUNT_API_TOKEN` configured in the shell (Stream edit permission):
+
+```sh
+npm run stream:origins
+npm run stream:origins -- --apply
+```
+
+The first command previews the number of videos requiring changes. The second
+updates all videos in that Stream account and verifies the returned permissions.
+Before any updates, it writes a local `stream-origins-backup-*.json` file containing
+previous origin settings. Other video properties, including signed URL requirements,
+are retained. Running the command again skips videos already configured correctly.
+Do not run this account-wide command against an account shared with unrelated apps.
+For an individual video, edit Allowed Origins in Cloudflare's Hosted videos dashboard
+to `kwonnet.com, *.kwonnet.com`. Transformation source rules and R2 CORS do not
+configure hosted Stream playback.
+
+
+### Video media organization
+
+New videos follow the logical path `media/<owner-hash>/<stream-video-id>`, using
+SHA-256 of the user ID for the same owner grouping as R2 images. Stream metadata
+stores the `folder`, `owner`, `provider`, `filePath`, and original `filename`; its
+visible video name uses the structured path. The app saves this path with the
+media record. These are metadata groups, not physical R2 folders: Cloudflare's
+Hosted videos page remains a flat list, and playback still uses the video's UID
+and the original HLS manifest URL. Legacy `stream/<video-id>` records and cached
+upload sessions remain supported. Stream creator ownership checks are unchanged.

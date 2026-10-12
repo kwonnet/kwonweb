@@ -4,6 +4,7 @@ import {
   createStreamService,
   createStreamHandlers,
   creatorId,
+  streamMediaPath,
   validateVideo,
   MAX_VIDEO_BYTES,
 } from "../src/lib/storage/stream.ts";
@@ -36,6 +37,17 @@ const request = (body = file, origin = "https://kwonnet.com") =>
   });
 test("provisions direct tus upload with server-controlled constraints and ownership", async () => {
   const service = createStreamService(config, async (url, options) => {
+    if (url.endsWith(`/${id}`)) {
+      assert.equal(options.method, "POST");
+      const details = JSON.parse(options.body);
+      assert.deepEqual(details.allowedOrigins, ["kwonnet.com", "*.kwonnet.com"]);
+      assert.equal(details.uid, id);
+      assert.equal(details.meta.folder, "media");
+      assert.equal(details.meta.name, streamMediaPath("user-1", id));
+      assert.equal(details.meta.filePath, streamMediaPath("user-1", id));
+      assert.equal(details.meta.filename, file.name);
+      return Response.json({success: true, result: {allowedOrigins: ["kwonnet.com", "*.kwonnet.com"]}});
+    }
     assert.equal(
       url,
       `https://api.cloudflare.com/client/v4/accounts/${config.accountId}/stream?direct_user=true`,
@@ -62,9 +74,13 @@ test("provisions direct tus upload with server-controlled constraints and owners
   const session = await service.create("user-1", {
     ...file,
     creator: "attacker",
+    allowedOrigins: ["attacker.example"],
+    folder: "profiles",
+    filePath: "media/attacker/video",
     maxDurationSeconds: 99999,
   });
   assert.equal(session.id, id);
+  assert.equal(session.filePath, streamMediaPath("user-1", id));
   assert.equal(session.uploadUrl, uploadUrl);
   assert.equal(session.maxDurationSeconds, 600);
   assert.ok(!JSON.stringify(session).includes(config.token));
@@ -206,7 +222,8 @@ test("bounds new upload reservations per authenticated user", async () => {
   const handlers = createStreamHandlers({
     config: () => config,
     userId: async () => "quota-test-user",
-    fetcher: async () => {
+    fetcher: async (url) => {
+      if (url.endsWith(`/${id}`)) return Response.json({success:true,result:{allowedOrigins:["kwonnet.com","*.kwonnet.com"]}});
       created++;
       return new Response(null, {
         status: 201,
@@ -254,4 +271,15 @@ test("provider HTML failure is logged safely without parsing or exposing its bod
   assert.equal(logs[0].operation, "create");
   assert.equal(logs[0].providerStatus, 502);
   assert.ok(!JSON.stringify(logs).includes("private diagnostics"));
+});
+test("structured video metadata uses the image owner hash while legacy video paths stay compatible", async () => {
+  const {createHash} = await import("node:crypto");
+  const expected = `media/${createHash("sha256").update("user-1").digest("hex")}/${id}`;
+  for (const [meta,filePath] of [[{folder:"media",owner:"untrusted",filePath:"../wrong"},expected],[{},`stream/${id}`]]) {
+    const service=createStreamService(config,async()=>Response.json({success:true,result:{...ready,meta}}));
+    const result=await service.status("user-1",id);
+    assert.equal(result.filePath,filePath);
+    assert.equal(result.url,ready.playback.hls);
+    await assert.rejects(service.status("other-user",id),{status:404});
+  }
 });
